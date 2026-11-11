@@ -39,7 +39,7 @@ Game quản lý–giải đố hài hước theo ngày: người chơi là thuy�
 - IEEE 830-1998 (khung cấu trúc tài liệu).
 
 ### 1.5 Tổng quan tài liệu
-Mục 2 mô tả tổng quan; mục 3 là yêu cầu chức năng chi tiết; mục 4 là yêu cầu phi chức năng; mục 5 là đặc tả nội dung 7 ngày (dữ liệu game); mục 6 là phạm vi loại trừ; mục 7 là ma trận truy vết GDD ↔ SRS; phụ lục ghi trạng thái triển khai hiện tại.
+Mục 2 mô tả tổng quan; mục 3 là yêu cầu chức năng chi tiết; mục 4 là yêu cầu phi chức năng; mục 5 là đặc tả nội dung ngày và pool event (dữ liệu game); mục 6 là phạm vi loại trừ; mục 7 là ma trận truy vết GDD ↔ SRS; phụ lục ghi trạng thái triển khai hiện tại.
 
 ---
 
@@ -62,7 +62,8 @@ Người chơi web (itch.io), điều khiển bằng chuột, chơi một lần 
 - Engine Unity 2D, C#, uGUI, TextMeshPro; build WebGL, submit lên itch.io.
 - Một Scene chính; chuyển trang bằng UI Panel; ngày/hành trình quản lý bằng dữ liệu trạng thái.
 - Dữ liệu quyết định/nhân vật/diễn biến dùng ScriptableObject.
-- Nguyên tắc sản xuất đã chốt: **mỗi ngày một quyết định, mỗi quyết định đẩy con tàu và chiếc bánh đến gần đích** (Ngày 4 là ngoại lệ có hai việc nhưng vẫn một lần Confirm).
+- Nguyên tắc sản xuất đã chốt: **mỗi ngày một quyết định, mỗi quyết định đẩy con tàu và chiếc bánh đến gần đích** (Ngày 4 là ngoại lệ có hai việc nhưng vẫn một lần Confirm — hiện ngoài phạm vi triển khai, xem mục 5).
+- Kiến trúc ngày đã chốt: **Ngày 1 cố định (ngày hướng dẫn); Ngày 2 → deadlineDay bốc ngẫu nhiên từ Event Pool; ngày cuối dùng `fixedFinale` nếu được gán.** Không lặp event trong một ván; hết pool → cho phép lặp (fallback), không bao giờ kẹt game.
 
 ### 2.5 Giả định & phụ thuộc
 - Thang quãng đường prototype: Normal = 1 đơn vị; Smart = 1,5–2; Slip-up = 0,25–0,5; tổng quãng đường chuẩn hóa 100%. Con số chốt sau khi nội dung 7 ngày chạy được và cân bằng (mục "điểm cần chốt" của GDD).
@@ -131,7 +132,16 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 - AC: cấu hình đúng trong bảng Ngày 4 mục 5; một lần Confirm duy nhất.
 
 **FR-0406 — Không có thủy thủ "luôn đúng".** Bảng ngày phải đảm bảo: mỗi ngày có ít nhất 2 cách đạt Smart; không có thủy thủ nào là lựa chọn tối ưu mọi tình huống; Dex đúng ở Ngày 1, sai ở Ngày 5 (người chơi phải tự đọc manh mối).
-- AC: đếm theo bảng mục 5 — mỗi ngày ≥ 2 tổ hợp Smart; mỗi nhân vật có ít nhất 1 ngày hợp và 1 ngày không hợp trong 7 ngày mẫu.
+- AC: đếm theo bảng mục 5 — mỗi ngày ≥ 2 tổ hợp Smart; mỗi nhân vật có ít nhất 1 ngày hợp và 1 ngày không hợp trong pool mẫu.
+
+**FR-0407 — Bốc event từ Event Pool.** Từ Ngày 2 đến `deadlineDay`, hệ thống bốc ngẫu nhiên một event từ pool:
+- Mỗi event có `eventId`, `weight` (≥1) và `spawnCondition` (điều kiện cờ). `EventScheduler` lọc event đã dùng / không thỏa cờ, bốc theo trọng số.
+- Định danh theo **seed** (xem NFR-06): cùng seed + cùng chuỗi lựa chọn → cùng chuỗi event. RNG (System.Random từ seed) CHỈ dùng để bốc event; tuyệt đối không dùng trong DecisionResolver / DeliveryEvaluator / TravelProgress.
+- Event được bốc **đúng 1 lần mỗi ngày và cache**: quay lại Briefing ↔ Status ↔ Assignment trong cùng ngày KHÔNG bốc lại. Event được dùng bị loại khỏi pool của ván.
+- Pool cạn hoặc không event nào thỏa cờ → fallback cho phép lặp event; không bao giờ trả null làm kẹt game.
+- Restart mặc định dùng seed mới (Environment.TickCount); `GameConfig.repeatSeedOnRestart = true` → dùng lại seed cũ.
+- Ngày cuối: nếu `EventPool.fixedFinale` được gán → luôn dùng event này; null → bốc như các ngày khác.
+- AC: hai ván cùng seed bốc ra cùng chuỗi event; hai ván khác seed có thể khác chuỗi; trong một ván không lặp event khi pool còn; chơi trọn ván không kẹt ở trang nào.
 
 ### 3.5 Kết quả & tiến độ (FR-05xx)
 
@@ -160,8 +170,9 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 **FR-0603 — Hiển thị bánh.** Bánh hiển thị bằng biểu tượng ASCII/pixel 7 tầng trong Status; hư hỏng thể hiện bằng đổi biểu tượng và dòng chữ trên bánh (ví dụ "CHÚC MỪNG SINH NHẬT" mất phần cuối); không cần animation.
 - AC: 3 mức tình trạng có 3 biểu hiện phân biệt được; 7 tầng có mặt ở biểu tượng.
 
-**FR-0604 — Cờ tác động Ngày 7.** Khi `TemporaryRepair = true`: phương án A (hạ cánh gắt) bị khóa. Khi `CargoShifted = true` và chọn A: Hàng giảm 1 mức.
-- AC: với mọi tổ hợp cờ, Ngày 7 luôn còn ít nhất một phương án khả dụng (GDD mục "điểm cần chốt").
+**FR-0604 — Cờ tác động Ngày cuối (Landing).** Khi `CargoShifted = true` và chọn A: Hàng giảm 1 mức. Khi `TemporaryRepair = true` và chọn A: kết quả Slip-up (vá tạm rung rời khi hạ gắt) kèm cảnh báo hiển thị ở Status (`tempRepairWarning`).
+- Quyết định đã chốt: luật "khóa phương án A" KHÔNG khả thi trên data model hiện tại (chưa hỗ trợ khóa phương án theo cờ); thay bằng entry hệ quả Slip-up + manh mối cảnh báo trước đó.
+- AC: với mọi tổ hợp cờ, chọn A luôn cho kết quả có lời giải thích rõ ràng; Hàng tối đa giảm 1 mức mỗi quyết định.
 
 ### 3.7 Thắng/thua và đoạn kết (FR-07xx)
 
@@ -178,7 +189,7 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 | Late but Intact | Trễ hạn, Hàng Intact | Qua giờ thổi nến nhưng bánh hoàn hảo |
 | Late Delivery | Trễ hạn, Hàng Scratched hoặc Ruined | Giao sau Ngày 7; chỉ còn lời xin lỗi |
 
-- AC: sau mỗi lần chơi kết thúc, đoạn kết hiển thị đúng theo bảng trên; có nút Restart khởi động lại Day 1 với trạng thái ban đầu.
+- AC: sau mỗi lần chơi kết thúc, đoạn kết hiển thị đúng theo bảng trên; có nút Restart khởi động lại Day 1 với trạng thái ban đầu và seed mới (hoặc seed cũ nếu `repeatSeedOnRestart`).
 
 ### 3.8 Trình bày & giao diện (FR-08xx)
 
@@ -195,8 +206,8 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 
 ### 3.9 Dữ liệu & kiến trúc (FR-09xx)
 
-**FR-0901 — Dữ liệu ScriptableObject.** `DailyBriefingDefinition`, `DecisionDefinition`, `CrewDefinition`; mỗi `DecisionDefinition` chứa danh sách phương án; mỗi phương án chứa danh sách `CrewOutcomeEntry`: `crewId`, `outcome`, `explanation`, `dialogue`, `flagToSet` (nếu có), `cargoDelta` (nếu có), `flagCondition` (ví dụ "chỉ khi CargoShifted = true").
-- AC: thêm/sửa một ngày chỉ cần sửa asset, không sửa code resolver.
+**FR-0901 — Dữ liệu ScriptableObject.** `DayDefinition` (event: `eventId`, `title`, `briefingText`, `statusText` có token `{CARGO}`, `cargoShiftedWarning`, `tempRepairWarning`, `spawnCondition`, `weight`, `decision`), `DecisionDefinition`, `CrewDefinition`, `EventPool` (`openingDay`, `fixedFinale`, `events`), `GameConfig` (giá trị cân bằng, `deadlineDay`, `repeatSeedOnRestart`); mỗi `DecisionDefinition` chứa danh sách phương án; mỗi phương án chứa danh sách `CrewOutcomeEntry`: `crewId`, `condition`, `outcome`, `explanation`, `quote`, `setFlag`, `cargoDelta`.
+- AC: thêm/sửa một event chỉ cần sửa asset, không sửa code resolver; pool không đủ event chỉ gây cảnh báo, không kẹt game.
 
 **FR-0902 — Enum chuẩn.** `DecisionOutcome { Normal, Smart, SlipUp }`, `ScreenStep { Briefing, Status, Assignment }`, `CargoCondition { Intact, Scratched, Ruined }`.
 
@@ -230,8 +241,8 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 | NFR-03 | Chữ dễ đọc: font monospace, độ tương phản đủ trên nền tối | Kiểm tra font + độ tương phản trên WebGL build |
 | NFR-04 | Tải trang: thời gian tải WebGL chấp nhận được trên itch.io | Kiểm tra thời gian tải khi build sớm (GDD yêu cầu build thử sớm để kiểm font, độ phân giải, chuột) |
 | NFR-05 | Công bằng: kết quả không bao giờ cảm giác ngẫu nhiên hay bất công | Mọi outcome có lời giải thích ngắn; mọi Slip-up có manh mối trước Confirm |
-| NFR-06 | Tính xác định: cùng một chuỗi quyết định cho cùng kết quả (không RNG trong việc xác định outcome/đoạn kết) | Chạy 2 ván cùng lựa chọn → cùng đoạn kết |
-| NFR-07 | Cân bằng nhanh: bảy ngày toàn Normal phải suýt thắng hoặc thua nhẹ; cần vài Smart để thắng thoải mái; chọn ngẫu nhiên không thể thắng | Chạy bảng tính nhanh theo thang mục 2.5 |
+| NFR-06 | Tính xác định theo seed: cùng seed + cùng chuỗi lựa chọn → cùng chuỗi event + cùng đoạn kết (không RNG trong việc xác định outcome/đoạn kết; RNG chỉ dùng bốc event) | Chạy 2 ván cùng seed và cùng lựa chọn → cùng chuỗi event và cùng đoạn kết (test EditMode) |
+| NFR-07 | Cân bằng nhanh: bảy ngày toàn Normal phải suýt thắng hoặc thua nhẹ; cần vài Smart để thắng thoải mái; chọn ngẫu nhiên không thể thắng | Đã chốt giá trị: totalDistance = 8.5; Normal = 1.0; Smart = 1.5; Slip-up = 0.3; deadlineDay = 7. Đo bằng mô phỏng: chơi ngẫu nhiên thắng ~5% (5000 ván, ngưỡng <15%, test `RandomPlayBalanceTests` + bước Validate) |
 | NFR-08 | Kiểm được: các logic cốt (resolver, evaluator, progress, cargo, flow) có test EditMode | Test suite chạy pass trong Unity Test Runner |
 
 ---
@@ -239,6 +250,8 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 ## 5. Đặc tả nội dung 7 ngày (dữ liệu game)
 
 Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "Smart: Dex + B" = chọn phương án B, giao cho Dex. Nội dung nằm trong ScriptableObject (FR-0901), resolver không hard-code.
+
+**Cấu trúc pool đã chốt:** Ngày 1 cố định (`openingDay`); Ngày 2–6 bốc ngẫu nhiên từ pool (FR-0407); Ngày 7 dùng `fixedFinale` = event Hạ cánh. Pool hiện có 9 event cho 5 slot ngẫu nhiên: Meteor, Customs, Distress, Breakdown, TollBooth, SpaceTraffic, RadioBlast, SpaceSnail, StardustFog. Bốn event sau (TollBooth, SpaceTraffic, RadioBlast, SpaceSnail, StardustFog) là event gốc mới tông hài, không đặt cờ, không hạ Hàng — bổ sung ngoài GDD để pool đủ lớn cho FR-0406 (mỗi nhân vật có ≥1 event hợp và ≥1 event không hợp). Mỗi event tự đủ manh mối trong briefing/status của chính nó (NFR-05); không event nào giả định event khác đã xuất hiện trước đó.
 
 ### Ngày 1 — Rời bến (ngày hướng dẫn)
 - **Tình huống:** Bến yêu cầu xác nhận niêm phong thùng bánh trước khi rời.
@@ -270,7 +283,8 @@ Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "
 - **Hệ quả:** Bob + C khi `CargoShifted = true` → Hàng giảm 1 mức.
 - **Thoại Slip-up (Mira):** "Ngài bảo trả lời trung thực. Tôi đã trả lời trung thực."
 
-### Ngày 4 — Hai việc cùng lúc (ngày phá nhịp)
+### Ngày 4 — Hai việc cùng lúc (ngày phá nhịp) — NGOÀI PHẠM VI TRIỂN KHAI
+> FR-0405 cần hệ thống phân công đôi riêng (2 người cùng 1 lần Confirm), chưa có trong data model hiện tại. Giữ đặc tả dưới làm yêu cầu tương lai; demo hiện tại không có ngày này.
 - **Tình huống:** Máy lọc khí báo động và đường đi bị lệch nhẹ. Hai việc: X. Sửa máy lọc khí · Y. Chỉnh hướng tàu.
 - **Phân công:** chọn hai thủy thủ khác nhau cho X và Y; hai người còn lại nghỉ; một lần Confirm.
 - **Hợp:** Mira–X (đọc sách hướng dẫn); Bob–Y (nhanh, mạnh tay); Dex–Y (kiểm tra hướng kỹ).
@@ -299,15 +313,15 @@ Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "
 - **Hệ quả:** Bob + B đặt `TemporaryRepair = true`.
 - **Thoại (Bob):** "Nó chạy rồi! ừ thì… hơi rung, và có tiếng lạ nữa."
 
-### Ngày 7 — Nước rút và hạ cánh
+### Ngày 7 — Nước rút và hạ cánh (fixedFinale, luôn xuất hiện ở ngày cuối)
 - **Tình huống:** Hạ cánh xuống hành tinh đích trước lúc thổi nến.
 - **Phương án:** A. Hạ cánh gắt và nhanh · B. Hạ cánh chậm và êm · C. Theo hướng dẫn của bến.
-- **Hệ quả từ cờ:** `TemporaryRepair = true` → A bị khóa (động cơ không chịu nổi). `CargoShifted = true` + chọn A → Hàng giảm 1 mức.
+- **Hệ quả từ cờ:** `CargoShifted = true` + chọn A → Hàng giảm 1 mức. `TemporaryRepair = true` + chọn A → Slip-up (vá tạm rung rời khi hạ gắt; cảnh báo hiển thị ở Status từ ngày đặt cờ). Luật "khóa A" của GDD không khả thi trên data model hiện tại — xem FR-0604.
 - **Smart:** Mira + C; Bob + A (chỉ khi không có cờ nào).
 - **Normal:** Chen + B.
-- **Slip-up:** Dex + C (nghi ngờ hướng dẫn của bến và tự đổi đường bay).
+- **Slip-up:** Dex + C (nghi ngờ hướng dẫn của bến và tự đổi đường bay); Bob + A khi `TemporaryRepair = true`.
 - **Ý nghĩa:** người chơi không có cờ nào được thoải mái hơn — phần thưởng cho sự cẩn thận các ngày trước.
-- **Thoại Slip-up (Mira):** "Hướng dẫn nói 'hạ cánh nhẹ nhàng'. Tôi đã hạ nhẹ nhàng. Rất nhẹ nhàng. Ba lần."
+- **Thoại Slip-up (Bob):** "Nó vẫn chạy mà! ...ừ thì, nửa chặng sau nó nghỉ ngơi." (thoại Mira giữ làm flavor: "Hướng dẫn nói 'hạ cánh nhẹ nhàng'. Tôi đã hạ nhẹ nhàng. Rất nhẹ nhàng. Ba lần.")
 
 ---
 
@@ -344,11 +358,11 @@ Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "
 ---
 
 ## Phụ lục A — Trạng thái triển khai hiện tại (phục vụ phân tích)
-Repo đã có bộ khung khớp kiến trúc GDD mục 10: `Assets/_Project/Scripts/Runtime/{Core, Data, Gameplay, UI, Presentation}`; các test EditMode cho DecisionResolver, GameStateFlow, DeliveryEvaluator, TravelProgress, CargoTracker; dữ liệu mẫu `Assets/_Project/Data/{Days, Decisions, Crew, Endings}` (Day1–Day3, Endings asset). Phân tích tiếp theo nên kiểm tra: mức độ khớp của bảng quyết định trong asset với bảng mục 5, giá trị thang quãng đường hiện tại, và độ bao phủ test so với FR-09xx.
+Repo đã có bộ khung khớp kiến trúc GDD mục 10: `Assets/_Project/Scripts/Runtime/{Core, Data, Logic, UI, Presentation}` + `Editor`. Kiến trúc Event Pool đã triển khai xong: `EventScheduler` (bốc theo weight + spawnCondition, pure C#), `GameState` có `Seed`/`Rng`/`CurrentEvent`/`UsedEvents`/`NewRun(seed)`, `GameManager.GetCurrentEvent()` cache-once, `EventPool` SO với `fixedFinale` = Hạ cánh. Dữ liệu mẫu `Assets/_Project/Data/{Events, Decisions, Config, Crew, Endings}`: `EventPool.asset` + 9 event (mỗi event có asset day + decision riêng), dựng tự động bằng `Tools/AyeAye/Build Demo` (idempotent, không ghi đè asset đã có). Test EditMode: 37/37 pass (EventScheduler 7 test, GameStateFlow + flow 7 ngày theo seed, DecisionResolver, CargoTracker, DeliveryEvaluator, TravelProgress, RandomPlayBalance). `Validate Demo` chạy kèm đo cân bằng ngẫu nhiên. Font: JetBrains Mono (OFL) thay consola. Chưa triển khai: FR-0101 (màn hình Start), FR-0402 (cảnh báo dự kiến ở Assignment), FR-0405 (Ngày 4 hai việc), FR-0603 (bánh 7 tầng).
 
 ## Phụ lục B — Điểm mở cần chốt khi prototype
-1. Tổng quãng đường (thang 100% hay số chuẩn hóa) và giá trị cụ thể Normal / Smart / Slip-up.
-2. Bảng tính nhanh cân bằng (7 ngày toàn Normal → suýt thắng/thua nhẹ; vài Smart → thắng thoải mái; chọn ngẫu nhiên không thể thắng).
+1. ~~Tổng quãng đường và giá trị cụ thể Normal / Smart / Slip-up~~ — **ĐÃ CHỐT**: 8.5 / 1.0 / 1.5 / 0.3; chơi ngẫu nhiên thắng ~5% (NFR-07).
+2. ~~Bảng tính nhanh cân bằng~~ — **ĐÃ CHỐT**: đo bằng `BalanceProbe` (mô phỏng pure C#) trong test + Validate.
 3. Thời lượng thực khi có chữ + hiệu ứng gõ (rút ngắn nếu vượt 12–15 phút).
-4. Quy tắc điểm đến: kết thúc Ngày 7 vẫn tính đúng hạn (FR-0701); chỉ thua nếu hết Ngày 7 mà tiến độ dưới 100%.
-5. Ngày 7 luôn còn ít nhất một phương án khả dụng trong mọi tổ hợp cờ (FR-0604).
+4. ~~Quy tắc điểm đến: kết thúc Ngày 7 vẫn tính đúng hạn (FR-0701)~~ — **ĐÃ CHỐT** và có test.
+5. ~~Ngày 7 luôn còn ít nhất một phương án khả dụng trong mọi tổ hợp cờ~~ — **ĐÃ CHỐT** (FR-0604 dạng hệ quả, không khóa phương án; có entry + test phủ).
