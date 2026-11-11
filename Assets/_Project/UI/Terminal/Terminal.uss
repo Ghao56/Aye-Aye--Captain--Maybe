@@ -36,7 +36,6 @@
     height: 100%;
     background-image: url("project://database/Assets/Image/Terminal.png?fileID=2800000&guid=a7945d2083442ba49ba0c113e78c4dfe");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-background-image-tint-color: rgba(0, 0, 0, 0);
 }
 
 /* Vùng kính màn hình CRT (cong + bo góc) — nội dung nằm trong padding để chừa lề (R-14 phương án a) */
