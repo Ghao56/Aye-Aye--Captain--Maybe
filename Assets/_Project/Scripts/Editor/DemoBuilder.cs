@@ -90,8 +90,8 @@ namespace AyeAye
             // 1) Dữ liệu.
             GameConfig config = AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath);
             if (config == null) { Debug.LogError("[Validate] Thiếu GameConfig tại " + ConfigPath); issues++; }
-            else if (Mathf.Abs(config.totalDistance - 7.2f) > 0.0001f || config.deadlineDay != 7)
-            { Debug.LogError("[Validate] GameConfig sai giá trị chuẩn (7.2 / deadline 7)."); issues++; }
+            else if (config.deadlineDay < 3 || config.totalDistance <= 0f)
+            { Debug.LogError("[Validate] GameConfig phi lý (deadlineDay < 3 hoặc totalDistance <= 0)."); issues++; }
 
             CrewDefinition[] crews = new CrewDefinition[4];
             for (int i = 0; i < 4; i++)
@@ -113,9 +113,32 @@ namespace AyeAye
                 {
                     for (int i = 0; i < pool.events.Count; i++)
                         issues += ValidateEvent(pool.events[i], "events[" + i + "]");
-                    if (config != null && pool.events.Count < config.deadlineDay - 1)
-                        Debug.LogWarning("[Validate] Pool chỉ có " + pool.events.Count + " event, ít hơn " + (config.deadlineDay - 1)
-                                         + " — một ván sẽ phải lặp event (fallback cho phép lặp).");
+                    if (config != null)
+                    {
+                        // Số slot bốc ngẫu nhiên: deadline trừ đi ngày mở màn và ngày finale cố định (nếu có).
+                        int randomSlots = config.deadlineDay - (pool.fixedFinale != null ? 2 : 1);
+                        if (pool.events.Count < randomSlots)
+                            Debug.LogWarning("[Validate] Pool chỉ có " + pool.events.Count + " event, ít hơn " + randomSlots
+                                             + " — một ván sẽ phải lặp event (fallback cho phép lặp).");
+                    }
+                }
+            }
+
+            // Cân bằng: bốc ngẫu nhiên không được thắng quá thường (SRS: random không thể thắng).
+            if (config != null && pool != null && pool.openingDay != null)
+            {
+                CrewDefinition probeCrew = ScriptableObject.CreateInstance<CrewDefinition>();
+                try
+                {
+                    float winRate = BalanceProbe.SimulateWinRate(config, pool, 3000, probeCrew);
+                    if (winRate >= BalanceProbe.WinRateLimit)
+                    { Debug.LogError("[Validate] Tỷ lệ thắng bốc ngẫu nhiên " + (winRate * 100f).ToString("0.0") + "% vượt ngưỡng " + (BalanceProbe.WinRateLimit * 100f) + "% — cần chỉnh cân bằng."); issues++; }
+                    else
+                        Debug.Log("[Validate] Cân bằng bốc ngẫu nhiên: tỷ lệ thắng " + (winRate * 100f).ToString("0.0") + "% (ngưỡng " + (BalanceProbe.WinRateLimit * 100f) + "%).");
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(probeCrew);
                 }
             }
 
@@ -522,10 +545,11 @@ namespace AyeAye
             Debug.Log("[DemoBuilder] TMP Settings sẵn sàng: " + TmpSettingsPath);
         }
 
-        static T CreateOrLoad<T>(string path) where T : ScriptableObject
+        static T CreateOrLoad<T>(string path, out bool created) where T : ScriptableObject
         {
             T asset = AssetDatabase.LoadAssetAtPath<T>(path);
-            if (asset == null)
+            created = asset == null;
+            if (created)
             {
                 asset = ScriptableObject.CreateInstance<T>();
                 AssetDatabase.CreateAsset(asset, path);
@@ -533,25 +557,46 @@ namespace AyeAye
             return asset;
         }
 
+        static T CreateOrLoad<T>(string path) where T : ScriptableObject
+        {
+            return CreateOrLoad<T>(path, out _);
+        }
+
         static GameConfig CreateConfig()
         {
-            GameConfig config = CreateOrLoad<GameConfig>(ConfigPath);
-            config.totalDistance = 7.2f;
-            config.deadlineDay = 7;
-            config.normalDistance = 1.0f;
-            config.smartDistance = 1.75f;
-            config.slipUpDistance = 0.4f;
-            config.typewriterCharsPerSecond = 90;
-            config.startingCargo = CargoCondition.Intact;
-            config.tripCode = "BDAY-0042";
-            config.shipName = "S.S. CÓ LẼ";
-            config.destinationName = "HÀNH TINH ZORP-9";
-            EditorUtility.SetDirty(config);
+            GameConfig config = CreateOrLoad<GameConfig>(ConfigPath, out bool createdConfig);
+            if (createdConfig)
+            {
+                // Chỉ ghi giá trị khi tạo asset mới: chỉnh tay trong Inspector không bị Build Demo đè mất.
+                config.totalDistance = 8.5f;
+                config.deadlineDay = 7;
+                config.normalDistance = 1.0f;
+                config.smartDistance = 1.5f;
+                config.slipUpDistance = 0.3f;
+                config.typewriterCharsPerSecond = 90;
+                config.startingCargo = CargoCondition.Intact;
+                config.tripCode = "BDAY-0042";
+                config.shipName = "S.S. CÓ LẼ";
+                config.destinationName = "HÀNH TINH ZORP-9";
+                EditorUtility.SetDirty(config);
+            }
             return config;
         }
 
         static CrewDefinition[] CreateCrews()
         {
+            // Đã đủ 4 crew asset → trả về như hiện có, không đè nội dung đã chỉnh tay.
+            CrewDefinition[] loaded = new[]
+            {
+                AssetDatabase.LoadAssetAtPath<CrewDefinition>(CrewPath(1)),
+                AssetDatabase.LoadAssetAtPath<CrewDefinition>(CrewPath(2)),
+                AssetDatabase.LoadAssetAtPath<CrewDefinition>(CrewPath(3)),
+                AssetDatabase.LoadAssetAtPath<CrewDefinition>(CrewPath(4)),
+            };
+            bool allCrews = true;
+            for (int i = 0; i < loaded.Length; i++) allCrews &= loaded[i] != null;
+            if (allCrews) return loaded;
+
             CrewDefinition bob = CreateOrLoad<CrewDefinition>(CrewPath(1));
             bob.id = CrewId.Bob; bob.displayName = "BOB"; bob.personalityLabel = "Quá nhiệt tình";
             bob.strengthText = "Việc nặng, việc gấp"; bob.weaknessText = "Việc tinh vi, dễ vỡ";
@@ -587,7 +632,7 @@ namespace AyeAye
             return new[] { bob, mira, chen, dex };
         }
 
-        // Tạo EventPool asset: ngày 1 cố định, các event còn lại bốc ngẫu nhiên cho Ngày 2..deadline.
+        // Tạo EventPool asset: ngày 1 cố định, ngày cuối cố định (Landing), còn lại bốc ngẫu nhiên.
         static EventPool CreateEventPool()
         {
             // Xóa asset của kiến trúc 3 ngày cố định để chạy lại không để rác.
@@ -596,17 +641,27 @@ namespace AyeAye
             AssetDatabase.DeleteAsset(DayPath(3));
             AssetDatabase.DeleteAsset(DecisionPath(3));
 
+            // Nội dung Landing/Distress đã sửa theo review: xóa để tạo lại từ khối lệnh mới.
+            AssetDatabase.DeleteAsset(EventPath("Landing"));
+            AssetDatabase.DeleteAsset(EventDecisionPath("Landing"));
+            AssetDatabase.DeleteAsset(EventPath("Distress"));
+            AssetDatabase.DeleteAsset(EventDecisionPath("Distress"));
+
             EventPool pool = CreateOrLoad<EventPool>(EventsPath);
             pool.openingDay = CreateOpeningDay();
-            pool.fixedFinale = null; // mặc định: ngày cuối vẫn bốc ngẫu nhiên như các ngày khác
+            // Landing luôn là Ngày 7 (review mục 3): hạ cánh xuống Zorp-9 từ sớm sẽ lệch mạch truyện.
+            pool.fixedFinale = CreateLanding();
             pool.events = new List<DayDefinition>
             {
                 CreateMeteor(),
                 CreateCustoms(),
                 CreateDistress(),
                 CreateBreakdown(),
-                CreateLanding(),
                 CreateTollBooth(),
+                CreateSpaceTraffic(),
+                CreateRadioBlast(),
+                CreateSpaceSnail(),
+                CreateStardustFog(),
             };
             EditorUtility.SetDirty(pool);
             return pool;
@@ -614,19 +669,28 @@ namespace AyeAye
 
         // Khuôn chung cho event trong pool: decision + day cùng path theo eventId.
         static DayDefinition CreateEvent(string eventId, string title, string briefing, string status,
-                                         string cargoWarning, string prompt, List<DecisionOption> options)
+                                         string cargoWarning, string tempWarning, string prompt,
+                                         List<DecisionOption> options)
         {
-            DecisionDefinition decision = CreateOrLoad<DecisionDefinition>(EventDecisionPath(eventId));
-            decision.prompt = prompt;
-            decision.options = options;
+            DecisionDefinition decision = CreateOrLoad<DecisionDefinition>(EventDecisionPath(eventId), out bool createdDecision);
+            if (createdDecision)
+            {
+                decision.prompt = prompt;
+                decision.options = options;
+            }
             EditorUtility.SetDirty(decision);
 
-            DayDefinition day = CreateOrLoad<DayDefinition>(EventPath(eventId));
+            DayDefinition day = CreateOrLoad<DayDefinition>(EventPath(eventId), out bool createdDay);
+            if (createdDay)
+            {
+                day.title = title;
+                day.briefingText = briefing;
+                day.statusText = status;
+            }
+            // eventId và cảnh báo luôn ghi lại: là dữ liệu kỹ thuật, không phải nội dung chỉnh tay.
             day.eventId = eventId;
-            day.title = title;
-            day.briefingText = briefing;
-            day.statusText = status;
             day.cargoShiftedWarning = cargoWarning ?? "";
+            day.tempRepairWarning = tempWarning ?? "";
             day.spawnCondition = FlagCondition.Always;
             day.weight = 1;
             day.decision = AssetDatabase.LoadAssetAtPath<DecisionDefinition>(EventDecisionPath(eventId));
@@ -637,6 +701,13 @@ namespace AyeAye
 
         static DayDefinition CreateOpeningDay()
         {
+            // Opening đã có sẵn → trả về như hiện có (nội dung có thể đã chỉnh tay).
+            if (AssetDatabase.LoadAssetAtPath<DecisionDefinition>(DecisionPath(1)) != null
+                && AssetDatabase.LoadAssetAtPath<DayDefinition>(DayPath(1)) != null)
+            {
+                return CreateOrLoad<DayDefinition>(DayPath(1));
+            }
+
             DecisionDefinition decision = CreateOrLoad<DecisionDefinition>(DecisionPath(1));
             decision.prompt = "Xác nhận niêm phong thùng bánh trước khi rời bến.";
             decision.options = new List<DecisionOption>
@@ -710,6 +781,13 @@ namespace AyeAye
 
         static DayDefinition CreateMeteor()
         {
+            // Meteor đã có sẵn → trả về như hiện có (nội dung có thể đã chỉnh tay).
+            if (AssetDatabase.LoadAssetAtPath<DecisionDefinition>(EventDecisionPath("Meteor")) != null
+                && AssetDatabase.LoadAssetAtPath<DayDefinition>(EventPath("Meteor")) != null)
+            {
+                return CreateOrLoad<DayDefinition>(EventPath("Meteor"));
+            }
+
             DecisionDefinition decision = CreateOrLoad<DecisionDefinition>(EventDecisionPath("Meteor"));
             decision.prompt = "Chọn cách đi qua vùng thiên thạch.";
             decision.options = new List<DecisionOption>
@@ -785,6 +863,13 @@ namespace AyeAye
 
         static DayDefinition CreateCustoms()
         {
+            // Customs đã có sẵn → trả về như hiện có (nội dung có thể đã chỉnh tay).
+            if (AssetDatabase.LoadAssetAtPath<DecisionDefinition>(EventDecisionPath("Customs")) != null
+                && AssetDatabase.LoadAssetAtPath<DayDefinition>(EventPath("Customs")) != null)
+            {
+                return CreateOrLoad<DayDefinition>(EventPath("Customs"));
+            }
+
             DecisionDefinition decision = CreateOrLoad<DecisionDefinition>(EventDecisionPath("Customs"));
             decision.prompt = "Chọn câu lệnh gửi cho đội.";
             decision.options = new List<DecisionOption>
@@ -909,6 +994,7 @@ namespace AyeAye
                 "KHU VỰC RỖNG NGĂN 7\n\nBộ thu bắt được một tín hiệu cầu cứu từ tàu lạ. Dex cho rằng đây là bẫy. Thông số tín hiệu lại khớp với chuyến \"Aurora-12\" đã đăng ký và mất liên lạc ba hôm trước.\n\nMỤC TIÊU HÔM NAY: quyết định với tín hiệu mà không chậm lịch trình.",
                 "TÀU: đủ nhiên liệu.\nBÁNH: {CARGO}.\nTÍN HIỆU: khớp chuyến Aurora-12 (đã đăng ký, mất liên lạc).\n\nDEX: \"Quá trùng hợp. Ai lại mất tín hiệu đúng lúc cần tiệc?\"\nBOB: \"Họ đang trên đường dự bữa tiệc sinh nhật mà!\"\nMIRA: \"Danh mục xác nhận Aurora-12 là thật.\"\nCHEN: \"Cứ coi như không nghe thấy.\"",
                 "",
+                "",
                 "Quyết định với tín hiệu cầu cứu lạ.",
                 new List<DecisionOption>
                 {
@@ -920,9 +1006,9 @@ namespace AyeAye
                         {
                             new CrewOutcomeEntry
                             {
-                                crew = CrewId.Dex, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
-                                explanation = "Dex xác minh danh tính tín hiệu với cảng trước khi bỏ qua: đúng Aurora-12 đã đăng ký, không phải bẫy. Tàu giữ lộ trình an toàn.",
-                                quote = "Đã xác minh. Bỏ qua... nhưng tôi vẫn để ý.",
+                                crew = CrewId.Dex, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Dex xác minh danh tính tín hiệu với cảng: đúng Aurora-12 đã đăng ký và mất liên lạc. Xác minh xong, tàu giữ lộ trình.",
+                                quote = "Đã xác minh. Giữ lộ trình... tôi vẫn để ý.",
                                 setFlag = FlagToSet.None, cargoDelta = 0,
                             },
                             new CrewOutcomeEntry
@@ -964,8 +1050,8 @@ namespace AyeAye
                         {
                             new CrewOutcomeEntry
                             {
-                                crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
-                                explanation = "Mira ghi nhận đầy đủ thông số tín hiệu, đối chiếu danh mục và báo cáo: tín hiệu hợp lệ. Quyết định cuối cùng vẫn để thuyền trưởng.",
+                                crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Mira ghi nhận đầy đủ thông số tín hiệu và đối chiếu danh mục: hợp lệ, đúng Aurora-12. Quyết định hành động được ngay nhờ dữ liệu sẵn.",
                                 quote = "Tín hiệu: hợp lệ. Theo danh mục.",
                                 setFlag = FlagToSet.None, cargoDelta = 0,
                             },
@@ -989,6 +1075,7 @@ namespace AyeAye
                 "Breakdown", "HỎNG HÓC KỸ THUẬT",
                 "HỎNG HÓC KỸ THUẬT\n\nBộ phận hệ thống đẩy số 2 rít lên và ngưng hoạt động giữa chừng. Sách hướng dẫn để trong kho, gáy sách đã lật sẵn ở mục \"sửa bộ phận đẩy\".\n\nMỤC TIÊU HÔM NAY: cho hệ thống đẩy chạy lại và không trễ nhiều.",
                 "TÀU: hệ thống đẩy số 2 hỏng.\nBÁNH: {CARGO}.\nHƯỚNG DẪN: \"Sửa chuẩn mất một ngày.\"\n\nBOB: \"Tôi có cách nhanh hơn!\"\nMIRA: \"Trước hết, đọc mục 12.\"\nDEX: \"Có tiếng động lạ. Tiếng động lạ là âm mưu.\"\nCHEN: \"Để tôi xem... kiểu gì cũng xong.\"",
+                "",
                 "",
                 "Chọn cách sửa hệ thống đẩy.",
                 new List<DecisionOption>
@@ -1071,6 +1158,7 @@ namespace AyeAye
                 "HẠ CÁNH — HÀNH TINH ZORP-9\n\nTàu vào quỹ đạo hạ cánh. Tháp hướng dẫn bến phát lệnh hạ cánh. Thùng bánh đã đi suốt hành trình, còn một chặng cuối là giữ được hình dáng của nó.\n\nMỤC TIÊU HÔM NAY: hạ cánh an toàn và đúng giờ.",
                 "TÀU: sẵn sàng hạ cánh.\nBÁNH: {CARGO}.\nTHÁP BẾN: \"Hạ cánh theo hướng dẫn, giảm tốc đều.\"\n\nMIRA: \"Tôi sẽ bám đúng từng chỉ dẫn.\"\nBOB: \"Để tôi chạm bến nhanh nhất!\"\nDEX: \"Ai lại phát hướng dẫn đúng giờ này? Nghi ngờ.\"\nCHEN: \"Hạ từ từ. Không vội.\"",
                 "CẢNH BÁO: thùng hàng đang lệch khỏi vị trí cố định — hạ gắt rất nguy hiểm.",
+                "CẢNH BÁO: hệ thống đẩy đang chạy ở chế độ sửa tạm — hạ gắt có thể làm bộ phận gãy luôn.",
                 "Chọn cách hạ cánh.",
                 new List<DecisionOption>
                 {
@@ -1080,6 +1168,14 @@ namespace AyeAye
                         description = "Quỹ đạo dốc, chạm bến sớm.",
                         entries = new List<CrewOutcomeEntry>
                         {
+                            // Đặt trước entry CargoShifted: resolver lấy entry khớp đầu tiên.
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Bob, condition = FlagCondition.TemporaryRepairRequired, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Bộ phận đẩy đang được vá tạm bằng dây buộc và băng keo. Hạ gắt làm phần vá rung rời, cả đội phải bay lại đúng hướng từ đầu.",
+                                quote = "Nó vẫn chạy mà! ...ừ thì, nửa chặng sau nó nghỉ ngơi.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
                             new CrewOutcomeEntry
                             {
                                 crew = CrewId.Bob, condition = FlagCondition.CargoShiftedForbidden, outcome = DecisionOutcome.Smart,
@@ -1144,6 +1240,7 @@ namespace AyeAye
                 "TollBooth", "TRẠM THU PHÍ VŨ TRỤ",
                 "TRẠM THU PHÍ VŨ TRỤ\n\nMột trạm thu phí tự động tròn trĩnh trôi ngang tuyến bay, chắn đúng giữa đường. Bảng hiệu nhấp nháy: \"PHÍ VÀO CỔNG: 3 CÔIN VŨ TRỤ\". Không ai nhớ mang coin.\n\nDưới bảng hiệu có một dòng chữ in rất nhỏ, nhỏ đến mức phải nhìn thật kỹ mới thấy.\n\nMỤC TIÊU HÔM NAY: qua cổng trạm mà không mất thêm thời gian.",
                 "TÀU: chờ trước cổng trạm.\nBÁNH: {CARGO}.\nBẢNG HIỆU: \"PHÍ: 3 CÔIN · KHÔNG NHẬN GIẢI THÍCH\"\n\nMIRA: \"Bảng ghi 3 coin. Tôi tin bảng.\"\nBOB: \"Hộp quà có kèm bánh mini đấy! Đổi được không?\"\nDEX: \"Trạm này không có trong sơ đồ tuyến. Chắc chắn là bẫy.\"\nCHEN: \"Hay là đi vòng?\"",
+                "",
                 "",
                 "Chọn cách qua trạm thu phí.",
                 new List<DecisionOption>
@@ -1210,8 +1307,329 @@ namespace AyeAye
                 });
         }
 
+        // Event gốc mới, tông hài: bảng phụ "tàu chở hàng mừng sinh nhật" — đúng đối tượng của mình.
+        static DayDefinition CreateSpaceTraffic()
+        {
+            return CreateEvent(
+                "SpaceTraffic", "KẸT ĐƯỜNG GIẢN ĐÀO",
+                "KẸT ĐƯỜNG GIẢN ĐÀO\n\nMột dàn tàu giao nhắn xếp hàng ba lớp trước cổng giản đạo. Hàng chờ dài hơn cả quỹ đạo dự kiến. Bảng phụ bên cạnh ghi: \"LÀN ƯU TIÊN: TÀU CHỞ HÀNG MỪNG SINH NHẬT ĐI THÔNG\".\n\nMỤC TIÊU HÔM NAY: qua giản đạo mà không trễ thêm.",
+                "TÀU: đứng ở cuối hàng.\nBÁNH: {CARGO}.\nBẢNG PHỤ: \"LÀN ƯU TIÊN: TÀU CHỞ HÀNG MỪNG SINH NHẬT ĐI THÔNG\"\n\nMIRA: \"Tàu mình chở hàng mừng sinh nhật. Bảng phụ nêu rõ.\"\nBOB: \"Hàng mừng sinh nhật chính là hàng của chúng ta!\"\nDEX: \"Ai làm cái bảng phụ đó? Bẫy. Chắc chắn là bẫy.\"\nCHEN: \"Hàng chờ. Ngủ được.\"",
+                "",
+                "",
+                "Chọn cách qua giản đạo.",
+                new List<DecisionOption>
+                {
+                    new DecisionOption
+                    {
+                        label = "Vào làn ưu tiên",
+                        description = "Bảng phụ cho phép rõ ràng.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Mira dừng đúng làn ưu tiên, xuất trình đơn hàng: một chiếc bánh mừng sinh nhật. Nhân viên giản đạo cho đi thông ngay.",
+                                quote = "Làn ưu tiên. Đúng mục đích sử dụng.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Any, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Cả đội vào làn ưu tiên và chờ lượt. Nhân viên gõ máy một lúc rồi cũng cho qua.",
+                                quote = "Đã xếp hàng ưu tiên.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Giải thích với kiểm soát viên",
+                        description = "Thuyết phục bằng nhiệt tình.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Bob, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Bob kể hết chuyến đi và đưa xem chiếc bánh. Kiểm soát viên cười to, tự tay chỉ vào làn nhanh.",
+                                quote = "Kiểm soát viên cười! Cười là thông!",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Chen, condition = FlagCondition.Always, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Chen giải thích với đúng tốc độ của anh ta. Đến khi kể xong thì ba lượt tàu khác đã đi trước.",
+                                quote = "Kể xong rồi. À, mất lượt rồi.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Xếp hàng đúng lượt",
+                        description = "Không tranh cãi, chờ đến chừng nào hay chừng nấy.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Chen, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Chen xếp hàng đúng quy định và chờ. Chậm nhưng không ai bắt bẻ gì.",
+                                quote = "Xếp hàng. Chờ. Chuẩn.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Dex, condition = FlagCondition.Always, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Dex soi bảng phụ suốt bốn tiếng để tìm dấu hiệu giả mạo. Không tìm ra, hàng cũng hết.",
+                                quote = "Bảng này in ba năm trước. Ai cất nhỉ? Hừ.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                });
+        }
+
+        // Event gốc mới, tông hài: con loa quảng cáo không chịu tắt.
+        static DayDefinition CreateRadioBlast()
+        {
+            return CreateEvent(
+                "RadioBlast", "LOA PHÁT THANH KHÔNG TẮT",
+                "LOA PHÁT THANH KHÔNG TẮT\n\nMột loa quảng cáo trôi ven tuyến phát đi phát lại bài quảng cáo \"tiệm tiện lợi Khe Khoảng Trống\". Loa dính vào gương quan sát và không chịu tắt. Dòng chữ dưới loa: \"CHỈ TẮT BẰNG CHÌA KHÓA SAO\".\n\nMỤC TIÊU HÔM NAY: tắt loa mà không trễ lịch trình.",
+                "TÀU: ồn.\nBÁNH: {CARGO}.\nLOA: \"Ghé Khe Khoảng Trống — đủ thứ nhỏ, giá thật lớn!\"\n\nMIRA: \"Quy trình có mục 'tiếng ồn': chịu đựng.\"\nBOB: \"Nút OFF chắc nằm đâu đó! Để tôi tìm!\"\nDEX: \"Loa này biết trước mình đến. Nghe kỹ — nó nhắc tên tàu mình.\"\nCHEN: \"Bật bản nhạc khác dập nó được không?\"",
+                "",
+                "",
+                "Chọn cách xử lý con loa.",
+                new List<DecisionOption>
+                {
+                    new DecisionOption
+                    {
+                        label = "Leo ra gương bấm nút OFF",
+                        description = "Nút OFF nằm lật ở mặt sau gương.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Bob, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Bob đeo dây an toàn, leo ra mặt ngoài gương và bấm đúng nút OFF nằm lật ở mặt sau. Loa tắt ngay lập tức.",
+                                quote = "Đây! Nút OFF. Im luôn.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Mira leo ra ngoài theo đúng quy trình hai người bám dây và tắt loa sau một lúc chuẩn bị.",
+                                quote = "Đã tắt loa. Quy trình: hoàn tất.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Dò tần số gốc của loa",
+                        description = "Phát lại chính bài quảng cáo cho nó nghe.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Dex, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Dex dò đúng tần số gốc rồi phát lại chính bài quảng cáo về phía con loa. Nó tự tắt vì \"đã phát đủ thời lượng\".",
+                                quote = "Hồi âm đã gửi. Loa nghe thấy chính nó. Tắt.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Chen, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Chen dò tần số theo sách hướng dẫn, chờ đúng thời lượng, con loa tự tắt.",
+                                quote = "Chờ hết bản quảng cáo. Nó im rồi.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Đóng nắp thông khí cho khỏi ồn",
+                        description = "Không xử lý loa, xử lý tai mình.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Mira đóng nắp thông khí theo đúng đề mục \"giảm tiếng ồn\". Cả tàu im lặng, thiếu không khí và thở dốc.",
+                                quote = "Nghi ngờ: đóng nắp thông khí không đúng mục đích lắm.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Any, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Cả đội đóng nắp thông khí, nghe nhỏ hơn, rồi mở lại cho thoáng.",
+                                quote = "Đã giảm ồn. Tạm ổn.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                });
+        }
+
+        // Event gốc mới, tông hài: ốc sên vũ trụ phát sáng bám vào kính.
+        static DayDefinition CreateSpaceSnail()
+        {
+            return CreateEvent(
+                "SpaceSnail", "ỐC SÊN PHÁT SÁNG",
+                "ỐC SÊN PHÁT SÁNG\n\nMột ốc sên vũ trụ phát sáng bám vào kính quan sát trước. Ánh sáng do nó phát ra che cả phía trước tàu. Trong kho có cuốn sách hướng dẫn mở sẵn ở mục ốc sên, gáy sách ghi: \"KHÔNG CHO ĂN. GỠ NHẸ. THẢ RA NGOÀI.\"\n\nMỤC TIÊU HÔM NAY: gỡ ốc sên khỏi kính mà không trễ.",
+                "TÀU: kính quan sát sáng rực.\nBÁNH: {CARGO}.\nSÁCH: \"ỐC SÊN: KHÔNG CHO ĂN. GỠ NHẸ. THẢ RA NGOÀI.\"\n\nMIRA: \"Sách có mục này. Làm đúng sách.\"\nBOB: \"Nó phát sáng đấy! Chắc là đói!\"\nDEX: \"Ốc sên này theo chúng ta từ bến. Gián điệp.\"\nCHEN: \"Chà sạch kính là xong.\"",
+                "",
+                "",
+                "Chọn cách xử lý ốc sên.",
+                new List<DecisionOption>
+                {
+                    new DecisionOption
+                    {
+                        label = "Gỡ nhẹ theo sách và thả ra ngoài",
+                        description = "Đúng từng chữ trong hướng dẫn.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Mira gỡ ốc sên từng chấm, đúng từng chữ trong sách, và thả ra ngoài khoang. Kính sạch, ốc sên bơi đi, còn để lại một vệt sáng cho vui.",
+                                quote = "Gỡ nhẹ. Thả ra ngoài. Sách: chính xác.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Any, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Cả đội gỡ ốc sên nhẹ nhàng và thả ra ngoài. Kính dần sạch lại.",
+                                quote = "Ốc sên đã được thả ra ngoài.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Cho nó ăn để nó chịu rời kính",
+                        description = "Sách nói rõ: KHÔNG cho ăn.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Bob, condition = FlagCondition.Always, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Bob cho ốc sên ăn vội. Nó chịu rời kính... để bơi vào trong kho, kéo cả họ hàng bám kín mặt kính.",
+                                quote = "Nó ăn rồi! ...Nó gọi bạn nữa.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Lau kính bằng que lau",
+                        description = "Không đụng vào con ốc sên.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Chen, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Chen dùng que lau kính đẩy nhẹ ốc sên sang một bên rồi thả ra ngoài. Nhanh hơn sách hướng dẫn nhưng đúng tinh thần.",
+                                quote = "Que lau kính. Nhanh. Sạch.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Dex, condition = FlagCondition.Always, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Dex soi ốc sên một tiếng vì nghi là thiết bị nghe trộm. Ốc sên gõ vỏ theo nhịp SOS, vẫn nghi ngờ.",
+                                quote = "Nó nháy theo nhịp ba. Mã gián điệp. Tôi chắc.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                });
+        }
+
+        // Event gốc mới, tông hài: dải bụi sao làm mờ kính nhưng cảm biến vẫn báo "rõ ràng".
+        static DayDefinition CreateStardustFog()
+        {
+            return CreateEvent(
+                "StardustFog", "SƯƠNG BỤI SAO",
+                "SƯƠNG BỤI SAO\n\nTàu đi vào một dải bụi sao mỏng. Kính quan sát mờ dần, nhưng cảm biến vẫn báo \"RÕ RÀNG\". Bụi bám dày ở mặt trước tàu, không lọt vào khoang kín.\n\nMỤC TIÊU HÔM NAY: vượt dải bụi sao mà không trễ.",
+                "TÀU: kính mờ, cảm biến tốt.\nBÁNH: {CARGO}.\nCẢM BIẾN: \"KHÔNG KHÍ KHU VỰC: RÕ RÀNG\" (kính quan sát: mờ)\n\nMIRA: \"Cảm biến báo rõ ràng. Kính mờ là chuyện nhỏ.\"\nBOB: \"Có gì đó dính ở mặt trước!\"\nDEX: \"'Rõ ràng' theo cách nói của ai? Kính mờ còn dám nói rõ ràng?\"\nCHEN: \"Vệt bụi đó để mai quét.\"",
+                "",
+                "",
+                "Chọn cách vượt dải bụi sao.",
+                new List<DecisionOption>
+                {
+                    new DecisionOption
+                    {
+                        label = "Quét bụi khỏi mặt trước rồi đi tiếp",
+                        description = "Sạch kính trước khi chạm vùng dày.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Bob, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Bob quét bụi khỏi mặt trước tàu trước khi chạm vùng dày. Kính sạch suốt dải bụi, tàu đi ngay.",
+                                quote = "Quét xong! Kính sạch. Đi tiếp!",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Any, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Cả đội quét phần bụi quan trọng rồi tiếp tục hành trình.",
+                                quote = "Đã quét bụi. Lộ trình giữ nguyên.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Luồn sát sau vệ tinh để bụi lắng",
+                        description = "Mượn vệt sạch của vệ tinh gần nhất.",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Chen, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                                explanation = "Chen tính lộ trình luồn sau vệ tinh gần nhất: bụi lắng sau nó như sau xe quét. Tàu qua dải bụi sạch và sớm.",
+                                quote = "Sau vệ tinh. Vết bụi rơi theo nó. Đi.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Dex, condition = FlagCondition.Always, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Dex nghi bụi sao là \"hóa trang của ai đó\" và đổi lộ trình nhiều lần để kiểm tra. Mất thời gian.",
+                                quote = "Bụi sao không tự bay được như thế. Ai phóng nó?",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                    new DecisionOption
+                    {
+                        label = "Tắt đèn để đỡ bám bụi",
+                        description = "Áp dụng mục \"tiết kiệm năng lượng\".",
+                        entries = new List<CrewOutcomeEntry>
+                        {
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.SlipUp,
+                                explanation = "Mira tắt đèn theo đúng mục \"tiết kiệm năng lượng trong vùng bụi\". Bụi không bớt, cả tàu đen thui và tụt lịch.",
+                                quote = "Mục tiết kiệm điện: đã áp dụng. Kết quả: tối.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                            new CrewOutcomeEntry
+                            {
+                                crew = CrewId.Any, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
+                                explanation = "Cả đội tắt đèn phụ cho bớt hao, rồi mở lại khi cần.",
+                                quote = "Đã tắt đèn phụ. Tạm ổn.",
+                                setFlag = FlagToSet.None, cargoDelta = 0,
+                            },
+                        },
+                    },
+                });
+        }
+
         static EndingDefinitions CreateEndings()
         {
+            // Endings đã có sẵn → trả về như hiện có.
+            EndingDefinitions existingEndings = AssetDatabase.LoadAssetAtPath<EndingDefinitions>(EndingsPath);
+            if (existingEndings != null) return existingEndings;
+
             EndingDefinitions endings = CreateOrLoad<EndingDefinitions>(EndingsPath);
             endings.endings = new List<EndingDefinitions.EndingEntry>
             {

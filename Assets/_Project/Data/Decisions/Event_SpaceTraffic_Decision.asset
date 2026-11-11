@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ea16a12c49a8b345a82bbb5d7acfe66, type: 3}
+  m_Name: Event_SpaceTraffic_Decision
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DecisionDefinition
+  prompt: "Ch\u1ECDn c\xE1ch qua gi\u1EA3n \u0111\u1EA1o."
+  options:
+  - label: "V\xE0o l\xE0n \u01B0u ti\xEAn"
+    description: "B\u1EA3ng ph\u1EE5 cho ph\xE9p r\xF5 r\xE0ng."
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 1
+      explanation: "Mira d\u1EEBng \u0111\xFAng l\xE0n \u01B0u ti\xEAn, xu\u1EA5t
+        tr\xECnh \u0111\u01A1n h\xE0ng: m\u1ED9t chi\u1EBFc b\xE1nh m\u1EEBng sinh
+        nh\u1EADt. Nh\xE2n vi\xEAn gi\u1EA3n \u0111\u1EA1o cho \u0111i th\xF4ng ngay."
+      quote: "L\xE0n \u01B0u ti\xEAn. \u0110\xFAng m\u1EE5c \u0111\xEDch s\u1EED
+        d\u1EE5ng."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 0
+      condition: 0
+      outcome: 0
+      explanation: "C\u1EA3 \u0111\u1ED9i v\xE0o l\xE0n \u01B0u ti\xEAn v\xE0 ch\u1EDD
+        l\u01B0\u1EE3t. Nh\xE2n vi\xEAn g\xF5 m\xE1y m\u1ED9t l\xFAc r\u1ED3i c\u0169ng
+        cho qua."
+      quote: "\u0110\xE3 x\u1EBFp h\xE0ng \u01B0u ti\xEAn."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "Gi\u1EA3i th\xEDch v\u1EDBi ki\u1EC3m so\xE1t vi\xEAn"
+    description: "Thuy\u1EBFt ph\u1EE5c b\u1EB1ng nhi\u1EC7t t\xECnh."
+    entries:
+    - crew: 1
+      condition: 0
+      outcome: 1
+      explanation: "Bob k\u1EC3 h\u1EBFt chuy\u1EBFn \u0111i v\xE0 \u0111\u01B0a
+        xem chi\u1EBFc b\xE1nh. Ki\u1EC3m so\xE1t vi\xEAn c\u01B0\u1EDDi to, t\u1EF1
+        tay ch\u1EC9 v\xE0o l\xE0n nhanh."
+      quote: "Ki\u1EC3m so\xE1t vi\xEAn c\u01B0\u1EDDi! C\u01B0\u1EDDi l\xE0 th\xF4ng!"
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 3
+      condition: 0
+      outcome: 2
+      explanation: "Chen gi\u1EA3i th\xEDch v\u1EDBi \u0111\xFAng t\u1ED1c \u0111\u1ED9
+        c\u1EE7a anh ta. \u0110\u1EBFn khi k\u1EC3 xong th\xEC ba l\u01B0\u1EE3t
+        t\xE0u kh\xE1c \u0111\xE3 \u0111i tr\u01B0\u1EDBc."
+      quote: "K\u1EC3 xong r\u1ED3i. \xC0, m\u1EA5t l\u01B0\u1EE3t r\u1ED3i."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "X\u1EBFp h\xE0ng \u0111\xFAng l\u01B0\u1EE3t"
+    description: "Kh\xF4ng tranh c\xE3i, ch\u1EDD \u0111\u1EBFn ch\u1EEBng n\xE0o
+      hay ch\u1EEBng n\u1EA5y."
+    entries:
+    - crew: 3
+      condition: 0
+      outcome: 0
+      explanation: "Chen x\u1EBFp h\xE0ng \u0111\xFAng quy \u0111\u1ECBnh v\xE0 ch\u1EDD.
+        Ch\u1EADm nh\u01B0ng kh\xF4ng ai b\u1EAFt b\u1EBB g\xEC."
+      quote: "X\u1EBFp h\xE0ng. Ch\u1EDD. Chu\u1EA9n."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex soi b\u1EA3ng ph\u1EE5 su\u1ED1t b\u1ED1n ti\u1EBFng \u0111\u1EC3
+        t\xECm d\u1EA5u hi\u1EC7u gi\u1EA3 m\u1EA1o. Kh\xF4ng t\xECm ra, h\xE0ng
+        c\u0169ng h\u1EBFt."
+      quote: "B\u1EA3ng n\xE0y in ba n\u0103m tr\u01B0\u1EDBc. Ai c\u1EA5t nh\u1EC9?
+        H\u1EEB."
+      setFlag: 0
+      cargoDelta: 0

@@ -33,7 +33,6 @@ namespace AyeAye
         {
             GameState state = game.State;
             DayDefinition day = game.GetCurrentEvent();
-            Debug.Log("[DBG] BeginDay: ngày " + state.CurrentDay + ", event=" + (day != null ? day.eventId : "NULL!") + ", decision=" + (day != null && day.decision != null ? "có" : "NULL!"));
             if (day == null)
             {
                 Debug.LogError("[DayCycleManager] Không tìm thấy DayDefinition cho ngày " + state.CurrentDay);
@@ -80,7 +79,6 @@ namespace AyeAye
 
         void ShowAssignmentScreen()
         {
-            Debug.Log("[DBG] ShowAssignmentScreen: vào màn phân công");
             if (isTransitioning) return;
             isTransitioning = true;
 
@@ -94,7 +92,6 @@ namespace AyeAye
         void OnConfirmed(int optionIndex, CrewId crew)
         {
             GameState state = game.State;
-            Debug.Log("[DBG] OnConfirmed: option=" + optionIndex + " crew=" + crew + " isTransitioning=" + isTransitioning + " PendingResolved=" + (state.PendingResolved != null ? "SET" : "null"));
             if (isTransitioning || state.PendingResolved != null) return;
             isTransitioning = true;
 
@@ -105,14 +102,11 @@ namespace AyeAye
                 option = day.decision.options[optionIndex];
 
             state.PendingResolved = DecisionResolver.Resolve(option, crew, state, game.GetCrew(crew));
-            Debug.Log("[DBG] OnConfirmed: resolve xong, outcome=" + state.PendingResolved.Outcome);
             game.assignment.ShowConfirmed(state.PendingResolved.OptionLabel, state.PendingResolved.CrewName);
-            Debug.Log("[DBG] OnConfirmed: ShowConfirmed đã gọi");
 
-            // Sau khi xác nhận, giữ trạng thái chuyển tiếp để user thấy kết quả phân công
-            // trước khi chuyển sang bước END DAY, tránh chồng lấn UI (kết thúc ngày ↔ xác nhận quyết định).
-            // Sử dụng Invoke để tránh chặn UI thread, cho phép UI cập nhật trước.
-            Invoke(nameof(CompleteConfirmation), 0.3f);
+            // Hết ngay cửa sổ khóa: giữ Invoke 0.3s tạo khe CHỈNH LẠI giữa chừng mà PendingResolved
+            // đã bị hủy → CONFIRM bị chặn → END DAY chết nút, người chơi kẹt.
+            CompleteConfirmation();
         }
 
         void CompleteConfirmation()
@@ -123,10 +117,7 @@ namespace AyeAye
         void OnEndDay()
         {
             GameState state = game.State;
-            // Không kiểm tra isTransitioning ở đây: END DAY chỉ bấm được sau CONFIRM (PendingResolved đã set),
-            // còn cửa sổ 0.3s sau CONFIRM vẫn isTransitioning=true — nếu từ chối trong cửa sổ đó thì UI
-            // đã khóa sẵn nút → nút chết vĩnh viễn, người chơi bị kẹt.
-            if (state.PendingResolved == null) { Debug.Log("[DBG] OnEndDay: BỊ CHẶN — PendingResolved null!"); return; }
+            if (state.PendingResolved == null) return;
             isTransitioning = true;
 
             ResolvedDecision resolved = state.PendingResolved;
@@ -137,11 +128,8 @@ namespace AyeAye
             float distance = TravelProgress.GetDistance(resolved.Outcome, game.Config);
             state.Progress += distance;
             DeliveryEvaluator.Evaluate(state);
-            Debug.Log("[DBG] OnEndDay: xong logic, overlay sắp hiện");
 
             game.screenFlow.ShowResultOverlay(true);
-            GameObject op = game.screenFlow.resultOverlayPanel;
-            Debug.Log("[DBG] overlay panel=" + (op != null ? op.name : "NULL!") + " activeSelf=" + (op != null ? op.activeSelf.ToString() : "n/a"));
             game.resultOverlay.Show(resolved, distance, state.IsFinished);
             game.screenFeedback.PlayFeedback(resolved.Outcome);
             StartCoroutine(AnimateProgressThenReady());
@@ -149,17 +137,14 @@ namespace AyeAye
 
         IEnumerator AnimateProgressThenReady()
         {
-            Debug.Log("[DBG] Coroutine chạy: progress=" + game.State.Progress + "/" + game.State.TotalDistance);
             game.progressBar.AnimateTo(game.State.Progress, game.State.TotalDistance, progressTweenSeconds);
             yield return new WaitForSeconds(progressTweenSeconds + 0.05f);
-            Debug.Log("[DBG] SetNextReady gọi");
             game.resultOverlay.SetNextReady();
             isTransitioning = false;
         }
 
         void OnOverlayNext()
         {
-            Debug.Log("[DBG] OnOverlayNext: isTransitioning=" + isTransitioning + " IsFinished=" + game.State.IsFinished);
             if (isTransitioning) return;
             isTransitioning = true;
 

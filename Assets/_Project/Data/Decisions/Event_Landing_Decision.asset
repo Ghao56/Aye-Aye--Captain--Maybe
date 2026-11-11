@@ -18,6 +18,17 @@ MonoBehaviour:
     description: "Qu\u1EF9 \u0111\u1EA1o d\u1ED1c, ch\u1EA1m b\u1EBFn s\u1EDBm."
     entries:
     - crew: 1
+      condition: 3
+      outcome: 2
+      explanation: "B\u1ED9 ph\u1EADn \u0111\u1EA9y \u0111ang \u0111\u01B0\u1EE3c
+        v\xE1 t\u1EA1m b\u1EB1ng d\xE2y bu\u1ED9c v\xE0 b\u0103ng keo. H\u1EA1 g\u1EAFt
+        l\xE0m ph\u1EA7n v\xE1 rung r\u1EDDi, c\u1EA3 \u0111\u1ED9i ph\u1EA3i bay
+        l\u1EA1i \u0111\xFAng h\u01B0\u1EDBng t\u1EEB \u0111\u1EA7u."
+      quote: "N\xF3 v\u1EABn ch\u1EA1y m\xE0! ...\u1EEB th\xEC, n\u1EEDa ch\u1EB7ng
+        sau n\xF3 ngh\u1EC9 ng\u01A1i."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 1
       condition: 2
       outcome: 1
       explanation: "Bob l\xE1i theo qu\u1EF9 \u0111\u1EA1o d\u1ED1c v\xE0 ch\u1EA1m

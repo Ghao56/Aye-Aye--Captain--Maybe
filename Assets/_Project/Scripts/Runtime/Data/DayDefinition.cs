@@ -21,6 +21,10 @@ namespace AyeAye
         [Tooltip("Hiển thị ở Status khi CargoShifted = true; có thể rỗng.")]
         public string cargoShiftedWarning;
 
+        [TextArea]
+        [Tooltip("Hiển thị ở Status khi TemporaryRepair = true; có thể rỗng.")]
+        public string tempRepairWarning;
+
         public DecisionDefinition decision;
 
         [Tooltip("Event chỉ xuất hiện khi điều kiện cờ này thỏa.")] public FlagCondition spawnCondition = FlagCondition.Always;

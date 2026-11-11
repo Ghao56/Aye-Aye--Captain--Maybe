@@ -21,12 +21,12 @@ MonoBehaviour:
     entries:
     - crew: 4
       condition: 0
-      outcome: 1
-      explanation: "Dex x\xE1c minh danh t\xEDnh t\xEDn hi\u1EC7u v\u1EDBi c\u1EA3ng
-        tr\u01B0\u1EDBc khi b\u1ECF qua: \u0111\xFAng Aurora-12 \u0111\xE3 \u0111\u0103ng
-        k\xFD, kh\xF4ng ph\u1EA3i b\u1EABy. T\xE0u gi\u1EEF l\u1ED9 tr\xECnh an to\xE0n."
-      quote: "\u0110\xE3 x\xE1c minh. B\u1ECF qua... nh\u01B0ng t\xF4i v\u1EABn \u0111\u1EC3
-        \xFD."
+      outcome: 0
+      explanation: "Dex x\xE1c minh danh t\xEDnh t\xEDn hi\u1EC7u v\u1EDBi c\u1EA3ng:
+        \u0111\xFAng Aurora-12 \u0111\xE3 \u0111\u0103ng k\xFD v\xE0 m\u1EA5t li\xEAn
+        l\u1EA1c. X\xE1c minh xong, t\xE0u gi\u1EEF l\u1ED9 tr\xECnh."
+      quote: "\u0110\xE3 x\xE1c minh. Gi\u1EEF l\u1ED9 tr\xECnh... t\xF4i v\u1EABn
+        \u0111\u1EC3 \xFD."
       setFlag: 0
       cargoDelta: 0
     - crew: 0
@@ -67,11 +67,11 @@ MonoBehaviour:
     entries:
     - crew: 2
       condition: 0
-      outcome: 0
+      outcome: 1
       explanation: "Mira ghi nh\u1EADn \u0111\u1EA7y \u0111\u1EE7 th\xF4ng s\u1ED1
-        t\xEDn hi\u1EC7u, \u0111\u1ED1i chi\u1EBFu danh m\u1EE5c v\xE0 b\xE1o c\xE1o:
-        t\xEDn hi\u1EC7u h\u1EE3p l\u1EC7. Quy\u1EBFt \u0111\u1ECBnh cu\u1ED1i c\xF9ng
-        v\u1EABn \u0111\u1EC3 thuy\u1EC1n tr\u01B0\u1EDFng."
+        t\xEDn hi\u1EC7u v\xE0 \u0111\u1ED1i chi\u1EBFu danh m\u1EE5c: h\u1EE3p l\u1EC7,
+        \u0111\xFAng Aurora-12. Quy\u1EBFt \u0111\u1ECBnh h\xE0nh \u0111\u1ED9ng
+        \u0111\u01B0\u1EE3c ngay nh\u1EDD d\u1EEF li\u1EC7u s\u1EB5n."
       quote: "T\xEDn hi\u1EC7u: h\u1EE3p l\u1EC7. Theo danh m\u1EE5c."
       setFlag: 0
       cargoDelta: 0

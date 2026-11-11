@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_SpaceSnail
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: SpaceSnail
+  title: "\u1ED0C S\xCAN PH\xC1T S\xC1NG"
+  briefingText: "\u1ED0C S\xCAN PH\xC1T S\xC1NG\n\nM\u1ED9t \u1ED1c s\xEAn v\u0169
+    tr\u1EE5 ph\xE1t s\xE1ng b\xE1m v\xE0o k\xEDnh quan s\xE1t tr\u01B0\u1EDBc. \xC1nh
+    s\xE1ng do n\xF3 ph\xE1t ra che c\u1EA3 ph\xEDa tr\u01B0\u1EDBc t\xE0u. Trong
+    kho c\xF3 cu\u1ED1n s\xE1ch h\u01B0\u1EDBng d\u1EABn m\u1EDF s\u1EB5n \u1EDF
+    m\u1EE5c \u1ED1c s\xEAn, g\xE1y s\xE1ch ghi: \"KH\xD4NG CHO \u0102N. G\u1EE0
+    NH\u1EB8. TH\u1EA2 RA NGO\xC0I.\"\n\nM\u1EE4C TI\xCAU H\xD4M NAY: g\u1EE1 \u1ED1c
+    s\xEAn kh\u1ECFi k\xEDnh m\xE0 kh\xF4ng tr\u1EC5."
+  statusText: "T\xC0U: k\xEDnh quan s\xE1t s\xE1ng r\u1EF1c.\nB\xC1NH: {CARGO}.\nS\xC1CH:
+    \"\u1ED0C S\xCAN: KH\xD4NG CHO \u0102N. G\u1EE0 NH\u1EB8. TH\u1EA2 RA NGO\xC0I.\"\n\nMIRA:
+    \"S\xE1ch c\xF3 m\u1EE5c n\xE0y. L\xE0m \u0111\xFAng s\xE1ch.\"\nBOB: \"N\xF3
+    ph\xE1t s\xE1ng \u0111\u1EA5y! Ch\u1EAFc l\xE0 \u0111\xF3i!\"\nDEX: \"\u1ED0c
+    s\xEAn n\xE0y theo ch\xFAng ta t\u1EEB b\u1EBFn. Gi\xE1n \u0111i\u1EC7p.\"\nCHEN:
+    \"Ch\xE0 s\u1EA1ch k\xEDnh l\xE0 xong.\""
+  cargoShiftedWarning: 
+  tempRepairWarning: 
+  decision: {fileID: 11400000, guid: 148c60503099cc34ebc52867caf75134, type: 2}
+  spawnCondition: 0
+  weight: 1

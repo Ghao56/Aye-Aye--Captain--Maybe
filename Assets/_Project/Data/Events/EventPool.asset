@@ -13,11 +13,14 @@ MonoBehaviour:
   m_Name: EventPool
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.EventPool
   openingDay: {fileID: 11400000, guid: df759865b3b75ef49ad99c48f8a8bb9b, type: 2}
-  fixedFinale: {fileID: 0}
+  fixedFinale: {fileID: 11400000, guid: 4ef5fbe2d6485ce43b9258218c1adb0c, type: 2}
   events:
   - {fileID: 11400000, guid: 47fad087dff22c145bf334e2999df188, type: 2}
   - {fileID: 11400000, guid: e38ade84d166eb741896a669dd7bba9a, type: 2}
   - {fileID: 11400000, guid: 581bc3634604f4f4e8c597953eea4791, type: 2}
   - {fileID: 11400000, guid: ba53ddc689c86f84191c222e4a2fd0fe, type: 2}
-  - {fileID: 11400000, guid: 4ef5fbe2d6485ce43b9258218c1adb0c, type: 2}
   - {fileID: 11400000, guid: 38dd7a8015ce9744b82b6811b269aaa7, type: 2}
+  - {fileID: 11400000, guid: aacc54abcfc23864ba2d46fc7ca292d6, type: 2}
+  - {fileID: 11400000, guid: 4830a969a677b0348b9f502ce4e71dfe, type: 2}
+  - {fileID: 11400000, guid: 0de199b4a2ea9b847871ab5b9a84c3f8, type: 2}
+  - {fileID: 11400000, guid: 156d73bf1d7dca2418f95e85b21b17cd, type: 2}

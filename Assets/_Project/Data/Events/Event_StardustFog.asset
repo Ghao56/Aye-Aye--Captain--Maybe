@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_StardustFog
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: StardustFog
+  title: "S\u01AF\u01A0NG B\u1EE4I SAO"
+  briefingText: "S\u01AF\u01A0NG B\u1EE4I SAO\n\nT\xE0u \u0111i v\xE0o m\u1ED9t d\u1EA3i
+    b\u1EE5i sao m\u1ECFng. K\xEDnh quan s\xE1t m\u1EDD d\u1EA7n, nh\u01B0ng c\u1EA3m
+    bi\u1EBFn v\u1EABn b\xE1o \"R\xD5 R\xC0NG\". B\u1EE5i b\xE1m d\xE0y \u1EDF m\u1EB7t
+    tr\u01B0\u1EDBc t\xE0u, kh\xF4ng l\u1ECDt v\xE0o khoang k\xEDn.\n\nM\u1EE4C TI\xCAU
+    H\xD4M NAY: v\u01B0\u1EE3t d\u1EA3i b\u1EE5i sao m\xE0 kh\xF4ng tr\u1EC5."
+  statusText: "T\xC0U: k\xEDnh m\u1EDD, c\u1EA3m bi\u1EBFn t\u1ED1t.\nB\xC1NH: {CARGO}.\nC\u1EA2M
+    BI\u1EBEN: \"KH\xD4NG KH\xCD KHU V\u1EF0C: R\xD5 R\xC0NG\" (k\xEDnh quan s\xE1t:
+    m\u1EDD)\n\nMIRA: \"C\u1EA3m bi\u1EBFn b\xE1o r\xF5 r\xE0ng. K\xEDnh m\u1EDD
+    l\xE0 chuy\u1EC7n nh\u1ECF.\"\nBOB: \"C\xF3 g\xEC \u0111\xF3 d\xEDnh \u1EDF m\u1EB7t
+    tr\u01B0\u1EDBc!\"\nDEX: \"'R\xF5 r\xE0ng' theo c\xE1ch n\xF3i c\u1EE7a ai? K\xEDnh
+    m\u1EDD c\xF2n d\xE1m n\xF3i r\xF5 r\xE0ng?\"\nCHEN: \"V\u1EC7t b\u1EE5i \u0111\xF3
+    \u0111\u1EC3 mai qu\xE9t.\""
+  cargoShiftedWarning: 
+  tempRepairWarning: 
+  decision: {fileID: 11400000, guid: 0ab01933e9332304ca94f623a3b3f3b1, type: 2}
+  spawnCondition: 0
+  weight: 1

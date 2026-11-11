@@ -28,6 +28,7 @@ MonoBehaviour:
     \"Danh m\u1EE5c x\xE1c nh\u1EADn Aurora-12 l\xE0 th\u1EADt.\"\nCHEN: \"C\u1EE9
     coi nh\u01B0 kh\xF4ng nghe th\u1EA5y.\""
   cargoShiftedWarning: 
+  tempRepairWarning: 
   decision: {fileID: 11400000, guid: 5ede54db2586e124f963575d4794168c, type: 2}
   spawnCondition: 0
   weight: 1

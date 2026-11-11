@@ -27,6 +27,7 @@ MonoBehaviour:
     l\u1EA1 l\xE0 \xE2m m\u01B0u.\"\nCHEN: \"\u0110\u1EC3 t\xF4i xem... ki\u1EC3u
     g\xEC c\u0169ng xong.\""
   cargoShiftedWarning: 
+  tempRepairWarning: 
   decision: {fileID: 11400000, guid: 48d65298de0ae6c458aa4504f3832101, type: 2}
   spawnCondition: 0
   weight: 1

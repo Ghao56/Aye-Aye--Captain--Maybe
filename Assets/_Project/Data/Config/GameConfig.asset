@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fea40fff56171244bb1fb82bc53c023e, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.GameConfig
-  totalDistance: 7.2
+  totalDistance: 8.5
   deadlineDay: 7
   normalDistance: 1
-  smartDistance: 1.75
-  slipUpDistance: 0.4
+  smartDistance: 1.5
+  slipUpDistance: 0.3
   typewriterCharsPerSecond: 90
   startingCargo: 3
   repeatSeedOnRestart: 0

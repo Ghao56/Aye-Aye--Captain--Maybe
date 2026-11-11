@@ -29,6 +29,7 @@ MonoBehaviour:
     \"Tr\u1EA1m n\xE0y kh\xF4ng c\xF3 trong s\u01A1 \u0111\u1ED3 tuy\u1EBFn. Ch\u1EAFc
     ch\u1EAFn l\xE0 b\u1EABy.\"\nCHEN: \"Hay l\xE0 \u0111i v\xF2ng?\""
   cargoShiftedWarning: 
+  tempRepairWarning: 
   decision: {fileID: 11400000, guid: 84ec47eaa2ab1944b978c9190b5105d9, type: 2}
   spawnCondition: 0
   weight: 1

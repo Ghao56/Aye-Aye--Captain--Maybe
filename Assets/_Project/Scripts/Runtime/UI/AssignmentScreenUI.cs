@@ -162,7 +162,6 @@ namespace AyeAye
         // Gọi sau khi Confirm thành công: hiện dòng phân công + nút END DAY.
         public void ShowConfirmed(string optionLabel, string crewName)
         {
-            Debug.Log("[DBG] ShowConfirmed: hiện nút END DAY, activeInHierarchy=" + (endDayButton != null ? endDayButton.gameObject.activeInHierarchy.ToString() : "null-ref!"));
             if (previewText != null) previewText.text = "PHÂN CÔNG: " + crewName + " → " + optionLabel;
             // Hai nút chung một vị trí (builder gán cùng rect) → phải ẩn nút confirm khi hiện END DAY.
             if (confirmButton != null) confirmButton.gameObject.SetActive(false);
@@ -173,7 +172,6 @@ namespace AyeAye
 
         void OnEndDayClicked()
         {
-            Debug.Log("[DBG] OnEndDayClicked: locked=" + locked + " interactable=" + (endDayButton != null ? endDayButton.interactable.ToString() : "null"));
             if (locked) return; // đã END DAY rồi → không cộng quãng đường lần hai
             locked = true;
             if (endDayButton != null) endDayButton.interactable = false;

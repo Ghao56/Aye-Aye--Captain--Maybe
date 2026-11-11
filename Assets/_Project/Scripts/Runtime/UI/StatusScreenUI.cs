@@ -42,9 +42,12 @@ namespace AyeAye
             string text = day.statusText;
             if (!string.IsNullOrEmpty(text)) text = text.Replace(CargoToken, CakeStatusUI.CargoName(state.Cargo));
 
-            string warning = (state.CargoShifted && !string.IsNullOrEmpty(day.cargoShiftedWarning))
-                ? day.cargoShiftedWarning
-                : "";
+            // Manh mối cờ (NFR-05): cảnh báo dựa trên cờ đang bật; cả hai cùng bật thì ghép lại.
+            string warning = "";
+            if (state.CargoShifted && !string.IsNullOrEmpty(day.cargoShiftedWarning))
+                warning = day.cargoShiftedWarning;
+            if (state.TemporaryRepair && !string.IsNullOrEmpty(day.tempRepairWarning))
+                warning = string.IsNullOrEmpty(warning) ? day.tempRepairWarning : warning + "\n" + day.tempRepairWarning;
 
             if (warningText != null) warningText.text = warning;
             if (flagsText != null)

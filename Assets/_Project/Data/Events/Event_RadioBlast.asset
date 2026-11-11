@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_RadioBlast
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: RadioBlast
+  title: "LOA PH\xC1T THANH KH\xD4NG T\u1EAET"
+  briefingText: "LOA PH\xC1T THANH KH\xD4NG T\u1EAET\n\nM\u1ED9t loa qu\u1EA3ng c\xE1o
+    tr\xF4i ven tuy\u1EBFn ph\xE1t \u0111i ph\xE1t l\u1EA1i b\xE0i qu\u1EA3ng c\xE1o
+    \"ti\u1EC7m ti\u1EC7n l\u1EE3i Khe Kho\u1EA3ng Tr\u1ED1ng\". Loa d\xEDnh v\xE0o
+    g\u01B0\u01A1ng quan s\xE1t v\xE0 kh\xF4ng ch\u1ECBu t\u1EAFt. D\xF2ng ch\u1EEF
+    d\u01B0\u1EDBi loa: \"CH\u1EC8 T\u1EAET B\u1EB0NG CH\xCCA KH\xD3A SAO\".\n\nM\u1EE4C
+    TI\xCAU H\xD4M NAY: t\u1EAFt loa m\xE0 kh\xF4ng tr\u1EC5 l\u1ECBch tr\xECnh."
+  statusText: "T\xC0U: \u1ED3n.\nB\xC1NH: {CARGO}.\nLOA: \"Gh\xE9 Khe Kho\u1EA3ng
+    Tr\u1ED1ng \u2014 \u0111\u1EE7 th\u1EE9 nh\u1ECF, gi\xE1 th\u1EADt l\u1EDBn!\"\n\nMIRA:
+    \"Quy tr\xECnh c\xF3 m\u1EE5c 'ti\u1EBFng \u1ED3n': ch\u1ECBu \u0111\u1EF1ng.\"\nBOB:
+    \"N\xFAt OFF ch\u1EAFc n\u1EB1m \u0111\xE2u \u0111\xF3! \u0110\u1EC3 t\xF4i t\xECm!\"\nDEX:
+    \"Loa n\xE0y bi\u1EBFt tr\u01B0\u1EDBc m\xECnh \u0111\u1EBFn. Nghe k\u1EF9 \u2014
+    n\xF3 nh\u1EAFc t\xEAn t\xE0u m\xECnh.\"\nCHEN: \"B\u1EADt b\u1EA3n nh\u1EA1c
+    kh\xE1c d\u1EADp n\xF3 \u0111\u01B0\u1EE3c kh\xF4ng?\""
+  cargoShiftedWarning: 
+  tempRepairWarning: 
+  decision: {fileID: 11400000, guid: a1cc811e53403244eb350ca2cfa12ec6, type: 2}
+  spawnCondition: 0
+  weight: 1

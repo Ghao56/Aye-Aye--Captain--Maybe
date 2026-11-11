@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_SpaceTraffic
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: SpaceTraffic
+  title: "K\u1EB8T \u0110\u01AF\u1EDCNG GI\u1EA2N \u0110\xC0O"
+  briefingText: "K\u1EB8T \u0110\u01AF\u1EDCNG GI\u1EA2N \u0110\xC0O\n\nM\u1ED9t
+    d\xE0n t\xE0u giao nh\u1EAFn x\u1EBFp h\xE0ng ba l\u1EDBp tr\u01B0\u1EDBc c\u1ED5ng
+    gi\u1EA3n \u0111\u1EA1o. H\xE0ng ch\u1EDD d\xE0i h\u01A1n c\u1EA3 qu\u1EF9 \u0111\u1EA1o
+    d\u1EF1 ki\u1EBFn. B\u1EA3ng ph\u1EE5 b\xEAn c\u1EA1nh ghi: \"L\xC0N \u01AFU
+    TI\xCAN: T\xC0U CH\u1EDE H\xC0NG M\u1EEANG SINH NH\u1EACT \u0110I TH\xD4NG\".\n\nM\u1EE4C
+    TI\xCAU H\xD4M NAY: qua gi\u1EA3n \u0111\u1EA1o m\xE0 kh\xF4ng tr\u1EC5 th\xEAm."
+  statusText: "T\xC0U: \u0111\u1EE9ng \u1EDF cu\u1ED1i h\xE0ng.\nB\xC1NH: {CARGO}.\nB\u1EA2NG
+    PH\u1EE4: \"L\xC0N \u01AFU TI\xCAN: T\xC0U CH\u1EDE H\xC0NG M\u1EEANG SINH NH\u1EACT
+    \u0110I TH\xD4NG\"\n\nMIRA: \"T\xE0u m\xECnh ch\u1EDF h\xE0ng m\u1EEBng sinh
+    nh\u1EADt. B\u1EA3ng ph\u1EE5 n\xEAu r\xF5.\"\nBOB: \"H\xE0ng m\u1EEBng sinh
+    nh\u1EADt ch\xEDnh l\xE0 h\xE0ng c\u1EE7a ch\xFAng ta!\"\nDEX: \"Ai l\xE0m c\xE1i
+    b\u1EA3ng ph\u1EE5 \u0111\xF3? B\u1EABy. Ch\u1EAFc ch\u1EAFn l\xE0 b\u1EABy.\"\nCHEN:
+    \"H\xE0ng ch\u1EDD. Ng\u1EE7 \u0111\u01B0\u1EE3c.\""
+  cargoShiftedWarning: 
+  tempRepairWarning: 
+  decision: {fileID: 11400000, guid: 23a44e03f8b231f4e88587baf9172b25, type: 2}
+  spawnCondition: 0
+  weight: 1

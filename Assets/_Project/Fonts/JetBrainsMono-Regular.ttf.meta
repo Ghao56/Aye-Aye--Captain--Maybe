@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 7c126308ce39ad547a1952074504aa24
+guid: 8e117974972515746b0de41a31aab39a
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Consolas
+  - JetBrains Mono
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

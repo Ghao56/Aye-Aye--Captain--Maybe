@@ -28,6 +28,9 @@ MonoBehaviour:
     Nghi ng\u1EDD.\"\nCHEN: \"H\u1EA1 t\u1EEB t\u1EEB. Kh\xF4ng v\u1ED9i.\""
   cargoShiftedWarning: "C\u1EA2NH B\xC1O: th\xF9ng h\xE0ng \u0111ang l\u1EC7ch kh\u1ECFi
     v\u1ECB tr\xED c\u1ED1 \u0111\u1ECBnh \u2014 h\u1EA1 g\u1EAFt r\u1EA5t nguy hi\u1EC3m."
+  tempRepairWarning: "C\u1EA2NH B\xC1O: h\u1EC7 th\u1ED1ng \u0111\u1EA9y \u0111ang
+    ch\u1EA1y \u1EDF ch\u1EBF \u0111\u1ED9 s\u1EEDa t\u1EA1m \u2014 h\u1EA1 g\u1EAFt
+    c\xF3 th\u1EC3 l\xE0m b\u1ED9 ph\u1EADn g\xE3y lu\xF4n."
   decision: {fileID: 11400000, guid: a2bb71d4fcd25d2488621457ee019ca0, type: 2}
   spawnCondition: 0
   weight: 1
