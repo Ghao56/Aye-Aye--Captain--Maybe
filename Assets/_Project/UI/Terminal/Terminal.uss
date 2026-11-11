@@ -1,0 +1,64 @@
+/* Terminal UI — toàn bộ số đo nằm ở đây (R6).
+   Stage 1920x1280 (giữ đúng tỉ lệ ảnh máy tính 1536x1024 = 3:2, rộng tối đa 1920).
+   Rect màn hình (% trên ảnh gốc 1536x1024): left 300, top 85, width 975, height 690. */
+
+:root {
+    --c-letterbox: rgb(0, 0, 0);
+    --c-screen-bg: rgba(4, 16, 10, 0.60);   /* phủ nhẹ lên kính CRT cong, làm đều nền */
+    --c-text: rgb(155, 232, 164);            /* xanh lá nhạt (khớp UI cũ #9BE8A4) */
+    --c-amber: rgb(255, 184, 77);            /* hổ phách #FFB84D */
+    --c-alert: rgb(255, 90, 77);             /* đỏ cảnh báo #FF5A4D */
+    --c-frame: rgb(46, 107, 71);             /* viền khung terminal */
+}
+
+/* Khung ngoài: letterbox đen, stage căn giữa */
+.root {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: var(--c-letterbox);
+}
+
+/* Sân khấu cố định 1920x1280, được TerminalView co bằng style.scale (contain) */
+.stage {
+    width: 1920px;
+    height: 1280px;
+    flex-shrink: 0;
+}
+
+/* Ảnh máy tính là nền sân khấu — picking-mode Ignore để không nuốt click (R-01) */
+.computer-image {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("project://database/Assets/Image/Terminal.png?fileID=2800000&guid=a7945d2083442ba49ba0c113e78c4dfe");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-background-image-tint-color: rgba(0, 0, 0, 0);
+}
+
+/* Vùng kính màn hình CRT (cong + bo góc) — nội dung nằm trong padding để chừa lề (R-14 phương án a) */
+.screen {
+    position: absolute;
+    left: 19.53%;      /* 300 / 1536 */
+    top: 8.30%;        /* 85 / 1024 */
+    width: 63.48%;     /* 975 / 1536 */
+    height: 67.38%;    /* 690 / 1024 */
+    overflow: hidden;
+    background-color: var(--c-screen-bg);
+    padding: 28px 38px;
+}
+
+/* Overlay căn chỉnh GATE B: phủ đúng #screen, luôn Ignore (R-01). Tắt bằng display:none khi người dùng duyệt */
+.debug-overlay {
+    position: absolute;
+    left: 19.53%;
+    top: 8.30%;
+    width: 63.48%;
+    height: 67.38%;
+    border-width: 2px;
+    border-color: rgba(255, 0, 255, 0.9);
+    background-color: rgba(255, 0, 255, 0.25);
+}
