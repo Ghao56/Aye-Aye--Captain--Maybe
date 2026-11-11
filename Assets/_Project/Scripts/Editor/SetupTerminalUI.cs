@@ -75,7 +75,7 @@ namespace AyeAye
             // Constant Pixel Size, scale 1 — sân khấu tự co bằng style.scale trong TerminalView.
             if (panel.scaleMode != PanelScaleMode.ConstantPixelSize) panel.scaleMode = PanelScaleMode.ConstantPixelSize;
             if (!Mathf.Approximately(panel.scale, 1f)) panel.scale = 1f;
-            if (panel.sortOrder != 10) panel.sortOrder = 10; // UIDocument vẽ trên Canvas uGUI cũ (đã tắt)
+            if (!Mathf.Approximately(panel.sortingOrder, 10f)) panel.sortingOrder = 10f; // UIDocument vẽ trên Canvas uGUI cũ (đã tắt)
 
             ThemeStyleSheet theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
             if (theme == null)
@@ -98,17 +98,17 @@ namespace AyeAye
 
             UIDocument document = go.GetComponent<UIDocument>();
             if (document == null) document = go.AddComponent<UIDocument>();
-            if (document.sourceAsset == null)
+            if (document.visualTreeAsset == null)
             {
-                document.sourceAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UxmlPath);
-                Debug.Log("[SetupTerminalUI] UIDocument.sourceAsset = " + UxmlPath);
+                document.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UxmlPath);
+                Debug.Log("[SetupTerminalUI] UIDocument.visualTreeAsset = " + UxmlPath);
             }
             if (document.panelSettings != panel) document.panelSettings = panel;
 
             TerminalView view = go.GetComponent<TerminalView>();
             if (view == null) view = go.AddComponent<TerminalView>();
 
-            if (created || document.sourceAsset != null)
+            if (created || document.visualTreeAsset != null)
                 Debug.Log("[SetupTerminalUI] TerminalUI sẵn sàng trên scene " + scene.name + ".");
         }
     }
