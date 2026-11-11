@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fea40fff56171244bb1fb82bc53c023e, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.GameConfig
+  totalDistance: 3.2
+  deadlineDay: 3
+  normalDistance: 1
+  smartDistance: 1.75
+  slipUpDistance: 0.4
+  typewriterCharsPerSecond: 90
+  startingCargo: 3
+  tripCode: BDAY-0042
+  shipName: "S.S. C\xD3 L\u1EBC"
+  destinationName: "H\xC0NH TINH ZORP-9"

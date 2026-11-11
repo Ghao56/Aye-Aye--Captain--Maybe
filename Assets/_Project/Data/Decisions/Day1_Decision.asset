@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ea16a12c49a8b345a82bbb5d7acfe66, type: 3}
+  m_Name: Day1_Decision
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DecisionDefinition
+  prompt: "X\xE1c nh\u1EADn ni\xEAm phong th\xF9ng b\xE1nh tr\u01B0\u1EDBc khi r\u1EDDi
+    b\u1EBFn."
+  options:
+  - label: "K\xFD x\xE1c nh\u1EADn lu\xF4n"
+    description: "Nhanh. Kh\xF4ng ki\u1EC3m tra g\xEC th\xEAm."
+    entries:
+    - crew: 3
+      condition: 0
+      outcome: 0
+      explanation: "Chen k\xFD x\xE1c nh\u1EADn nhanh g\u1ECDn. M\u1ECDi th\u1EE9
+        tr\xF4ng \u1ED5n, nh\u01B0ng kh\xF4ng ai ki\u1EC3m tra k\u1EF9."
+      quote: "Xong. Gi\u1EDD t\xF4i ngh\u1EC9 \u0111\u01B0\u1EE3c ch\u01B0a?"
+      setFlag: 0
+      cargoDelta: 0
+  - label: "Ki\u1EC3m tra th\u1EE7 c\xF4ng"
+    description: "K\u1EF9 l\u01B0\u1EE1ng nh\u01B0ng t\u1ED1n c\xF4ng."
+    entries:
+    - crew: 4
+      condition: 0
+      outcome: 1
+      explanation: "Dex ph\xE1t hi\u1EC7n d\xE2y bu\u1ED9c s\u1ED1 3 b\u1ECB l\u1ECFng
+        v\xE0 bu\u1ED9c l\u1EA1i ch\u1EAFc ch\u1EAFn. T\xE0u r\u1EDDi b\u1EBFn su\xF4n
+        s\u1EBB."
+      quote: "T\xF4i \u0111\xE3 n\xF3i l\xE0 c\xF3 g\xEC \u0111\xF3 kh\xF4ng \u1ED5n.
+        Gi\u1EDD th\xEC \u1ED5n r\u1ED3i. Ch\u1EAFc v\u1EADy."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 1
+      condition: 0
+      outcome: 2
+      explanation: "Bob si\u1EBFt th\xEAm hai v\xF2ng cho ch\u1EAFc. Chi\u1EBFc b\xE1nh
+        b\u1ECB \xE9p l\xF5m m\u1ED9t b\xEAn, c\u1EA3 \u0111\u1ED9i m\u1EA5t th\u1EDDi
+        gian th\xE1o ra."
+      quote: "Ch\u1EAFc ch\u1EAFn l\xE0 t\u1ED1t! T\xF4i \u0111\xE3 si\u1EBFt th\xEAm
+        hai v\xF2ng n\u1EEFa!"
+      setFlag: 0
+      cargoDelta: 0
+  - label: "Ch\u1EA1y qu\xE9t t\u1EF1 \u0111\u1ED9ng"
+    description: "D\xF9ng m\xE1y qu\xE9t c\u1EE7a t\xE0u."
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 0
+      explanation: "Mira ch\u1EA1y qu\xE9t theo \u0111\xFAng quy tr\xECnh. K\u1EBFt
+        qu\u1EA3: kh\xF4ng c\xF3 c\u1EA3nh b\xE1o."
+      quote: "Qu\xE9t ho\xE0n t\u1EA5t. Kh\xF4ng c\xF3 c\u1EA3nh b\xE1o, theo \u0111\xFAng
+        t\u1EEBng ch\u1EEF."
+      setFlag: 0
+      cargoDelta: 0

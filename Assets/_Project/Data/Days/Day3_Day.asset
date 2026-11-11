@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Day3_Day
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  dayNumber: 3
+  title: "NG\xC0Y 3 \xB7 TR\u1EA0M H\u1EA2I QUAN"
+  briefingText: "TR\u1EA0M H\u1EA2I QUAN GLEEP\n\nTr\u1EA1m h\u1EA3i quan y\xEAu
+    c\u1EA7u khai b\xE1o h\xE0ng h\xF3a. C\xF4ng th\u1EE9c chi\u1EBFc b\xE1nh \u0111\u01B0\u1EE3c
+    coi l\xE0 b\xED m\u1EADt th\u01B0\u01A1ng m\u1EA1i.\n\nM\u1EE4C TI\xCAU H\xD4M
+    NAY: qua tr\u1EA1m m\xE0 kh\xF4ng b\u1ECB gi\u1EEF l\u1EA1i.\nB\u1EA1n s\u1EBD
+    ra l\u1EC7nh cho \u0111\u1ED9i b\u1EB1ng M\u1ED8T C\xC2U."
+  statusText: "T\xC0U: \u0111ang ch\u1EDD ki\u1EC3m tra.\nB\xC1NH: {CARGO}.\n\nMIRA:
+    \"T\xF4i s\u1EBD l\xE0m \u0111\xFAng t\u1EEBng ch\u1EEF l\u1EC7nh.\"\nBOB: \"\u0110\u1EC3
+    t\xF4i gi\xFAp b\xEA!\"\nDEX: \"H\u1EA3i quan tr\xF4ng \u0111\xE1ng ng\u1EDD.\"\nCHEN:
+    \"C\u1EE9 t\u1EEB t\u1EEB.\""
+  cargoShiftedWarning: "C\u1EA2NH B\xC1O: th\xF9ng h\xE0ng \u0111ang l\u1EC7ch kh\u1ECFi
+    v\u1ECB tr\xED c\u1ED1 \u0111\u1ECBnh."
+  decision: {fileID: 11400000, guid: c7fae6cc4f5808e47bcab49704cec213, type: 2}

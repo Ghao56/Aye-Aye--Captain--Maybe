@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ea16a12c49a8b345a82bbb5d7acfe66, type: 3}
+  m_Name: Day3_Decision
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DecisionDefinition
+  prompt: "Ch\u1ECDn c\xE2u l\u1EC7nh g\u1EEDi cho \u0111\u1ED9i."
+  options:
+  - label: "\u201CTr\u1EA3 l\u1EDDi trung th\u1EF1c m\u1ECDi c\xE2u h\u1ECFi.\u201D"
+    description: "R\xF5 r\xE0ng. C\xF3 th\u1EC3 qu\xE1 r\xF5 r\xE0ng."
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 2
+      explanation: "Mira k\u1EC3 t\u1EA5t c\u1EA3, k\u1EC3 c\u1EA3 \u201Cm\u1ED9t
+        l\u01B0\u1EE3ng \u0111\u01B0\u1EDDng kh\xF4ng h\u1EE3p ph\xE1p \u1EDF ba
+        h\u1EC7 sao\u201D. H\u1EA3i quan gi\u1EEF t\xE0u \u0111\u1EC3 h\u1ECFi th\xEAm."
+      quote: "Ng\xE0i b\u1EA3o tr\u1EA3 l\u1EDDi trung th\u1EF1c. T\xF4i \u0111\xE3
+        tr\u1EA3 l\u1EDDi trung th\u1EF1c."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex t\u1EEB ch\u1ED1i khai b\xE1o v\xEC nghi ng\u1EDD h\u1EA3i
+        quan. C\u1EA3 \u0111\u1ED9i m\u1EA5t th\u1EDDi gian gi\u1EA3i th\xEDch."
+      quote: "T\xF4i kh\xF4ng khai g\xEC h\u1EBFt. \u0110\xE2y c\xF3 th\u1EC3 l\xE0
+        b\u1EABy."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 3
+      condition: 0
+      outcome: 0
+      explanation: "Chen l\xE0m th\u1EE7 t\u1EE5c ch\u1EADm r\xE3i nh\u01B0ng \u0111\xFAng
+        quy \u0111\u1ECBnh. T\xE0u \u0111\u01B0\u1EE3c cho qua."
+      quote: "Xong r\u1ED3i. T\u1EEB t\u1EEB th\xF4i."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "\u201CKhai b\xE1o \u0111\u1EE7 gi\u1EA5y t\u1EDD.\u201D"
+    description: "Theo \u0111\xFAng th\u1EE7 t\u1EE5c."
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 1
+      explanation: "Mira n\u1ED9p \u0111\u1EA7y \u0111\u1EE7 gi\u1EA5y t\u1EDD theo
+        \u0111\xFAng danh m\u1EE5c. H\u1EA3i quan duy\u1EC7t r\u1EA5t nhanh."
+      quote: "Gi\u1EA5y t\u1EDD: \u0111\u1EE7. Theo \u0111\xFAng danh m\u1EE5c."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex t\u1EEB ch\u1ED1i khai b\xE1o v\xEC nghi ng\u1EDD h\u1EA3i
+        quan. C\u1EA3 \u0111\u1ED9i m\u1EA5t th\u1EDDi gian gi\u1EA3i th\xEDch."
+      quote: "T\xF4i kh\xF4ng khai g\xEC h\u1EBFt. \u0110\xE2y c\xF3 th\u1EC3 l\xE0
+        b\u1EABy."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 3
+      condition: 0
+      outcome: 0
+      explanation: "Chen l\xE0m th\u1EE7 t\u1EE5c ch\u1EADm r\xE3i nh\u01B0ng \u0111\xFAng
+        quy \u0111\u1ECBnh. T\xE0u \u0111\u01B0\u1EE3c cho qua."
+      quote: "Xong r\u1ED3i. T\u1EEB t\u1EEB th\xF4i."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "\u201CTr\u1EA3 l\u1EDDi ng\u1EAFn g\u1ECDn.\u201D"
+    description: "Nhanh, \u0111\u1EE1 r\u01B0\u1EDDm r\xE0."
+    entries:
+    - crew: 1
+      condition: 2
+      outcome: 1
+      explanation: "Bob tr\u1EA3 l\u1EDDi ng\u1EAFn g\u1ECDn v\xE0 nhi\u1EC7t t\xECnh.
+        H\u1EA3i quan qu\xFD anh \u1EA5y v\xE0 cho qua nhanh."
+      quote: "C\xF3! Kh\xF4ng! C\u1EA3m \u01A1n!"
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 1
+      condition: 1
+      outcome: 2
+      explanation: "Bob nhi\u1EC7t t\xECnh gi\xFAp b\xEA th\xF9ng b\xE1nh l\xEAn
+        b\xE0n ki\u1EC3m tra v\xE0 l\xE0m r\u01A1i. B\xE1nh b\u1ECB tr\u1EA7y, h\u1EA3i
+        quan gi\u1EEF t\xE0u l\u1EA1i."
+      quote: "T\xF4i gi\xFAp \u0111\u01B0\u1EE3c m\xE0! ...Ch\u1EAFc v\u1EADy."
+      setFlag: 0
+      cargoDelta: -1
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex t\u1EEB ch\u1ED1i khai b\xE1o v\xEC nghi ng\u1EDD h\u1EA3i
+        quan. C\u1EA3 \u0111\u1ED9i m\u1EA5t th\u1EDDi gian gi\u1EA3i th\xEDch."
+      quote: "T\xF4i kh\xF4ng khai g\xEC h\u1EBFt. \u0110\xE2y c\xF3 th\u1EC3 l\xE0
+        b\u1EABy."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 3
+      condition: 0
+      outcome: 0
+      explanation: "Chen l\xE0m th\u1EE7 t\u1EE5c ch\u1EADm r\xE3i nh\u01B0ng \u0111\xFAng
+        quy \u0111\u1ECBnh. T\xE0u \u0111\u01B0\u1EE3c cho qua."
+      quote: "Xong r\u1ED3i. T\u1EEB t\u1EEB th\xF4i."
+      setFlag: 0
+      cargoDelta: 0

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b80e714133316f48b7a6082c19709dd, type: 3}
+  m_Name: Endings
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.EndingDefinitions
+  endings:
+  - id: 0
+    title: "GIAO H\xC0NG HO\xC0N H\u1EA2O"
+    body: "Chi\u1EBFc b\xE1nh \u0111\u1EBFn n\u01A1i nguy\xEAn v\u1EB9n. Ng\u01B0\u1EDDi
+      nh\u1EADn th\u1ED5i n\u1EBFn th\xE0nh c\xF4ng v\xE0 h\u1EE9a s\u1EBD \u0111\u1EC3
+      l\u1EA1i \u0111\xE1nh gi\xE1 n\u0103m sao."
+  - id: 1
+    title: "H\u01A0I TR\u1EA6Y, V\u1EAAN NGON"
+    body: "B\xE1nh \u0111\u1EBFn \u0111\xFAng h\u1EA1n nh\u01B0ng h\u01A1i tr\u1EA7y.
+      Ng\u01B0\u1EDDi nh\u1EADn v\u1EABn c\u01B0\u1EDDi v\xE0 th\u1ED5i n\u1EBFn."
+  - id: 2
+    title: "GIAO H\xC0NG TH\u1EA2M H\u1ECCA"
+    body: "B\xE1nh \u0111\u1EBFn \u0111\xFAng h\u1EA1n nh\u01B0ng \u0111\xE3 n\xE1t.
+      H\u1ECD v\u1EABn \u0103n b\u1EB1ng th\xECa v\xE0 c\u1ED1 t\u1ECF ra l\u1ECBch
+      s\u1EF1."
+  - id: 3
+    title: "\u0110\u1EB8P NH\u01AFNG TR\u1EC4"
+    body: "B\xE1nh nguy\xEAn v\u1EB9n nh\u01B0ng \u0111\xE3 qua gi\u1EDD th\u1ED5i
+      n\u1EBFn. H\u1ECD th\u1ED5i n\u1EBFn mu\u1ED9n v\xE0 n\xF3i kh\xF4ng sao. Ch\u1EAFc
+      v\u1EADy."
+  - id: 4
+    title: "GIAO H\xC0NG TR\u1EC4"
+    body: "B\xE1nh \u0111\u1EBFn sau gi\u1EDD th\u1ED5i n\u1EBFn. Ch\u1EC9 c\xF2n
+      l\u1EA1i m\u1ED9t l\u1EDDi xin l\u1ED7i v\xE0 m\u1ED9t chi\u1EBFc b\xE1nh kh\xF4ng
+      c\xF2n \u0111\u1EB9p."

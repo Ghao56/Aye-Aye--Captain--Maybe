@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Day2_Day
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  dayNumber: 2
+  title: "NG\xC0Y 2 \xB7 V\xD9NG THI\xCAN TH\u1EA0CH"
+  briefingText: "V\xD9NG THI\xCAN TH\u1EA0CH NH\u1ECE\n\nT\xE0u s\u1EAFp \u0111i
+    qua m\u1ED9t v\xF9ng thi\xEAn th\u1EA1ch nh\u1ECF. C\u1EA3m bi\u1EBFn cho bi\u1EBFt
+    m\u1EADt \u0111\u1ED9 thi\xEAn th\u1EA1ch th\u1EA5p \u1EDF r\xECa b\xEAn ph\u1EA3i.\n\nM\u1EE4C
+    TI\xCAU H\xD4M NAY: v\u01B0\u1EE3t v\xF9ng thi\xEAn th\u1EA1ch m\xE0 kh\xF4ng
+    ch\u1EADm l\u1ECBch tr\xECnh."
+  statusText: "T\xC0U: \u0111\u1ED9ng c\u01A1 \u1ED5n \u0111\u1ECBnh.\nB\xC1NH: {CARGO}.\nC\u1EA2M
+    BI\u1EBEN: r\xECa ph\u1EA3i = M\u1EACT \u0110\u1ED8 TH\u1EA4P \xB7 gi\u1EEFa
+    = M\u1EACT \u0110\u1ED8 CAO.\n\nDEX: \"Ch\xFAng \u0111ang nh\u1EAFm v\xE0o t\xE0u,
+    t\xF4i ch\u1EAFc ch\u1EAFn.\"\nBOB: \"\u0110i th\u1EB3ng l\xE0 nhanh nh\u1EA5t!\"\nMIRA:
+    \"T\xF4i c\xF3 th\u1EC3 b\xE1m theo c\u1EA3m bi\u1EBFn.\"\nCHEN: \"Hay l\xE0
+    c\u1EE9 \u0111\u1EC3 n\xF3 tr\xF4i.\""
+  cargoShiftedWarning: 
+  decision: {fileID: 11400000, guid: 04708bd8db396c741b0fdb951a4bcbe1, type: 2}
