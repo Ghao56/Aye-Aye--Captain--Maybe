@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_Breakdown
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: Breakdown
+  title: "H\u1ECENG H\xD3C K\u1EF8 THU\u1EACT"
+  briefingText: "H\u1ECENG H\xD3C K\u1EF8 THU\u1EACT\n\nB\u1ED9 ph\u1EADn h\u1EC7
+    th\u1ED1ng \u0111\u1EA9y s\u1ED1 2 r\xEDt l\xEAn v\xE0 ng\u01B0ng ho\u1EA1t \u0111\u1ED9ng
+    gi\u1EEFa ch\u1EEBng. S\xE1ch h\u01B0\u1EDBng d\u1EABn \u0111\u1EC3 trong kho,
+    g\xE1y s\xE1ch \u0111\xE3 l\u1EADt s\u1EB5n \u1EDF m\u1EE5c \"s\u1EEDa b\u1ED9
+    ph\u1EADn \u0111\u1EA9y\".\n\nM\u1EE4C TI\xCAU H\xD4M NAY: cho h\u1EC7 th\u1ED1ng
+    \u0111\u1EA9y ch\u1EA1y l\u1EA1i v\xE0 kh\xF4ng tr\u1EC5 nhi\u1EC1u."
+  statusText: "T\xC0U: h\u1EC7 th\u1ED1ng \u0111\u1EA9y s\u1ED1 2 h\u1ECFng.\nB\xC1NH:
+    {CARGO}.\nH\u01AF\u1EDANG D\u1EAAN: \"S\u1EEDa chu\u1EA9n m\u1EA5t m\u1ED9t ng\xE0y.\"\n\nBOB:
+    \"T\xF4i c\xF3 c\xE1ch nhanh h\u01A1n!\"\nMIRA: \"Tr\u01B0\u1EDBc h\u1EBFt, \u0111\u1ECDc
+    m\u1EE5c 12.\"\nDEX: \"C\xF3 ti\u1EBFng \u0111\u1ED9ng l\u1EA1. Ti\u1EBFng \u0111\u1ED9ng
+    l\u1EA1 l\xE0 \xE2m m\u01B0u.\"\nCHEN: \"\u0110\u1EC3 t\xF4i xem... ki\u1EC3u
+    g\xEC c\u0169ng xong.\""
+  cargoShiftedWarning: 
+  decision: {fileID: 11400000, guid: 48d65298de0ae6c458aa4504f3832101, type: 2}
+  spawnCondition: 0
+  weight: 1

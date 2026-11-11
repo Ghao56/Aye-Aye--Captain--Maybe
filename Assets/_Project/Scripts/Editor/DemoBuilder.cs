@@ -686,9 +686,9 @@ namespace AyeAye
                     {
                         new CrewOutcomeEntry
                         {
-                            crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.Normal,
-                            explanation = "Mira chạy quét theo đúng quy trình. Kết quả: không có cảnh báo.",
-                            quote = "Quét hoàn tất. Không có cảnh báo, theo đúng từng chữ.",
+                            crew = CrewId.Mira, condition = FlagCondition.Always, outcome = DecisionOutcome.Smart,
+                            explanation = "Mira chạy quét theo đúng quy trình. Máy quét phát hiện độ căng bất thường ở dây buộc số 3 (đã được thay vội ở bến) và Mira báo cáo trước khi rời bến.",
+                            quote = "Quét hoàn tất. Có cảnh báo: dây buộc số 3.",
                             setFlag = FlagToSet.None, cargoDelta = 0,
                         },
                     },

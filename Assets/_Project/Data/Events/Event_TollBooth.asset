@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_TollBooth
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: TollBooth
+  title: "TR\u1EA0M THU PH\xCD V\u0168 TR\u1EE4"
+  briefingText: "TR\u1EA0M THU PH\xCD V\u0168 TR\u1EE4\n\nM\u1ED9t tr\u1EA1m thu
+    ph\xED t\u1EF1 \u0111\u1ED9ng tr\xF2n tr\u0129nh tr\xF4i ngang tuy\u1EBFn bay,
+    ch\u1EAFn \u0111\xFAng gi\u1EEFa \u0111\u01B0\u1EDDng. B\u1EA3ng hi\u1EC7u nh\u1EA5p
+    nh\xE1y: \"PH\xCD V\xC0O C\u1ED4NG: 3 C\xD4IN V\u0168 TR\u1EE4\". Kh\xF4ng ai
+    nh\u1EDB mang coin.\n\nD\u01B0\u1EDBi b\u1EA3ng hi\u1EC7u c\xF3 m\u1ED9t d\xF2ng
+    ch\u1EEF in r\u1EA5t nh\u1ECF, nh\u1ECF \u0111\u1EBFn m\u1EE9c ph\u1EA3i nh\xECn
+    th\u1EADt k\u1EF9 m\u1EDBi th\u1EA5y.\n\nM\u1EE4C TI\xCAU H\xD4M NAY: qua c\u1ED5ng
+    tr\u1EA1m m\xE0 kh\xF4ng m\u1EA5t th\xEAm th\u1EDDi gian."
+  statusText: "T\xC0U: ch\u1EDD tr\u01B0\u1EDBc c\u1ED5ng tr\u1EA1m.\nB\xC1NH: {CARGO}.\nB\u1EA2NG
+    HI\u1EC6U: \"PH\xCD: 3 C\xD4IN \xB7 KH\xD4NG NH\u1EACN GI\u1EA2I TH\xCDCH\"\n\nMIRA:
+    \"B\u1EA3ng ghi 3 coin. T\xF4i tin b\u1EA3ng.\"\nBOB: \"H\u1ED9p qu\xE0 c\xF3
+    k\xE8m b\xE1nh mini \u0111\u1EA5y! \u0110\u1ED5i \u0111\u01B0\u1EE3c kh\xF4ng?\"\nDEX:
+    \"Tr\u1EA1m n\xE0y kh\xF4ng c\xF3 trong s\u01A1 \u0111\u1ED3 tuy\u1EBFn. Ch\u1EAFc
+    ch\u1EAFn l\xE0 b\u1EABy.\"\nCHEN: \"Hay l\xE0 \u0111i v\xF2ng?\""
+  cargoShiftedWarning: 
+  decision: {fileID: 11400000, guid: 84ec47eaa2ab1944b978c9190b5105d9, type: 2}
+  spawnCondition: 0
+  weight: 1

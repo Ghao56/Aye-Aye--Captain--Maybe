@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ea16a12c49a8b345a82bbb5d7acfe66, type: 3}
+  m_Name: Event_TollBooth_Decision
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DecisionDefinition
+  prompt: "Ch\u1ECDn c\xE1ch qua tr\u1EA1m thu ph\xED."
+  options:
+  - label: "Tr\u1EA3 ph\xED b\u1EB1ng \u0111\u1ED3 trong kho"
+    description: "Coin kh\xF4ng c\xF3, nh\u01B0ng th\u1EE9 kh\xE1c th\xEC nhi\u1EC1u."
+    entries:
+    - crew: 1
+      condition: 0
+      outcome: 1
+      explanation: "Bob l\u1EA5y hai chi\u1EBFc b\xE1nh mini trong h\u1ED9p qu\xE0
+        t\u1EB7ng k\xE8m \u0111\u01B0a cho robot thu ph\xED. N\xF3 qu\u1EB9t, ph\xE1t
+        ra ti\u1EBFng ding, m\u1EDF c\u1ED5ng ngay."
+      quote: "V\u1EADt \u0111\u1ED5i sao l\u1EA5y b\xE1nh! Ding!"
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 0
+      condition: 0
+      outcome: 0
+      explanation: "C\u1EA3 \u0111\u1ED9i l\u1EE5c t\xFAi l\u1EA5y \u0111\u1EE7 th\u1EE9
+        nh\u1ECF \u0111\u1ED5i ph\xED. Robot b\u1EA5m m\xE1y m\u1ED9t l\xFAc r\u1ED3i
+        c\u0169ng ch\u1ECBu m\u1EDF c\u1ED5ng."
+      quote: "\u0110\xE3 \u0111\u1ED5i xong ph\xED. C\u1ED5ng m\u1EDF."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "V\xF2ng \u0111i l\u1ED1i kh\xE1c"
+    description: "Kh\xF4ng tr\u1EA3 ph\xED, t\u1ED1n \u0111\u01B0\u1EDDng bay."
+    entries:
+    - crew: 3
+      condition: 0
+      outcome: 1
+      explanation: "Chen t\xEDnh tr\u01B0\u1EDBc g\xF3c v\xF2ng v\xE0 lu\u1ED3n sau
+        v\u1EC7 tinh: tr\xE1nh \u0111\u01B0\u1EE3c tr\u1EA1m m\xE0 g\u1EA7n nh\u01B0
+        kh\xF4ng tr\u1EC5."
+      quote: "T\xF4i \u0111\xE3 t\xEDnh g\xF3c v\xF2ng. T\u1EEB l\xE2u r\u1ED3i.
+        Tr\u01B0\u1EDBc c\u1EA3 khi c\u1EA7n."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex kh\u0103ng kh\u0103ng v\xF2ng \u0111i ba v\xF2ng \u0111\u1EC3
+        tr\xE1nh \"b\u1EABy\". L\u1EA7n th\u1EE9 ba m\u1EDBi ch\u1ECBu quay v\u1EC1
+        c\u1ED5ng."
+      quote: "V\xF2ng m\u1ED9t: an to\xE0n. V\xF2ng hai: an to\xE0n h\u01A1n. V\xF2ng
+        ba: m\u1EA5t gi\u1EDD."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "\u0110\u1ECDc k\u1EF9 quy \u0111\u1ECBnh r\u1ED3i c\xE3i"
+    description: "D\xF2ng ch\u1EEF in nh\u1ECF l\xE0 v\u0169 kh\xED."
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 1
+      explanation: "Mira ch\u1EC9 v\xE0o d\xF2ng ch\u1EEF in nh\u1ECF sau b\u1EA3ng:
+        \"m\u1EE5c 7.4: mi\u1EC5n ph\xED cho t\xE0u ch\u1EDF h\xE0ng ch\xFAc m\u1EEBng\".
+        Robot m\u1EDF c\u1ED5ng v\xE0 ph\xE1t cho m\u1ED7i ng\u01B0\u1EDDi m\u1ED9t
+        c\xE1i sticker."
+      quote: "M\u1EE5c 7.4: mi\u1EC5n ph\xED. T\xF4i \u0111\xE3 \u0111\u1ECDc m\u1EE5c
+        7.4."
+      setFlag: 0
+      cargoDelta: 0

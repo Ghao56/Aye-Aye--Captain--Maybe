@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
-  m_Name: Day3_Day
+  m_Name: Event_Customs
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
-  dayNumber: 3
-  title: "NG\xC0Y 3 \xB7 TR\u1EA0M H\u1EA2I QUAN"
+  eventId: Customs
+  title: "TR\u1EA0M H\u1EA2I QUAN"
   briefingText: "TR\u1EA0M H\u1EA2I QUAN GLEEP\n\nTr\u1EA1m h\u1EA3i quan y\xEAu
     c\u1EA7u khai b\xE1o h\xE0ng h\xF3a. C\xF4ng th\u1EE9c chi\u1EBFc b\xE1nh \u0111\u01B0\u1EE3c
     coi l\xE0 b\xED m\u1EADt th\u01B0\u01A1ng m\u1EA1i.\n\nM\u1EE4C TI\xCAU H\xD4M
@@ -25,4 +25,6 @@ MonoBehaviour:
     \"C\u1EE9 t\u1EEB t\u1EEB.\""
   cargoShiftedWarning: "C\u1EA2NH B\xC1O: th\xF9ng h\xE0ng \u0111ang l\u1EC7ch kh\u1ECFi
     v\u1ECB tr\xED c\u1ED1 \u0111\u1ECBnh."
-  decision: {fileID: 11400000, guid: c7fae6cc4f5808e47bcab49704cec213, type: 2}
+  decision: {fileID: 11400000, guid: 3a66ea56ac1ce6e49ab98b5eab3841d8, type: 2}
+  spawnCondition: 0
+  weight: 1

@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fea40fff56171244bb1fb82bc53c023e, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.GameConfig
-  totalDistance: 3.2
-  deadlineDay: 3
+  totalDistance: 7.2
+  deadlineDay: 7
   normalDistance: 1
   smartDistance: 1.75
   slipUpDistance: 0.4
   typewriterCharsPerSecond: 90
   startingCargo: 3
+  repeatSeedOnRestart: 0
   tripCode: BDAY-0042
-  shipName: CARGO-9
+  shipName: "S.S. C\xD3 L\u1EBC"
   destinationName: "H\xC0NH TINH ZORP-9"

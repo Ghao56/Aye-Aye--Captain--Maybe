@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
   m_Name: Day1_Day
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
-  dayNumber: 1
-  title: "NG\xC0Y 1 \xB7 R\u1EDCI B\u1EBEN"
+  eventId: Opening
+  title: "R\u1EDCI B\u1EBEN"
   briefingText: "B\u1EBEN GIAO NH\u1EACN ZORP\n\nTh\xF9ng b\xE1nh \u0111\xE3 \u0111\u01B0\u1EE3c
     ch\u1EA5t l\xEAn t\xE0u. Tr\u01B0\u1EDBc khi r\u1EDDi b\u1EBFn, nh\xE2n vi\xEAn
     b\u1EBFn y\xEAu c\u1EA7u thuy\u1EC1n tr\u01B0\u1EDFng x\xE1c nh\u1EADn ni\xEAm
@@ -27,3 +27,5 @@ MonoBehaviour:
     \"C\xF3 th\u1EC3 l\xE0m sau \u0111\u01B0\u1EE3c kh\xF4ng?\""
   cargoShiftedWarning: 
   decision: {fileID: 11400000, guid: e0afb92747ddb814dba4d38cdf41b781, type: 2}
+  spawnCondition: 0
+  weight: 1

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_Distress
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: Distress
+  title: "T\xCDN HI\u1EC6U C\u1EA6U C\u1EE8U L\u1EA0"
+  briefingText: "KHU V\u1EF0C R\u1ED6NG NG\u0102N 7\n\nB\u1ED9 thu b\u1EAFt \u0111\u01B0\u1EE3c
+    m\u1ED9t t\xEDn hi\u1EC7u c\u1EA7u c\u1EE9u t\u1EEB t\xE0u l\u1EA1. Dex cho r\u1EB1ng
+    \u0111\xE2y l\xE0 b\u1EABy. Th\xF4ng s\u1ED1 t\xEDn hi\u1EC7u l\u1EA1i kh\u1EDBp
+    v\u1EDBi chuy\u1EBFn \"Aurora-12\" \u0111\xE3 \u0111\u0103ng k\xFD v\xE0 m\u1EA5t
+    li\xEAn l\u1EA1c ba h\xF4m tr\u01B0\u1EDBc.\n\nM\u1EE4C TI\xCAU H\xD4M NAY: quy\u1EBFt
+    \u0111\u1ECBnh v\u1EDBi t\xEDn hi\u1EC7u m\xE0 kh\xF4ng ch\u1EADm l\u1ECBch tr\xECnh."
+  statusText: "T\xC0U: \u0111\u1EE7 nhi\xEAn li\u1EC7u.\nB\xC1NH: {CARGO}.\nT\xCDN
+    HI\u1EC6U: kh\u1EDBp chuy\u1EBFn Aurora-12 (\u0111\xE3 \u0111\u0103ng k\xFD,
+    m\u1EA5t li\xEAn l\u1EA1c).\n\nDEX: \"Qu\xE1 tr\xF9ng h\u1EE3p. Ai l\u1EA1i m\u1EA5t
+    t\xEDn hi\u1EC7u \u0111\xFAng l\xFAc c\u1EA7n ti\u1EC7c?\"\nBOB: \"H\u1ECD \u0111ang
+    tr\xEAn \u0111\u01B0\u1EDDng d\u1EF1 b\u1EEFa ti\u1EC7c sinh nh\u1EADt m\xE0!\"\nMIRA:
+    \"Danh m\u1EE5c x\xE1c nh\u1EADn Aurora-12 l\xE0 th\u1EADt.\"\nCHEN: \"C\u1EE9
+    coi nh\u01B0 kh\xF4ng nghe th\u1EA5y.\""
+  cargoShiftedWarning: 
+  decision: {fileID: 11400000, guid: 5ede54db2586e124f963575d4794168c, type: 2}
+  spawnCondition: 0
+  weight: 1

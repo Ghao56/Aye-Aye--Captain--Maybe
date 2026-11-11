@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3ea16a12c49a8b345a82bbb5d7acfe66, type: 3}
-  m_Name: Day2_Decision
+  m_Name: Event_Meteor_Decision
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DecisionDefinition
   prompt: "Ch\u1ECDn c\xE1ch \u0111i qua v\xF9ng thi\xEAn th\u1EA1ch."
   options:

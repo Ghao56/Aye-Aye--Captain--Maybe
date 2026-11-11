@@ -54,10 +54,12 @@ MonoBehaviour:
     entries:
     - crew: 2
       condition: 0
-      outcome: 0
-      explanation: "Mira ch\u1EA1y qu\xE9t theo \u0111\xFAng quy tr\xECnh. K\u1EBFt
-        qu\u1EA3: kh\xF4ng c\xF3 c\u1EA3nh b\xE1o."
-      quote: "Qu\xE9t ho\xE0n t\u1EA5t. Kh\xF4ng c\xF3 c\u1EA3nh b\xE1o, theo \u0111\xFAng
-        t\u1EEBng ch\u1EEF."
+      outcome: 1
+      explanation: "Mira ch\u1EA1y qu\xE9t theo \u0111\xFAng quy tr\xECnh. M\xE1y
+        qu\xE9t ph\xE1t hi\u1EC7n \u0111\u1ED9 c\u0103ng b\u1EA5t th\u01B0\u1EDDng
+        \u1EDF d\xE2y bu\u1ED9c s\u1ED1 3 (\u0111\xE3 \u0111\u01B0\u1EE3c thay v\u1ED9i
+        \u1EDF b\u1EBFn) v\xE0 Mira b\xE1o c\xE1o tr\u01B0\u1EDBc khi r\u1EDDi b\u1EBFn."
+      quote: "Qu\xE9t ho\xE0n t\u1EA5t. C\xF3 c\u1EA3nh b\xE1o: d\xE2y bu\u1ED9c
+        s\u1ED1 3."
       setFlag: 0
       cargoDelta: 0

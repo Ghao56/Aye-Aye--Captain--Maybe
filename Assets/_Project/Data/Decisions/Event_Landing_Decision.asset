@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ea16a12c49a8b345a82bbb5d7acfe66, type: 3}
+  m_Name: Event_Landing_Decision
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DecisionDefinition
+  prompt: "Ch\u1ECDn c\xE1ch h\u1EA1 c\xE1nh."
+  options:
+  - label: "H\u1EA1 c\xE1nh g\u1EAFt v\xE0 nhanh"
+    description: "Qu\u1EF9 \u0111\u1EA1o d\u1ED1c, ch\u1EA1m b\u1EBFn s\u1EDBm."
+    entries:
+    - crew: 1
+      condition: 2
+      outcome: 1
+      explanation: "Bob l\xE1i theo qu\u1EF9 \u0111\u1EA1o d\u1ED1c v\xE0 ch\u1EA1m
+        b\u1EBFn tr\u01B0\u1EDBc gi\u1EDD h\u1EB9n. Th\xF9ng b\xE1nh v\u1EABn nguy\xEAn
+        v\xEC n\u1EB1m \u0111\xFAng v\u1ECB tr\xED."
+      quote: "Ch\u1EA1m b\u1EBFn! Tr\u01B0\u1EDBc gi\u1EDD h\u1EB9n!"
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 1
+      condition: 1
+      outcome: 2
+      explanation: "H\u1EA1 g\u1EAFt l\xE0m th\xF9ng b\xE1nh \u0111ang l\u1EC7ch
+        tr\u01B0\u1EE3t th\xEAm m\u1ED9t m\u1EE9c. Chi\u1EBFc b\xE1nh kh\xF4ng c\xF2n
+        nguy\xEAn v\u1EB9n."
+      quote: "T\u1ED1c \u0111\u1ED9 l\xE0 c\u1EE7a Bob! \xC0... b\xE1nh th\xEC kh\xF4ng."
+      setFlag: 0
+      cargoDelta: -1
+  - label: "H\u1EA1 c\xE1nh ch\u1EADm v\xE0 \xEAm"
+    description: "Nguy\xEAn t\u1EAFc s\u1ED1 m\u1ED9t: kh\xF4ng l\u1EAFc."
+    entries:
+    - crew: 3
+      condition: 0
+      outcome: 0
+      explanation: "Chen h\u1EA1 c\xE1nh ch\u1EADm r\xE3i, \xEAm \xE1i, kh\xF4ng
+        s\u1EDBm kh\xF4ng mu\u1ED9n."
+      quote: "Ch\u1EA1m. Kh\xF4ng ti\u1EBFng \u0111\u1ED9ng. T\u1ED1t."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "Theo h\u01B0\u1EDBng d\u1EABn c\u1EE7a b\u1EBFn"
+    description: "B\xE1m l\u1EC7nh th\xE1p h\u01B0\u1EDBng d\u1EABn."
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 1
+      explanation: "Mira b\xE1m \u0111\xFAng t\u1EEBng ch\u1EC9 d\u1EABn c\u1EE7a
+        th\xE1p b\u1EBFn: gi\u1EA3m t\u1ED1c \u0111\u1EC1u, h\u1EA1 ch\xEDnh x\xE1c
+        v\xE0o \u0111i\u1EC3m ch\u1EC9 \u0111\u1ECBnh."
+      quote: "H\u01B0\u1EDBng d\u1EABn n\xF3i 'h\u1EA1 c\xE1nh nh\u1EB9 nh\xE0ng'.
+        T\xF4i \u0111\xE3 h\u1EA1 nh\u1EB9 nh\xE0ng. R\u1EA5t nh\u1EB9 nh\xE0ng.
+        Ba l\u1EA7n."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex nghi ng\u1EDD h\u01B0\u1EDBng d\u1EABn c\u1EE7a th\xE1p b\u1EBFn
+        v\xE0 t\u1EF1 \u0111\u1ED5i \u0111\u01B0\u1EDDng bay theo c\xE1ch ri\xEAng.
+        C\u1EA3 \u0111\u1ED9i m\u1EA5t th\u1EDDi gian bay l\u1EA1i \u0111\xFAng h\xE0nh
+        lang h\u1EA1 c\xE1nh."
+      quote: "Ch\u1EC9 d\u1EABn n\xE0y do AI b\u1EBFn ph\xE1t. AI b\u1EBFn do ai
+        l\u1EADp tr\xECnh? Ch\xEDnh x\xE1c: kh\xF4ng ph\u1EA3i t\xF4i."
+      setFlag: 0
+      cargoDelta: 0

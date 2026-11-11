@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b0400889cfa9b4bbe13c288c4b40ee, type: 3}
+  m_Name: Event_Landing
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayDefinition
+  eventId: Landing
+  title: "H\u1EA0 C\xC1NH"
+  briefingText: "H\u1EA0 C\xC1NH \u2014 H\xC0NH TINH ZORP-9\n\nT\xE0u v\xE0o qu\u1EF9
+    \u0111\u1EA1o h\u1EA1 c\xE1nh. Th\xE1p h\u01B0\u1EDBng d\u1EABn b\u1EBFn ph\xE1t
+    l\u1EC7nh h\u1EA1 c\xE1nh. Th\xF9ng b\xE1nh \u0111\xE3 \u0111i su\u1ED1t h\xE0nh
+    tr\xECnh, c\xF2n m\u1ED9t ch\u1EB7ng cu\u1ED1i l\xE0 gi\u1EEF \u0111\u01B0\u1EE3c
+    h\xECnh d\xE1ng c\u1EE7a n\xF3.\n\nM\u1EE4C TI\xCAU H\xD4M NAY: h\u1EA1 c\xE1nh
+    an to\xE0n v\xE0 \u0111\xFAng gi\u1EDD."
+  statusText: "T\xC0U: s\u1EB5n s\xE0ng h\u1EA1 c\xE1nh.\nB\xC1NH: {CARGO}.\nTH\xC1P
+    B\u1EBEN: \"H\u1EA1 c\xE1nh theo h\u01B0\u1EDBng d\u1EABn, gi\u1EA3m t\u1ED1c
+    \u0111\u1EC1u.\"\n\nMIRA: \"T\xF4i s\u1EBD b\xE1m \u0111\xFAng t\u1EEBng ch\u1EC9
+    d\u1EABn.\"\nBOB: \"\u0110\u1EC3 t\xF4i ch\u1EA1m b\u1EBFn nhanh nh\u1EA5t!\"\nDEX:
+    \"Ai l\u1EA1i ph\xE1t h\u01B0\u1EDBng d\u1EABn \u0111\xFAng gi\u1EDD n\xE0y?
+    Nghi ng\u1EDD.\"\nCHEN: \"H\u1EA1 t\u1EEB t\u1EEB. Kh\xF4ng v\u1ED9i.\""
+  cargoShiftedWarning: "C\u1EA2NH B\xC1O: th\xF9ng h\xE0ng \u0111ang l\u1EC7ch kh\u1ECFi
+    v\u1ECB tr\xED c\u1ED1 \u0111\u1ECBnh \u2014 h\u1EA1 g\u1EAFt r\u1EA5t nguy hi\u1EC3m."
+  decision: {fileID: 11400000, guid: a2bb71d4fcd25d2488621457ee019ca0, type: 2}
+  spawnCondition: 0
+  weight: 1

@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ea16a12c49a8b345a82bbb5d7acfe66, type: 3}
+  m_Name: Event_Distress_Decision
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DecisionDefinition
+  prompt: "Quy\u1EBFt \u0111\u1ECBnh v\u1EDBi t\xEDn hi\u1EC7u c\u1EA7u c\u1EE9u
+    l\u1EA1."
+  options:
+  - label: "B\u1ECF qua, gi\u1EEF l\u1ED9 tr\xECnh"
+    description: "An to\xE0n tuy\u1EBFn bay. Ch\u1EC9 n\u1EBFu ch\u1EAFc t\xEDn hi\u1EC7u
+      kh\xF4ng \u0111\xE1ng tin."
+    entries:
+    - crew: 4
+      condition: 0
+      outcome: 1
+      explanation: "Dex x\xE1c minh danh t\xEDnh t\xEDn hi\u1EC7u v\u1EDBi c\u1EA3ng
+        tr\u01B0\u1EDBc khi b\u1ECF qua: \u0111\xFAng Aurora-12 \u0111\xE3 \u0111\u0103ng
+        k\xFD, kh\xF4ng ph\u1EA3i b\u1EABy. T\xE0u gi\u1EEF l\u1ED9 tr\xECnh an to\xE0n."
+      quote: "\u0110\xE3 x\xE1c minh. B\u1ECF qua... nh\u01B0ng t\xF4i v\u1EABn \u0111\u1EC3
+        \xFD."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 0
+      condition: 0
+      outcome: 0
+      explanation: "T\xE0u gi\u1EEF l\u1ED9 tr\xECnh v\xE0 b\u1ECF qua t\xEDn hi\u1EC7u.
+        Kh\xF4ng th\xEAm vi\u1EC7c, kh\xF4ng th\xEAm nguy c\u01A1."
+      quote: "\u0110\xE3 b\u1ECF qua t\xEDn hi\u1EC7u, gi\u1EEF nguy\xEAn l\u1ED9
+        tr\xECnh."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "\u0110i gi\xFAp"
+    description: "H\u01B0\u1EDBng \u0111\u1EBFn t\u1ECDa \u0111\u1ED9 t\xEDn hi\u1EC7u."
+    entries:
+    - crew: 1
+      condition: 0
+      outcome: 1
+      explanation: "Bob l\xE1i t\xE0u \u0111\u1EBFn t\u1ECDa \u0111\u1ED9 t\xEDn
+        hi\u1EC7u. Aurora-12 ch\u1EC9 h\u1EBFt \u0103ng-ten; h\u1ECD t\u1EB7ng l\u1EA1i
+        m\u1ED9t can nhi\xEAn li\u1EC7u v\xE0 ch\xFAc b\u1EEFa ti\u1EC7c sinh nh\u1EADt
+        vui v\u1EBB."
+      quote: "C\u1EE9u \u0111\u01B0\u1EE3c r\u1ED3i! H\u1ECD c\xF2n t\u1EB7ng m\xECnh
+        nhi\xEAn li\u1EC7u!"
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 3
+      condition: 0
+      outcome: 2
+      explanation: "Chen \u0111i tr\u1EE3 gi\xFAp v\u1EDBi \u0111\xFAng t\u1ED1c
+        \u0111\u1ED9 an to\xE0n c\u1EE7a anh ta. \u0110\u1EBFn n\u01A1i th\xEC Aurora-12
+        \u0111\xE3 \u0111\u01B0\u1EE3c t\xE0u kh\xE1c c\u1EE9u, c\u1EA3 \u0111\u1ED9i
+        m\u1EA5t th\u1EDDi gian oan."
+      quote: "T\xF4i \u0111\u1EBFn r\u1ED3i. \xC0, h\u1ECD \u0111i r\u1ED3i."
+      setFlag: 0
+      cargoDelta: 0
+  - label: "Ki\u1EC3m tra t\xEDn hi\u1EC7u tr\u01B0\u1EDBc r\u1ED3i quy\u1EBFt \u0111\u1ECBnh"
+    description: "Ph\xE2n t\xEDch th\xF4ng s\u1ED1 r\u1ED3i m\u1EDBi h\xE0nh \u0111\u1ED9ng."
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 0
+      explanation: "Mira ghi nh\u1EADn \u0111\u1EA7y \u0111\u1EE7 th\xF4ng s\u1ED1
+        t\xEDn hi\u1EC7u, \u0111\u1ED1i chi\u1EBFu danh m\u1EE5c v\xE0 b\xE1o c\xE1o:
+        t\xEDn hi\u1EC7u h\u1EE3p l\u1EC7. Quy\u1EBFt \u0111\u1ECBnh cu\u1ED1i c\xF9ng
+        v\u1EABn \u0111\u1EC3 thuy\u1EC1n tr\u01B0\u1EDFng."
+      quote: "T\xEDn hi\u1EC7u: h\u1EE3p l\u1EC7. Theo danh m\u1EE5c."
+      setFlag: 0
+      cargoDelta: 0
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex ki\u1EC3m tra, r\u1ED3i ki\u1EC3m tra ti\u1EBFp v\xEC v\u1EABn
+        th\u1EA5y nghi. Khi tin \u0111\u01B0\u1EE3c th\xEC t\xEDn hi\u1EC7u \u0111\xE3
+        y\u1EBFu, c\u1EA3 \u0111\u1ED9i b\u1ECF l\u1EE1 c\u01A1 h\u1ED9i gi\xFAp."
+      quote: "Ch\u1EDD \u0111\xE3... ki\u1EC3m tra l\u1EA7n th\u1EE9 b\u1EA3y n\u1EEFa."
+      setFlag: 0
+      cargoDelta: 0
