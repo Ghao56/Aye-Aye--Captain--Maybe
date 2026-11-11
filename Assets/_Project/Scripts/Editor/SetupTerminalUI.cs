@@ -92,10 +92,22 @@ namespace AyeAye
             if (panel.scaleMode != PanelScaleMode.ConstantPixelSize) panel.scaleMode = PanelScaleMode.ConstantPixelSize;
             if (!Mathf.Approximately(panel.scale, 1f)) panel.scale = 1f;
             if (!Mathf.Approximately(panel.sortingOrder, 10f)) panel.sortingOrder = 10f; // UIDocument vẽ trên Canvas uGUI cũ (đã tắt)
-            if (panel.renderMode != PanelRenderMode.WorldSpace)
+            // renderMode đang internal ở 6000.3.3f1 → đặt qua SerializedObject
+            // (field serial hoá m_RenderMode có sẵn; PanelRenderMode.WorldSpace = 1 theo docs 6000.3).
+            SerializedObject so = new SerializedObject(panel);
+            SerializedProperty renderMode = so.FindProperty("m_RenderMode");
+            if (renderMode != null)
             {
-                panel.renderMode = PanelRenderMode.WorldSpace; // kiến trúc B (duyệt 11/11/2026)
-                Debug.Log("[SetupTerminalUI] PanelSettings.renderMode = WorldSpace.");
+                if (renderMode.intValue != 1)
+                {
+                    renderMode.intValue = 1; // WorldSpace
+                    so.ApplyModifiedProperties();
+                    Debug.Log("[SetupTerminalUI] PanelSettings m_RenderMode = WorldSpace.");
+                }
+            }
+            else
+            {
+                Debug.LogError("[SetupTerminalUI] PanelSettings không có m_RenderMode — bản Unity không hỗ trợ World Space?");
             }
 
             ThemeStyleSheet theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
