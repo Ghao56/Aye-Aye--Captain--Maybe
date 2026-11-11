@@ -15,7 +15,7 @@ namespace AyeAye
         const string ThemePath = UiFolder + "/RuntimeTheme.tss";
         const string PanelSettingsPath = UiFolder + "/TerminalPanelSettings.asset";
         const string ScenePath = "Assets/_Project/Scenes/Main.unity";
-        const string MachineName = "TerminalMachine";
+        const string MachineName = "Terminal";
         const string LegacyUiObjectName = "TerminalUI";
         // Phải khớp MachineWorldWidth/Height trong TerminalView: 19.2x12.8 unit = panel 1920x1280 px @ PPU 100.
         const float MachineWorldWidth = 19.2f;
@@ -127,6 +127,12 @@ namespace AyeAye
             {
                 Object.DestroyImmediate(legacy);
                 Debug.Log("[SetupTerminalUI] Đã xoá " + LegacyUiObjectName + " (kiến trúc A).");
+            }
+            GameObject oldNamed = GameObject.Find(MachineName) != null ? null : GameObject.Find("TerminalMachine");
+            if (oldNamed != null)
+            {
+                Object.DestroyImmediate(oldNamed);
+                Debug.Log("[SetupTerminalUI] Đã xoá TerminalMachine (đổi tên thành Terminal).");
             }
 
             GameObject go = GameObject.Find(MachineName);
