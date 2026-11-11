@@ -2,10 +2,12 @@ using UnityEngine;
 
 namespace AyeAye
 {
-    [CreateAssetMenu(fileName = "Day_New_Day", menuName = "AyeAye/Day Definition")]
+    // Một event trong ngày. dayNumber đã bỏ: số ngày lấy từ GameState.CurrentDay,
+    // title chỉ chứa tên event, tiền tố "NGÀY n · " ghép lúc hiển thị.
+    [CreateAssetMenu(fileName = "Event_New_Event", menuName = "AyeAye/Day Definition")]
     public class DayDefinition : ScriptableObject
     {
-        public int dayNumber;
+        [Tooltip("Định danh ổn định của event, dùng cho log/test.")] public string eventId;
 
         public string title;
 
@@ -20,5 +22,11 @@ namespace AyeAye
         public string cargoShiftedWarning;
 
         public DecisionDefinition decision;
+
+        [Tooltip("Event chỉ xuất hiện khi điều kiện cờ này thỏa.")] public FlagCondition spawnCondition = FlagCondition.Always;
+
+        [Min(1)]
+        [Tooltip("Trọng số khi bốc ngẫu nhiên; càng lớn càng hay gặp.")]
+        public int weight = 1;
     }
 }

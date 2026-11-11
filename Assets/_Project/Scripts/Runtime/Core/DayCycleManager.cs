@@ -32,8 +32,8 @@ namespace AyeAye
         public void BeginDay()
         {
             GameState state = game.State;
-            Debug.Log("[DBG] BeginDay: ngày " + state.CurrentDay + ", day=" + (game.GetDay(state.CurrentDay) != null ? "có" : "NULL!") + ", decision=" + (game.GetDay(state.CurrentDay) != null && game.GetDay(state.CurrentDay).decision != null ? "có" : "NULL!"));
-            DayDefinition day = game.GetDay(state.CurrentDay);
+            DayDefinition day = game.GetCurrentEvent();
+            Debug.Log("[DBG] BeginDay: ngày " + state.CurrentDay + ", event=" + (day != null ? day.eventId : "NULL!") + ", decision=" + (day != null && day.decision != null ? "có" : "NULL!"));
             if (day == null)
             {
                 Debug.LogError("[DayCycleManager] Không tìm thấy DayDefinition cho ngày " + state.CurrentDay);
@@ -47,7 +47,7 @@ namespace AyeAye
 
             game.screenFlow.ShowStep(ScreenStep.Briefing);
             game.header.Refresh(state, game.Config);
-            game.briefing.Show(day);
+            game.briefing.Show(day, state.CurrentDay);
         }
 
         void ShowStatusScreen()
@@ -57,7 +57,7 @@ namespace AyeAye
 
             GameState state = game.State;
             game.screenFlow.ShowStep(ScreenStep.Status);
-            game.status.Show(state, game.GetDay(state.CurrentDay), game.crews);
+            game.status.Show(state, game.GetCurrentEvent(), game.crews);
             game.cakeStatus.Show(state.Cargo);
 
             isTransitioning = false;
@@ -69,7 +69,7 @@ namespace AyeAye
 
             GameState state = game.State;
             game.screenFlow.ShowStep(ScreenStep.Briefing);
-            game.briefing.Show(game.GetDay(state.CurrentDay)); // Show() chạy lại typewriter.
+            game.briefing.Show(game.GetCurrentEvent(), state.CurrentDay); // Show() chạy lại typewriter.
         }
 
         // CHỈNH LẠI: hủy phân công đã xác nhận; UI tự khôi phục các nút lựa chọn.
@@ -84,7 +84,7 @@ namespace AyeAye
             if (isTransitioning) return;
             isTransitioning = true;
 
-            DayDefinition day = game.GetDay(game.State.CurrentDay);
+            DayDefinition day = game.GetCurrentEvent();
             game.screenFlow.ShowStep(ScreenStep.Assignment);
             game.assignment.Show(day != null ? day.decision : null, game.crews);
 
@@ -98,7 +98,7 @@ namespace AyeAye
             if (isTransitioning || state.PendingResolved != null) return;
             isTransitioning = true;
 
-            DayDefinition day = game.GetDay(state.CurrentDay);
+            DayDefinition day = game.GetCurrentEvent();
             DecisionOption option = null;
             if (day != null && day.decision != null && day.decision.options != null
                 && optionIndex >= 0 && optionIndex < day.decision.options.Count)
@@ -169,6 +169,8 @@ namespace AyeAye
                 return;
             }
 
+            // Ngày mới = event mới: xóa cache để GetCurrentEvent bốc tiếp từ pool.
+            game.State.CurrentEvent = null;
             game.screenFlow.ShowResultOverlay(false);
             // Chờ màn hình kết quả biến mất trước khi bắt đầu ngày mới
             // tránh chồng lấn UI giữa kết quả ngày cũ và giao diện ngày mới.
@@ -199,7 +201,8 @@ namespace AyeAye
             game.screenFeedback.ResetVisuals();
             game.assignment.ClearSelection();
             game.progressBar.ResetBar();
-            game.State.Reset();
+            // Restart = ván mới: NewRun dọn cả CurrentEvent; seed lặp lại hay không theo config.
+            game.State.NewRun(game.Config.repeatSeedOnRestart ? game.State.Seed : Environment.TickCount);
 
             isTransitioning = false;
             BeginDay();

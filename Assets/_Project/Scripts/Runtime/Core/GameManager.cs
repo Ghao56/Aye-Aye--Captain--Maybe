@@ -7,7 +7,7 @@ namespace AyeAye
     {
         [Header("Data")]
         public GameConfig config;
-        public DayDefinition[] days = new DayDefinition[0];
+        public EventPool eventPool;
         public CrewDefinition[] crews = new CrewDefinition[0];
         public EndingDefinitions endings;
 
@@ -56,21 +56,40 @@ namespace AyeAye
             return null;
         }
 
-        public DayDefinition GetDay(int dayNumber)
+        // Bốc event cho ngày hiện tại, đúng 1 lần rồi cache (QUAY LẠI giữa các trang không bốc lại).
+        public DayDefinition GetCurrentEvent()
         {
-            if (days == null) return null;
-            for (int i = 0; i < days.Length; i++)
-                if (days[i] != null && days[i].dayNumber == dayNumber) return days[i];
-            return null;
+            if (State.CurrentEvent != null) return State.CurrentEvent;
+
+            DayDefinition picked;
+            if (State.CurrentDay == 1) picked = eventPool.openingDay;
+            else if (State.CurrentDay == Config.deadlineDay && eventPool.fixedFinale != null) picked = eventPool.fixedFinale;
+            else picked = EventScheduler.Pick(eventPool.events, State.UsedEvents, State, State.Rng);
+
+            if (picked == null)
+            {
+                Debug.LogError("[GameManager] Không bốc được event cho ngày " + State.CurrentDay);
+                return null;
+            }
+
+            State.CurrentEvent = picked;
+            if (!State.UsedEvents.Contains(picked)) State.UsedEvents.Add(picked);
+            Debug.Log("[Event] Ngày " + State.CurrentDay + ": " + picked.eventId + " (seed " + State.Seed + ")");
+            return picked;
         }
 
         bool ValidateReferences()
         {
             bool ok = Check(config, "GameConfig")
-                      && Check(days != null && days.Length == 3, "days (cần đúng 3 DayDefinition)")
+                      && Check(eventPool, "EventPool")
+                      && Check(eventPool == null || eventPool.openingDay != null, "eventPool.openingDay")
                       && Check(crews != null && crews.Length == 4, "crews (cần đúng 4 CrewDefinition)");
-            if (days != null)
-                for (int i = 0; i < days.Length; i++) ok &= Check(days[i], "days[" + i + "]");
+            if (eventPool != null)
+            {
+                ok &= Check(eventPool.events != null && eventPool.events.Count >= 1, "eventPool.events (cần ít nhất 1 event)");
+                if (eventPool.events != null)
+                    for (int i = 0; i < eventPool.events.Count; i++) ok &= Check(eventPool.events[i], "eventPool.events[" + i + "]");
+            }
             if (crews != null)
                 for (int i = 0; i < crews.Length; i++) ok &= Check(crews[i], "crews[" + i + "]");
 

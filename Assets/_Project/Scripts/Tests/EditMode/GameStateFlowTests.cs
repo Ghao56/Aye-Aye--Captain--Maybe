@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AyeAye.Tests;
 using NUnit.Framework;
 using UnityEngine;
@@ -107,6 +108,81 @@ namespace AyeAye
             Assert.IsFalse(state.IsFinished);
             Assert.IsNull(state.FinalEnding);
             Assert.IsFalse(state.ReachedEarly);
+        }
+
+        [Test]
+        public void NewRun_ResetsEventStateAndSeed()
+        {
+            GameConfig config = TestFixtures.NewConfig();
+            GameState state = new GameState(config, 42);
+            state.CurrentDay = 3;
+            state.Progress = 5f;
+            state.CargoShifted = true;
+            DayDefinition used = ScriptableObject.CreateInstance<DayDefinition>();
+            used.eventId = "used1";
+            state.UsedEvents.Add(used);
+            state.CurrentEvent = used;
+
+            state.NewRun(42); // cùng seed: RNG mới nhưng chuỗi xác định
+
+            Assert.AreEqual(42, state.Seed);
+            Assert.IsNotNull(state.Rng);
+            Assert.AreEqual(1, state.CurrentDay);
+            Assert.AreEqual(0f, state.Progress);
+            Assert.IsFalse(state.CargoShifted);
+            Assert.IsNull(state.CurrentEvent);
+            Assert.AreEqual(0, state.UsedEvents.Count);
+        }
+
+        [Test]
+        public void Flow_SevenDays_WithScheduler_FinishesDeterministically()
+        {
+            // Mô phỏng ván 7 ngày: pool 6 event, ngày 1 opening, ngày cuối finale cố định.
+            GameConfig config = TestFixtures.NewConfig();
+            config.totalDistance = 7.2f;
+            config.deadlineDay = 7;
+            GameState state = new GameState(config, 4242);
+            CrewDefinition chen = TestFixtures.NewCrew(CrewId.Chen, "chen line", "chen quote");
+            DecisionOption normal = TestFixtures.Option("normal", TestFixtures.Entry(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "e", "q", FlagToSet.None, 0));
+
+            List<DayDefinition> pool = new List<DayDefinition>();
+            for (int i = 0; i < 6; i++)
+            {
+                DayDefinition day = ScriptableObject.CreateInstance<DayDefinition>();
+                day.eventId = "ev" + (i + 1);
+                day.title = day.eventId;
+                day.decision = ScriptableObject.CreateInstance<DecisionDefinition>();
+                day.decision.options = new System.Collections.Generic.List<DecisionOption> { normal };
+                pool.Add(day);
+            }
+
+            string[] sequence = new string[7];
+            for (int day = 1; day <= 7; day++)
+            {
+                Assert.AreEqual(day, state.CurrentDay);
+                DayDefinition current = EventScheduler.Pick(pool, state.UsedEvents, state, state.Rng);
+                Assert.IsNotNull(current, "Ngày " + day + " không được kẹt vì thiếu event.");
+                state.CurrentEvent = current;
+                state.UsedEvents.Add(current);
+                sequence[day - 1] = current.eventId;
+
+                RunDay(state, config, current.decision.options[0], CrewId.Chen, chen);
+            }
+
+            Assert.IsTrue(state.IsFinished);
+            // 7 ngày Normal = 7.0 < 7.2 → trễ nhưng hoàn tất (NFR-07: suýt thua).
+            Assert.AreEqual(EndingId.LateButIntact, state.FinalEnding);
+
+            // Cùng seed → cùng chuỗi 7 event.
+            GameState replay = new GameState(config, 4242);
+            for (int day = 1; day <= 7; day++)
+            {
+                DayDefinition current = EventScheduler.Pick(pool, replay.UsedEvents, replay, replay.Rng);
+                replay.UsedEvents.Add(current);
+                Assert.AreEqual(sequence[day - 1], current.eventId);
+                RunDay(replay, config, current.decision.options[0], CrewId.Chen, chen);
+            }
+            Assert.IsTrue(replay.IsFinished);
         }
 
         [Test]

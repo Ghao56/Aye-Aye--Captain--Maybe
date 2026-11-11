@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace AyeAye
 {
@@ -19,16 +20,33 @@ namespace AyeAye
         public EndingId? FinalEnding;
         public bool ReachedEarly;
 
-        public GameState(GameConfig config)
+        public int Seed;
+        public System.Random Rng;
+        public DayDefinition CurrentEvent;
+        public readonly List<DayDefinition> UsedEvents = new List<DayDefinition>();
+
+        public GameState(GameConfig config) : this(config, Environment.TickCount) { }
+
+        // Overload seed cho test: cùng seed + cùng chuỗi lựa chọn → cùng kết quả (SRS NFR-06).
+        public GameState(GameConfig config, int seed)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
             TotalDistance = config.totalDistance;
             DeadlineDay = config.deadlineDay;
             startingCargo = config.startingCargo;
+            NewRun(seed);
+        }
+
+        // Bắt đầu một ván mới: Reset() rồi thiết lập seed/RNG. Dùng cho cả chạy đầu và Restart.
+        public void NewRun(int seed)
+        {
             Reset();
+            Seed = seed;
+            Rng = new System.Random(seed);
         }
 
         // Đưa về trạng thái ban đầu theo config; cờ và Hàng cũng được dọn sạch.
+        // Không đụng Seed/Rng — việc đó là của NewRun.
         public void Reset()
         {
             CurrentDay = 1;
@@ -40,6 +58,8 @@ namespace AyeAye
             IsFinished = false;
             FinalEnding = null;
             ReachedEarly = false;
+            CurrentEvent = null;
+            UsedEvents.Clear();
         }
 
         // Dùng Math để logic không phụ thuộc UnityEngine.

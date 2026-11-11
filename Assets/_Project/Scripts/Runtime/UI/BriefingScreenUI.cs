@@ -30,12 +30,14 @@ namespace AyeAye
             if (typewriter != null) typewriter.SetSpeed(Mathf.RoundToInt(charsPerSecond));
         }
 
-        public void Show(DayDefinition day)
+        public void Show(DayDefinition day, int dayNumber)
         {
             currentDay = day;
             awaitingSecondClick = false;
 
-            if (titleText != null) titleText.text = day != null ? day.title : "";
+            // Tiền tố "NGÀY n · " ghép lúc hiển thị; title của event không chứa số ngày.
+            string prefix = day != null ? "NGÀY " + dayNumber + " · " : "";
+            if (titleText != null) titleText.text = prefix + (day != null ? day.title : "");
             if (bodyText != null && typewriter != null)
             {
                 typewriter.Play(day != null ? day.briefingText : "");

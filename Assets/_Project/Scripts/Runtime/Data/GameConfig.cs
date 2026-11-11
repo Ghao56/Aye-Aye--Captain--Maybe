@@ -26,6 +26,9 @@ namespace AyeAye
         [Tooltip("Mức Hàng khi bắt đầu chuyến.")]
         public CargoCondition startingCargo = CargoCondition.Intact;
 
+        [Tooltip("Nếu bật: Restart chơi lại với đúng seed cũ (chuỗi event lặp lại). Mặc định tắt = mỗi lần restart một seed mới.")]
+        public bool repeatSeedOnRestart = false;
+
         public string tripCode = "BDAY-0042";
         public string shipName = "S.S. CÓ LẼ";
         public string destinationName = "HÀNH TINH ZORP-9";

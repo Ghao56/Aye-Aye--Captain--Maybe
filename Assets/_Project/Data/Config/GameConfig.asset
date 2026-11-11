@@ -20,5 +20,5 @@ MonoBehaviour:
   typewriterCharsPerSecond: 90
   startingCargo: 3
   tripCode: BDAY-0042
-  shipName: "S.S. C\xD3 L\u1EBC"
+  shipName: CARGO-9
   destinationName: "H\xC0NH TINH ZORP-9"
