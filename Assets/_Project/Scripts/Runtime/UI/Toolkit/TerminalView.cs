@@ -36,6 +36,8 @@ namespace AyeAye
         void OnEnable()
         {
             document = GetComponent<UIDocument>();
+            // Ẩn lớp ImagePreview (sprite xem trước ở Scene view) khi Play — ảnh thật do panel vẽ.
+            foreach (SpriteRenderer sr in GetComponentsInChildren<SpriteRenderer>()) sr.enabled = false;
             TryBind();
         }
 

@@ -168,11 +168,49 @@ namespace AyeAye
             // Input world-space: raycast từ camera → collider → sự kiện pointer vào UXML.
             if (go.GetComponent<PanelInputConfiguration>() == null) go.AddComponent<PanelInputConfiguration>();
 
+            EnsurePreviewImage(go);
+
             TerminalView view = go.GetComponent<TerminalView>();
             if (view == null) view = go.AddComponent<TerminalView>();
 
             if (created || document.visualTreeAsset != null)
                 Debug.Log("[SetupTerminalUI] " + MachineName + " sẵn sàng trên scene " + scene.name + ".");
+        }
+
+        // Lớp xem trước: ảnh máy dính trên object để kéo vị trí trong Scene view.
+        // TerminalView tự ẩn nó khi Play (ảnh thật do panel vẽ — tránh chồng đôi).
+        const string PreviewTexSrc = "Assets/Image/Terminal.png";
+        const string PreviewTexPath = UiFolder + "/TerminalPreview.png";
+        const float PreviewPpu = 80f; // 1536/80 = 19.2, 1024/80 = 12.8 → khớp đúng panel world-space
+
+        static void EnsurePreviewImage(GameObject go)
+        {
+            if (!System.IO.File.Exists(PreviewTexPath))
+            {
+                System.IO.File.Copy(PreviewTexSrc, PreviewTexPath, false);
+                AssetDatabase.ImportAsset(PreviewTexPath);
+                Debug.Log("[SetupTerminalUI] Đã copy ảnh xem trước: " + PreviewTexPath);
+            }
+            TextureImporter importer = AssetImporter.GetAtPath(PreviewTexPath) as TextureImporter;
+            if (importer != null && (importer.spriteImportMode != SpriteImportMode.Single || !Mathf.Approximately(importer.spritePixelsPerUnit, PreviewPpu)))
+            {
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.spritePixelsPerUnit = PreviewPpu;
+                importer.SaveAndReimport();
+            }
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(PreviewTexPath);
+            if (sprite == null)
+            {
+                Debug.LogError("[SetupTerminalUI] Không nạp được sprite xem trước " + PreviewTexPath);
+                return;
+            }
+
+            Transform existing = go.transform.Find("ImagePreview");
+            GameObject preview = existing != null ? existing.gameObject : new GameObject("ImagePreview");
+            if (existing == null) preview.transform.SetParent(go.transform, false);
+            SpriteRenderer sr = preview.GetComponent<SpriteRenderer>();
+            if (sr == null) sr = preview.AddComponent<SpriteRenderer>();
+            if (sr.sprite != sprite) sr.sprite = sprite;
         }
     }
 }
