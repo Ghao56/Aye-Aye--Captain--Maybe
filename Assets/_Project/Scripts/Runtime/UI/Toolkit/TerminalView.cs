@@ -25,7 +25,7 @@ namespace AyeAye
         double introStart;
         float translateX;
         float translateY;
-        IVisualElementScheduledProperty introTick;
+        IVisualElementScheduledItem introTick;
 
         void OnEnable()
         {
@@ -214,3 +214,4 @@ namespace AyeAye
         }
     }
 }
+
