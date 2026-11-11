@@ -17,7 +17,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background-color: var(--c-letterbox);
+    background-color: rgb(255, 0, 0); /* CHẨN ĐOÁN TẠM: đỏ = panel render được; đen = panel không render */
 }
 
 /* Sân khấu cố định 1920x1280, được TerminalView co bằng style.scale (contain) */
@@ -58,6 +58,6 @@
     width: 63.48%;
     height: 67.38%;
     border-width: 2px;
-    border-color: rgba(255, 0, 255, 0.9);
-    background-color: rgba(255, 0, 255, 0.25);
+    border-color: rgb(255, 0, 255);
+    background-color: rgba(255, 0, 255, 0.9); /* CHẨN ĐOÁN TẠM: đậm để nhìn thấy rõ */
 }
