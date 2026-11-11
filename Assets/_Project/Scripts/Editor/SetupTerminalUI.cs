@@ -86,7 +86,7 @@ namespace AyeAye
             return panel;
         }
 
-        static void EnsureSceneObjects(PanelSettings panel, UnityEditor.SceneManagement.Scene scene)
+        static void EnsureSceneObjects(PanelSettings panel, UnityEngine.SceneManagement.Scene scene)
         {
             GameObject go = GameObject.Find(UiObjectName);
             bool created = go == null;
