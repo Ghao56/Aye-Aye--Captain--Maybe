@@ -11,23 +11,22 @@
     --c-frame: rgb(46, 107, 71);             /* viền khung terminal */
 }
 
-/* Khung ngoài: letterbox đen, stage căn giữa */
+/* Container world-space (kiến trúc B): lấp vừa khít vùng worldSpaceSize của UIDocument.
+   Letterbox do camera world lo — không cần nền nữa. */
 .root {
-    flex-grow: 1;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    background-color: var(--c-letterbox); /* màu chẩn đoán đã tắt sau Gate B */
 }
 
-/* Sân khấu cố định 1920x1280, được TerminalView co bằng style.scale (contain) */
+/* Sân khấu cố định 1920x1280 px = 19.2x12.8 world unit (PPU 100) */
 .stage {
     width: 1920px;
     height: 1280px;
     flex-shrink: 0;
 }
 
-/* Ảnh máy tính là nền sân khấu — picking-mode Ignore để không nuốt click (R-01) */
+/* Ảnh máy tính là nền sân khấu — PHẢI pickable để bấm được vào máy mở màn */
 .computer-image {
     position: absolute;
     left: 0;

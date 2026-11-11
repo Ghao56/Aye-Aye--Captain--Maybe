@@ -3,16 +3,19 @@ using UnityEngine.UIElements;
 
 namespace AyeAye
 {
-    // Khung UI Toolkit + mở màn (tính năng được người dùng duyệt 11/11/2026, lệch có duyệt so với lệnh gốc):
-    // chờ bấm vào máy tính → zoom vào đúng vùng kính (#screen) → hiệu ứng TV bật (vạch sáng giãn) → xong.
-    // Co giãn #stage theo #root kiểu "contain" khi chưa mở màn; sau mở màn giữ kiểu "lấp đầy #screen".
+    // Kiến trúc B (người dùng duyệt 11/11/2026): máy tính là VẬT THỂ world-space.
+    // UIDocument (renderMode WorldSpace) + BoxCollider trên cùng GameObject — kéo đi đâu ảnh + UI đi theo.
+    // Bấm vào máy → camera ortho dời + thu vào đúng vùng kính (#screen) → hiệu ứng TV bật (như kiến trúc A).
     [RequireComponent(typeof(UIDocument))]
     public class TerminalView : MonoBehaviour
     {
         enum IntroState { WaitingClick, Zooming, PowerOn, Done }
 
-        const float ZoomDurationMs = 600f;
-        const float PowerOnDurationMs = 500f;
+        const float ZoomSeconds = 0.6f;
+        const float PowerOnSeconds = 0.5f;
+        // Phải khớp worldSpaceSize đặt trong SetupTerminalUI: 19.2x12.8 unit (PPU 100 → panel 1920x1280 px).
+        const float MachineWorldWidth = 19.2f;
+        const float MachineWorldHeight = 12.8f;
 
         UIDocument document;
         VisualElement root;
@@ -20,11 +23,14 @@ namespace AyeAye
         VisualElement screen;
         VisualElement tvFx;
         VisualElement tvLine;
+        Camera cam;
         bool bound;
         IntroState introState = IntroState.WaitingClick;
-        double introStart;
-        float translateX;
-        float translateY;
+        float introMs;
+        Vector3 camStartPos;
+        float camStartSize;
+        Vector2 screenCenterWorld;
+        float targetOrthoSize;
         IVisualElementScheduledItem introTick;
 
         void OnEnable()
@@ -36,12 +42,28 @@ namespace AyeAye
         void Update()
         {
             // rootVisualElement có thể chưa dựng cây lúc OnEnable (R-02): thử bind lại đến khi xong.
-            if (!bound) TryBind();
+            if (!bound)
+            {
+                TryBind();
+                return;
+            }
+
+            if (cam == null) return;
+            if (introState == IntroState.WaitingClick)
+                FitCameraToMachine();          // chưa zoom: khung hình thấy trọn chiếc máy, bám theo vị trí object
+            else if (introState == IntroState.Done)
+                KeepScreenFitted();            // sau mở màn: kính lấp đầy khung, giữ khi đổi tỉ lệ cửa sổ
         }
 
         void TryBind()
         {
             if (document == null || bound) return;
+            if (cam == null) cam = Camera.main;
+            if (cam == null)
+            {
+                Debug.LogError("[TerminalView] Không tìm thấy Camera.main — camera game phải có tag MainCamera.");
+                return;
+            }
             root = document.rootVisualElement;
             if (root == null || root.childCount == 0) return;
             stage = root.Q("stage");
@@ -50,10 +72,9 @@ namespace AyeAye
             tvLine = root.Q("tv-line");
             if (stage == null || screen == null) return;
 
-            root.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
-            root.RegisterCallback<PointerDownEvent>(OnIntroClick); // gỡ khi intro xong và ở OnDisable (R-03)
+            // Sự kiện pointer world-space tới panel nhờ PanelInputConfiguration + BoxCollider (Setup tạo).
+            root.RegisterCallback<PointerDownEvent>(OnIntroClick); // gỡ khi intro xong và ở OnDisable
             bound = true;
-            ApplyScale();
         }
 
         // ------------------------------------------------------------- mở màn
@@ -61,25 +82,55 @@ namespace AyeAye
         void OnIntroClick(PointerDownEvent evt)
         {
             if (introState != IntroState.WaitingClick) return;
-            if (!stage.worldBound.Contains((Vector2)evt.position)) return; // bấm ngoài máy tính không mở màn
+            // PointerDown tới được root của panel này = click đã trúng vật thể (raycast world-space lo việc lọc).
 
             introState = IntroState.Zooming;
-            introStart = Time.realtimeSinceStartupAsDouble * 1000.0;
+            introMs = 0f;
+            camStartPos = cam.transform.position;
+            camStartSize = cam.orthographicSize;
+            ComputeZoomTarget();
             if (introTick != null) introTick.Pause();
             introTick = root.schedule.Execute(ZoomTick).Every(16);
         }
 
+        // panel px → world: container world = worldSpaceSize (Fixed), panel px = 1920x1280.
+        float UnitsPerPixel
+        {
+            get
+            {
+                float px = root != null && root.layout.width > 0f ? root.layout.width : 1920f;
+                return MachineWorldWidth / px;
+            }
+        }
+
+        void ComputeZoomTarget()
+        {
+            float upp = UnitsPerPixel;
+            // Vùng kính trong toạ độ px của container (#stage nằm ở góc container).
+            Rect r = new Rect(stage.layout.position + screen.layout.position, screen.layout.size);
+            Vector2 containerCenterPx = new Vector2(root.layout.width, root.layout.height) * 0.5f;
+            Vector2 pxOffset = new Vector2(r.center.x - containerCenterPx.x, containerCenterPx.y - r.center.y); // world y hướng lên
+            screenCenterWorld = (Vector2)transform.position + pxOffset * upp;
+
+            float halfW = r.width * upp * 0.5f;
+            float halfH = r.height * upp * 0.5f;
+            float aspect = cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
+            targetOrthoSize = Mathf.Max(halfH, halfW / aspect); // contain: kính nằm gọn trong khung, không méo
+        }
+
         void ZoomTick()
         {
-            if (root == null || stage == null || screen == null) return;
-            float k = Mathf.Clamp01((float)((Time.realtimeSinceStartupAsDouble * 1000.0 - introStart) / ZoomDurationMs));
-            float s = Mathf.Lerp(FitScale(stage), FitScale(screen), Smooth(k));
-            stage.style.scale = new Scale(new Vector3(s, s, 1f));
+            if (cam == null) { FinishIntro(); return; }
+            introMs += 16f;
+            float k = Mathf.Clamp01(introMs / (ZoomSeconds * 1000f));
+            float s = Smooth(k);
+            cam.orthographicSize = Mathf.Lerp(camStartSize, targetOrthoSize, s);
+            Vector3 target = new Vector3(screenCenterWorld.x, screenCenterWorld.y, cam.transform.position.z);
+            cam.transform.position = Vector3.Lerp(camStartPos, target, s);
             if (k >= 1f)
             {
                 introTick.Pause();
                 introTick = null;
-                AlignScreenToRoot();
                 StartPowerOn();
             }
         }
@@ -87,7 +138,7 @@ namespace AyeAye
         void StartPowerOn()
         {
             introState = IntroState.PowerOn;
-            introStart = Time.realtimeSinceStartupAsDouble * 1000.0;
+            introMs = 0f;
             if (tvFx == null || tvLine == null)
             {
                 FinishIntro();
@@ -103,7 +154,8 @@ namespace AyeAye
         void PowerOnTick()
         {
             if (tvFx == null || tvLine == null) { FinishIntro(); return; }
-            float k = Mathf.Clamp01((float)((Time.realtimeSinceStartupAsDouble * 1000.0 - introStart) / PowerOnDurationMs));
+            introMs += 16f;
+            float k = Mathf.Clamp01(introMs / (PowerOnSeconds * 1000f));
             if (k < 0.4f)
             {
                 // Vạch sáng giãn ngang trước.
@@ -127,67 +179,27 @@ namespace AyeAye
             introState = IntroState.Done;
             // Gỡ handler click: từ đây nút bấm của game nhận click bình thường (Phase 4).
             if (bound && root != null) root.UnregisterCallback<PointerDownEvent>(OnIntroClick);
-            Debug.Log("[TerminalView] Mở màn xong (zoom + TV bật).");
+            Debug.Log("[TerminalView] Mở màn xong (zoom camera + TV bật).");
         }
 
-        // Đo và dịch #stage sao cho #screen căn đúng tâm khung (dùng worldBound, không phụ thuộc thứ tự transform).
-        void AlignScreenToRoot()
-        {
-            root.schedule.Execute(AlignTick).ExecuteLater(0);
-            root.schedule.Execute(AlignTick).ExecuteLater(48); // đo lại một lần để tự hiệu chỉnh phần dư
-        }
-
-        void AlignTick()
-        {
-            if (root == null || stage == null || screen == null) return;
-            Vector2 delta = Center(root.worldBound) - Center(screen.worldBound);
-            translateX += delta.x;
-            translateY += delta.y;
-            stage.style.translate = new Translate(translateX, translateY, 0f);
-        }
-
-        static Vector2 Center(Rect r) => new Vector2(r.x + r.width * 0.5f, r.y + r.height * 0.5f);
         static float Smooth(float k) => k * k * (3f - 2f * k);
 
-        // ------------------------------------------------------------- co giãn
+        // ------------------------------------------------------------- căn camera
 
-        void OnGeometryChanged(GeometryChangedEvent evt)
+        // Chưa mở màn: thấy trọn chiếc máy (contain theo tỉ lệ cửa sổ), camera bám tâm object.
+        void FitCameraToMachine()
         {
-            if (!bound) return;
-            if (introState == IntroState.WaitingClick)
-                ApplyScale();          // contain khi chưa mở màn
-            else if (introState == IntroState.Done)
-                ApplyFillTransform();  // giữ kiểu lấp đầy khi cửa sổ đổi kích thước
-            // Zooming/PowerOn: tick của intro tự quản, không đụng vào.
+            float aspect = cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
+            cam.orthographicSize = Mathf.Max(MachineWorldHeight * 0.5f, MachineWorldWidth * 0.5f / aspect);
+            Vector3 p = cam.transform.position;
+            cam.transform.position = new Vector3(transform.position.x, transform.position.y, p.z);
         }
 
-        void ApplyScale()
+        // Sau mở màn: kính lấp đầy khung (đổi kích thước cửa sổ cũng giữ).
+        void KeepScreenFitted()
         {
-            if (root == null || stage == null) return;
-            if (stage.layout.width <= 0f || stage.layout.height <= 0f) return;
-            if (root.layout.width <= 0f || root.layout.height <= 0f) return;
-            float s = FitScale(stage);
-            stage.style.scale = new Scale(new Vector3(s, s, 1f));
-        }
-
-        // Sau mở màn: #screen lấp đầy khung (cửa sổ đổi kích thước cũng giữ).
-        void ApplyFillTransform()
-        {
-            if (root == null || stage == null || screen == null) return;
-            if (screen.layout.width <= 0f || screen.layout.height <= 0f) return;
-            float s = FitScale(screen);
-            stage.style.scale = new Scale(new Vector3(s, s, 1f));
-            AlignScreenToRoot();
-        }
-
-        // Hệ số co: đưa phần tử `el` về vừa khít khung root (không méo).
-        float FitScale(VisualElement el)
-        {
-            Rect rootRect = root.layout;
-            Rect elRect = el.layout;
-            if (rootRect.width <= 0f || rootRect.height <= 0f) return 1f;
-            if (elRect.width <= 0f || elRect.height <= 0f) return 1f;
-            return Mathf.Min(rootRect.width / elRect.width, rootRect.height / elRect.height);
+            ComputeZoomTarget();
+            cam.orthographicSize = targetOrthoSize;
         }
 
         // ------------------------------------------------------------- vòng đời
@@ -196,22 +208,16 @@ namespace AyeAye
         {
             if (introTick != null) { introTick.Pause(); introTick = null; }
             if (bound && root != null)
-            {
-                root.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
                 root.UnregisterCallback<PointerDownEvent>(OnIntroClick);
-            }
-            if (stage != null) stage.style.translate = new Translate(0f, 0f, 0f);
             root = null;
             stage = null;
             screen = null;
             tvFx = null;
             tvLine = null;
             document = null;
+            cam = null;
             bound = false;
             introState = IntroState.WaitingClick; // Play lại từ đầu → chờ bấm lại
-            translateX = 0f;
-            translateY = 0f;
         }
     }
 }
-
