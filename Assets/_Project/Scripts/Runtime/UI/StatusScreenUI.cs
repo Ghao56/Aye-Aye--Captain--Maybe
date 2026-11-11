@@ -13,12 +13,12 @@ namespace AyeAye
         public TMP_Text[] crewCards = new TMP_Text[0];
         public TerminalTextEffect typewriter;
         public Button continueButton;
+        public Button backButton;
 
         public event System.Action ContinueRequested;
+        public event System.Action BackRequested;
 
         static readonly string CargoToken = "{CARGO}";
-
-        bool awaitingSecondClick;
 
         void Awake()
         {
@@ -26,6 +26,8 @@ namespace AyeAye
                 continueButton.onClick.AddListener(OnContinueClicked);
             else
                 Debug.LogError("[StatusScreenUI] continueButton chưa được gán trên " + name);
+            if (backButton != null)
+                backButton.onClick.AddListener(OnBackClicked);
         }
 
         public void SetTypewriterSpeed(float charsPerSecond)
@@ -36,7 +38,6 @@ namespace AyeAye
         public void Show(GameState state, DayDefinition day, CrewDefinition[] crews)
         {
             if (state == null || day == null) return;
-            awaitingSecondClick = false;
 
             string text = day.statusText;
             if (!string.IsNullOrEmpty(text)) text = text.Replace(CargoToken, CakeStatusUI.CargoName(state.Cargo));
@@ -78,12 +79,15 @@ namespace AyeAye
             if (typewriter != null && typewriter.IsTyping)
             {
                 typewriter.Complete();
-                awaitingSecondClick = true;
                 return;
             }
 
-            awaitingSecondClick = false;
             if (ContinueRequested != null) ContinueRequested();
+        }
+
+        void OnBackClicked()
+        {
+            if (BackRequested != null) BackRequested();
         }
     }
 }

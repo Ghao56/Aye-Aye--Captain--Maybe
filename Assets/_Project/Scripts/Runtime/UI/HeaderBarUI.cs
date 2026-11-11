@@ -12,8 +12,8 @@ namespace AyeAye
         public TMP_Text systemText;
         public TMP_Text lampText;
 
-        [Header("Chuỗi kiểm tra glyph tiếng Việt (cần bật cờ debug)")]
-        public bool showGlyphTest;
+        [Header("Chuỗi kiểm tra glyph tiếng Việt (chỉ bật khi debug font)")]
+        [SerializeField] public bool showGlyphTest; // mặc định TẮT: dòng chữ vàng dưới tên tàu là chuỗi test glyph, không phải mojibake.
         public TMP_Text glyphTestText;
 
         static readonly Color GreenColor = new Color(0.608f, 0.910f, 0.643f);

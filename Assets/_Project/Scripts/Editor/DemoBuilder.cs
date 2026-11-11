@@ -165,6 +165,7 @@ namespace AyeAye
                     issues += CheckRef(game.status.warningText, "status.warningText");
                     issues += CheckRef(game.status.flagsText, "status.flagsText");
                     issues += CheckRef(game.status.continueButton, "status.continueButton");
+                    issues += CheckRef(game.status.backButton, "status.backButton");
                     if (game.status.crewCards == null || game.status.crewCards.Length != 4)
                     { Debug.LogError("[Validate] status.crewCards phải có 4 phần tử."); issues++; }
                     else for (int i = 0; i < 4; i++) issues += CheckRef(game.status.crewCards[i], "status.crewCards[" + i + "]");
@@ -176,6 +177,8 @@ namespace AyeAye
                     issues += CheckRef(game.assignment.previewText, "assignment.previewText");
                     issues += CheckRef(game.assignment.confirmButton, "assignment.confirmButton");
                     issues += CheckRef(game.assignment.endDayButton, "assignment.endDayButton");
+                    issues += CheckRef(game.assignment.backButton, "assignment.backButton");
+                    issues += CheckRef(game.assignment.editButton, "assignment.editButton");
                     if (game.assignment.optionButtons == null || game.assignment.optionButtons.Length != 3)
                     { Debug.LogError("[Validate] assignment.optionButtons phải có 3 phần tử."); issues++; }
                     else for (int i = 0; i < 3; i++) issues += CheckRef(game.assignment.optionButtons[i], "assignment.optionButtons[" + i + "]");
@@ -272,17 +275,18 @@ namespace AyeAye
 
         static TMP_FontAsset EnsureFontAsset()
         {
-            TMP_FontAsset existing = FindExistingFontAsset();
-            if (existing != null) return existing;
-
-            Font sourceFont = FindFontInProjectFolder();
-            if (sourceFont == null) sourceFont = CopySystemFontFallback();
+            Font sourceFont = PickSourceFont();
             if (sourceFont == null)
             {
                 Debug.LogError("[DemoBuilder] Không có font trong " + FontsFolder + " và không copy được font hệ thống. "
                                + "Bỏ một file .ttf/.otf hỗ trợ tiếng Việt (ví dụ Roboto Mono) vào thư mục đó rồi chạy lại Tools/AyeAye/Build Demo.");
                 return null;
             }
+
+            // Tên asset gắn với font nguồn; nếu người dùng bỏ font mới vào thì tạo lại asset cho font đó.
+            string assetName = sourceFont.name + " SDF";
+            TMP_FontAsset existing = FindExistingFontAsset(assetName);
+            if (existing != null) return existing;
 
             TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(sourceFont);
             if (fontAsset == null)
@@ -309,27 +313,34 @@ namespace AyeAye
             return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
         }
 
-        static TMP_FontAsset FindExistingFontAsset()
+        static TMP_FontAsset FindExistingFontAsset(string assetName)
         {
             string[] guids = AssetDatabase.FindAssets("t:TMP_FontAsset", new[] { FontsFolder });
             foreach (string guid in guids)
             {
                 TMP_FontAsset asset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(AssetDatabase.GUIDToAssetPath(guid));
-                if (asset != null) return asset;
+                if (asset != null && asset.name == assetName) return asset;
             }
             return null;
         }
 
-        static Font FindFontInProjectFolder()
+        // Font do người dùng bỏ vào được ưu tiên; file do builder tự copy (fallback hệ thống) chỉ dùng khi thiếu.
+        static readonly string[] SystemFallbackBaseNames = { "consola", "arial", "segoeui", "tahoma", "times" };
+
+        static Font PickSourceFont()
         {
             string[] guids = AssetDatabase.FindAssets("t:Font", new[] { FontSearchFolder });
+            Font fallbackHit = null;
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 Font font = AssetDatabase.LoadAssetAtPath<Font>(path);
-                if (font != null) return font;
+                if (font == null) continue;
+                string baseName = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
+                if (System.Array.IndexOf(SystemFallbackBaseNames, baseName) < 0) return font;
+                if (fallbackHit == null) fallbackHit = font;
             }
-            return null;
+            return fallbackHit != null ? fallbackHit : CopySystemFontFallback();
         }
 
         // Nếu người dùng chưa bỏ font, dùng font hệ thống có dấu tiếng Việt để demo vẫn chạy.
@@ -882,7 +893,7 @@ namespace AyeAye
             header.lampText = CreateText("LampText", headerInner, V(0.82f, 0.15f), V(0.99f, 0.85f), font, 22, GreenColor, TextAlignmentOptions.Right);
             header.glyphTestText = CreateText("GlyphTestText", headerInner, V(0.20f, 0.0f), V(0.82f, 0.16f), font, 14, AmberColor, TextAlignmentOptions.Center);
             header.glyphTestText.text = "ăâêôơư đ àáảãạ ềếểễệ ồốổỗộ";
-            header.showGlyphTest = true;
+            header.showGlyphTest = false; // chuỗi test glyph chỉ bật tay trong Inspector khi cần kiểm tra font.
 
             // ---- Content area (chứa 4 trang)
             RectTransform content = CreateRect("ContentArea", canvasT, V(0f, 0.12f), V(1f, 0.94f));
@@ -921,6 +932,7 @@ namespace AyeAye
             statusType.cursorText = statusCursor;
             status.typewriter = statusType;
             status.continueButton = CreateButton("ContinueButton", statusInner, V(0.70f, 0.13f), V(0.98f, 0.22f), font, "TIẾP TỤC >", 26);
+            status.backButton = CreateButton("BackButton", statusInner, V(0.02f, 0.13f), V(0.30f, 0.22f), font, "QUAY LẠI", 26);
             CakeStatusUI cake = statusInner.gameObject.AddComponent<CakeStatusUI>();
             cake.cakeText = CreateText("CakeText", statusInner, V(0.62f, 0.13f), V(0.98f, 1f), font, 24, GreenColor, TextAlignmentOptions.TopLeft);
 
@@ -949,6 +961,9 @@ namespace AyeAye
             assignment.confirmButton = CreateButton("ConfirmButton", assignInner, V(0.30f, 0.02f), V(0.70f, 0.12f), font, "XÁC NHẬN QUYẾT ĐỊNH", 26);
             assignment.endDayButton = CreateButton("EndDayButton", assignInner, V(0.30f, 0.02f), V(0.70f, 0.12f), font, "KẾT THÚC NGÀY >", 26);
             assignment.endDayButton.gameObject.SetActive(false);
+            assignment.backButton = CreateButton("BackButton", assignInner, V(0.02f, 0.02f), V(0.27f, 0.12f), font, "QUAY LẠI", 26);
+            assignment.editButton = CreateButton("EditButton", assignInner, V(0.73f, 0.02f), V(0.98f, 0.12f), font, "CHỈNH LẠI", 26);
+            assignment.editButton.gameObject.SetActive(false);
 
             // ---- Result overlay + ScreenFeedback
             RectTransform overlayInner = CreateFramedPanel("ResultOverlayPanel", content, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);

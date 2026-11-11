@@ -61,6 +61,7 @@ namespace AyeAye
                 {
                     shown = Mathf.Min(goal, total);
                     target.maxVisibleCharacters = shown;
+                    PositionCursor(shown);
                 }
                 blinkTimer += Time.deltaTime;
                 if (cursorText != null && blinkTimer >= 0.15f)
@@ -71,6 +72,26 @@ namespace AyeAye
                 yield return null;
             }
             Finish();
+        }
+
+        // Đặt con trỏ █ ngay sau ký tự hiển thị cuối cùng; textInfo cho phép theo cả line-wrap.
+        void PositionCursor(int shown)
+        {
+            if (cursorText == null) return;
+            TMP_CharacterInfo[] chars = target.textInfo.characterInfo;
+            if (chars == null || chars.Length == 0) return;
+
+            // Con trỏ đứng tại vị trí ký tự TIẾP theo sẽ hiện — đúng chỗ chữ đang chạy tới (theo cả line-wrap).
+            TMP_CharacterInfo c = chars[Mathf.Clamp(shown, 0, chars.Length - 1)];
+            Vector3 anchor = target.transform.TransformPoint(new Vector3(c.origin, c.baseLine, 0f));
+
+            // Bù gốc của chính con trỏ để glyph █ ngồi đúng lên baseline của ký tự.
+            if (cursorText.textInfo != null && cursorText.textInfo.characterCount > 0)
+            {
+                TMP_CharacterInfo cur = cursorText.textInfo.characterInfo[0];
+                anchor -= cursorText.transform.TransformVector(new Vector3(cur.origin, cur.baseLine, 0f));
+            }
+            cursorText.transform.position = anchor;
         }
 
         // Hiện toàn bộ văn bản ngay (bấm SKIP hoặc lần CONTINUE đầu).

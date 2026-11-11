@@ -15,9 +15,13 @@ namespace AyeAye
         public TMP_Text[] crewLabels = new TMP_Text[0];
         public Button confirmButton;
         public Button endDayButton;
+        public Button backButton;
+        public Button editButton;
 
         public event System.Action<int, CrewId> Confirmed;
         public event System.Action EndDayRequested;
+        public event System.Action BackRequested;
+        public event System.Action EditRequested;
 
         // Thứ tự cố định của thẻ thủy thủ, khớp mảng crews do builder gán.
         static readonly CrewId[] CrewOrder = { CrewId.Bob, CrewId.Mira, CrewId.Chen, CrewId.Dex };
@@ -53,6 +57,10 @@ namespace AyeAye
                 Debug.LogError("[AssignmentScreenUI] confirmButton chưa được gán trên " + name);
             if (endDayButton != null)
                 endDayButton.onClick.AddListener(OnEndDayClicked);
+            if (backButton != null)
+                backButton.onClick.AddListener(OnBackClicked);
+            if (editButton != null)
+                editButton.onClick.AddListener(OnEditClicked);
         }
 
         public void Show(DecisionDefinition decision, CrewDefinition[] crews)
@@ -92,7 +100,12 @@ namespace AyeAye
             if (previewText != null) previewText.text = "";
             if (confirmButton != null) confirmButton.gameObject.SetActive(true);
             if (confirmButton != null) confirmButton.interactable = false;
-            if (endDayButton != null) endDayButton.gameObject.SetActive(false);
+            if (endDayButton != null)
+            {
+                endDayButton.gameObject.SetActive(false);
+                endDayButton.interactable = true; // ngày trước đã bấm END DAY → phải mở lại, nút chỉ bị ẩn chứ không chết.
+            }
+            if (editButton != null) editButton.gameObject.SetActive(false);
         }
 
         void OnOptionClicked(int index)
@@ -137,8 +150,8 @@ namespace AyeAye
             if (locked || confirmed || selectedOption < 0 || selectedCrew == CrewId.Any) return;
 
             // Khóa ngay để chống bấm đúp; không hiển thị kết quả ở bước này.
+            // Chỉ dùng cờ `confirmed` — nếu đặt cả `locked` thì OnEndDayClicked bị chặn vĩnh viễn.
             confirmed = true;
-            locked = true;
             if (confirmButton != null) confirmButton.interactable = false;
             for (int i = 0; i < optionButtons.Length; i++) SetActiveButton(optionButtons[i], false);
             for (int i = 0; i < crewButtons.Length; i++) SetActiveButton(crewButtons[i], false);
@@ -149,16 +162,52 @@ namespace AyeAye
         // Gọi sau khi Confirm thành công: hiện dòng phân công + nút END DAY.
         public void ShowConfirmed(string optionLabel, string crewName)
         {
+            Debug.Log("[DBG] ShowConfirmed: hiện nút END DAY, activeInHierarchy=" + (endDayButton != null ? endDayButton.gameObject.activeInHierarchy.ToString() : "null-ref!"));
             if (previewText != null) previewText.text = "PHÂN CÔNG: " + crewName + " → " + optionLabel;
+            // Hai nút chung một vị trí (builder gán cùng rect) → phải ẩn nút confirm khi hiện END DAY.
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
             if (endDayButton != null) endDayButton.gameObject.SetActive(true);
+            if (editButton != null) editButton.gameObject.SetActive(true);
+            if (backButton != null) backButton.gameObject.SetActive(false);
         }
 
         void OnEndDayClicked()
         {
+            Debug.Log("[DBG] OnEndDayClicked: locked=" + locked + " interactable=" + (endDayButton != null ? endDayButton.interactable.ToString() : "null"));
             if (locked) return; // đã END DAY rồi → không cộng quãng đường lần hai
             locked = true;
             if (endDayButton != null) endDayButton.interactable = false;
             if (EndDayRequested != null) EndDayRequested();
+        }
+
+        // QUAY LẠI (trước khi CONFIRM): về màn Status, giữ nguyên lựa chọn.
+        void OnBackClicked()
+        {
+            if (confirmed || locked) return;
+            if (BackRequested != null) BackRequested();
+        }
+
+        // CHỈNH LẠI (sau khi CONFIRM): mở khóa lựa chọn để chỉnh lại, END DAY bị hủy.
+        void OnEditClicked()
+        {
+            if (!confirmed || locked) return;
+            confirmed = false;
+            if (endDayButton != null) endDayButton.gameObject.SetActive(false);
+            if (confirmButton != null) confirmButton.gameObject.SetActive(true);
+            if (editButton != null) editButton.gameObject.SetActive(false);
+            if (backButton != null) backButton.gameObject.SetActive(true);
+            for (int i = 0; i < optionButtons.Length; i++)
+            {
+                SetActiveButton(optionButtons[i], true);
+                SetSelected(optionButtons[i], i < optionLabels.Length ? optionLabels[i] : null, i == selectedOption);
+            }
+            for (int i = 0; i < crewButtons.Length; i++)
+            {
+                SetActiveButton(crewButtons[i], true);
+                SetSelected(crewButtons[i], i < crewLabels.Length ? crewLabels[i] : null, crewButtons[i] != null && CrewOrder[i] == selectedCrew);
+            }
+            RefreshPreview();
+            if (EditRequested != null) EditRequested();
         }
 
         // Restart: dọn sạch lựa chọn và màu hiển thị.
@@ -179,6 +228,7 @@ namespace AyeAye
                 endDayButton.gameObject.SetActive(false);
                 endDayButton.interactable = true;
             }
+            if (editButton != null) editButton.gameObject.SetActive(false);
         }
 
         static void SetActiveButton(Button button, bool active)

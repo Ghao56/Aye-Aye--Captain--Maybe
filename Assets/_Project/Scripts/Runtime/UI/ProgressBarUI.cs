@@ -10,9 +10,6 @@ namespace AyeAye
         public RectTransform marker;
         public TMP_Text percentText;
 
-        static readonly string StartLabel = "START >";
-        static readonly string EndLabel = "> ĐÍCH";
-
         Coroutine tween;
         float displayedPercent;
 
