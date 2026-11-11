@@ -36,8 +36,6 @@ namespace AyeAye
         void OnEnable()
         {
             document = GetComponent<UIDocument>();
-            // Ẩn lớp ImagePreview (sprite xem trước ở Scene view) khi Play — ảnh thật do panel vẽ.
-            foreach (SpriteRenderer sr in GetComponentsInChildren<SpriteRenderer>()) sr.enabled = false;
             TryBind();
         }
 
@@ -57,9 +55,27 @@ namespace AyeAye
                 KeepScreenFitted();            // sau mở màn: kính lấp đầy khung, giữ khi đổi tỉ lệ cửa sổ
         }
 
+        // Ảnh máy giờ do SpriteRenderer "ImagePreview" vẽ → mọi kích thước camera/zoom lấy theo sprite thật,
+        // người dùng scale object bao nhiêu cũng khớp.
+        SpriteRenderer preview;
+        Vector2 MachineWorldSize
+        {
+            get
+            {
+                if (preview != null && preview.sprite != null)
+                {
+                    Vector3 s = transform.lossyScale;
+                    Vector3 b = preview.sprite.bounds.size;
+                    return new Vector2(b.x * s.x, b.y * s.y);
+                }
+                return new Vector2(MachineWorldWidth, MachineWorldHeight);
+            }
+        }
+
         void TryBind()
         {
             if (document == null || bound) return;
+            if (preview == null) preview = GetComponentInChildren<SpriteRenderer>();
             if (cam == null) cam = Camera.main;
             if (cam == null)
             {
@@ -101,7 +117,7 @@ namespace AyeAye
             get
             {
                 float px = root != null && root.layout.width > 0f ? root.layout.width : 1920f;
-                return MachineWorldWidth / px;
+                return MachineWorldSize.x / px;
             }
         }
 
@@ -191,8 +207,9 @@ namespace AyeAye
         // Chưa mở màn: thấy trọn chiếc máy (contain theo tỉ lệ cửa sổ), camera bám tâm object.
         void FitCameraToMachine()
         {
+            Vector2 size = MachineWorldSize;
             float aspect = cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
-            cam.orthographicSize = Mathf.Max(MachineWorldHeight * 0.5f, MachineWorldWidth * 0.5f / aspect);
+            cam.orthographicSize = Mathf.Max(size.y * 0.5f, size.x * 0.5f / aspect);
             Vector3 p = cam.transform.position;
             cam.transform.position = new Vector3(transform.position.x, transform.position.y, p.z);
         }

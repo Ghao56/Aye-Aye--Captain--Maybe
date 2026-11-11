@@ -2,7 +2,6 @@
     <Style src="Terminal.uss" />
     <ui:VisualElement name="root" class="root">
         <ui:VisualElement name="stage" class="stage">
-            <ui:VisualElement name="computer-image" class="computer-image" />
             <ui:VisualElement name="screen" class="screen">
                 <ui:VisualElement name="tv-fx" picking-mode="Ignore" class="tv-fx">
                     <ui:VisualElement name="tv-line" picking-mode="Ignore" class="tv-line" />

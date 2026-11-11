@@ -26,16 +26,8 @@
     flex-shrink: 0;
 }
 
-/* Ảnh máy tính là nền sân khấu — PHẢI pickable để bấm được vào máy mở màn */
-.computer-image {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("project://database/Assets/Image/Terminal.png?fileID=2800000&guid=a7945d2083442ba49ba0c113e78c4dfe");
-    -unity-background-scale-mode: stretch-to-fill;
-}
+/* Ảnh máy tính KHÔNG nằm trong panel nữa — vẽ bằng SpriteRenderer "ImagePreview"
+   trên GameObject Terminal (kiến trúc B, người dùng yêu cầu 12/11/2026). */
 
 /* Vùng kính màn hình CRT (cong + bo góc) — nội dung nằm trong padding để chừa lề (R-14 phương án a) */
 .screen {

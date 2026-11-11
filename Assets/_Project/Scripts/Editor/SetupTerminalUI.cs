@@ -158,9 +158,14 @@ namespace AyeAye
             if (document.worldSpaceSize != new Vector2(MachineWorldWidth, MachineWorldHeight))
                 document.worldSpaceSize = new Vector2(MachineWorldWidth, MachineWorldHeight);
 
-            // Collider (3D, trigger) cho raycast input world-space của PanelInputConfiguration.
-            BoxCollider hit = go.GetComponent<BoxCollider>();
-            if (hit == null) hit = go.AddComponent<BoxCollider>();
+            // Collider (3D, trigger) cho raycast input world-space của PanelInputConfiguration — chỉ giữ 1.
+            BoxCollider[] colliders = go.GetComponents<BoxCollider>();
+            for (int i = 1; i < colliders.Length; i++)
+            {
+                Object.DestroyImmediate(colliders[i]);
+                Debug.Log("[SetupTerminalUI] Đã xoá BoxCollider trùng trên " + MachineName + ".");
+            }
+            BoxCollider hit = colliders.Length > 0 ? colliders[0] : go.AddComponent<BoxCollider>();
             Vector3 hitSize = new Vector3(MachineWorldWidth, MachineWorldHeight, 0.5f);
             if (hit.size != hitSize) hit.size = hitSize;
             if (!hit.isTrigger) hit.isTrigger = true;
@@ -208,6 +213,7 @@ namespace AyeAye
             Transform existing = go.transform.Find("ImagePreview");
             GameObject preview = existing != null ? existing.gameObject : new GameObject("ImagePreview");
             if (existing == null) preview.transform.SetParent(go.transform, false);
+            preview.transform.localPosition = Vector3.zero; // ảnh phải nằm đúng tâm — nơi panel đặt UI
             SpriteRenderer sr = preview.GetComponent<SpriteRenderer>();
             if (sr == null) sr = preview.AddComponent<SpriteRenderer>();
             if (sr.sprite != sprite) sr.sprite = sprite;
