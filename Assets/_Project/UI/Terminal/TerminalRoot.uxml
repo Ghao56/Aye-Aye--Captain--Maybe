@@ -3,7 +3,11 @@
     <ui:VisualElement name="root" class="root">
         <ui:VisualElement name="stage" class="stage">
             <ui:VisualElement name="computer-image" picking-mode="Ignore" class="computer-image" />
-            <ui:VisualElement name="screen" class="screen" />
+            <ui:VisualElement name="screen" class="screen">
+                <ui:VisualElement name="tv-fx" picking-mode="Ignore" class="tv-fx">
+                    <ui:VisualElement name="tv-line" picking-mode="Ignore" class="tv-line" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <ui:VisualElement name="debug-overlay" picking-mode="Ignore" class="debug-overlay" />
         </ui:VisualElement>
     </ui:VisualElement>

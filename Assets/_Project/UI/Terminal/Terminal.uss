@@ -17,7 +17,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background-color: rgb(255, 0, 0); /* CHẨN ĐOÁN TẠM: đỏ = panel render được; đen = panel không render */
+    background-color: var(--c-letterbox); /* màu chẩn đoán đã tắt sau Gate B */
 }
 
 /* Sân khấu cố định 1920x1280, được TerminalView co bằng style.scale (contain) */
@@ -50,8 +50,9 @@
     padding: 28px 38px;
 }
 
-/* Overlay căn chỉnh GATE B: phủ đúng #screen, luôn Ignore (R-01). Tắt bằng display:none khi người dùng duyệt */
+/* Overlay căn chỉnh GATE B: đã duyệt ngày 11/11/2026 → ẩn mặc định */
 .debug-overlay {
+    display: none;
     position: absolute;
     left: 19.53%;
     top: 8.30%;
@@ -59,5 +60,25 @@
     height: 67.38%;
     border-width: 2px;
     border-color: rgb(255, 0, 255);
-    background-color: rgba(255, 0, 255, 0.9); /* CHẨN ĐOÁN TẠM: đậm để nhìn thấy rõ */
+    background-color: rgba(255, 0, 255, 0.25);
+}
+
+/* Hiệu ứng TV bật khi mở màn (zoom) — picking-mode Ignore (R-01) */
+.tv-fx {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(2, 8, 5);
+    display: none;
+}
+
+.tv-line {
+    position: absolute;
+    left: 0;
+    top: 49%;
+    width: 0%;
+    height: 2%;
+    background-color: rgb(220, 255, 230);
 }
