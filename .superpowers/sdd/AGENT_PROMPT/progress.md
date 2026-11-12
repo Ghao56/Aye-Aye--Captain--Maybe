@@ -18,3 +18,4 @@ Ruling: TDD theo chu kỳ dịch vụ (RED = lỗi compile do thiếu service, G
 
 Task 0 (Bước 0 — kiểm kê repo): DONE (báo cáo đã gửi user; bảng đối chiếu trong report, không lệch chặn tiến trình).
 Task 1 (Bước 1 / chu kỳ 1 — nền tảng + GameStateBuilder): DONE (RED: CS0103 GameStateBuilder không tồn tại; GREEN: 3/3 GameStateBuilderTests pass, aa-c1-green.xml; commit pending). Files: GameEnums.cs, GameConfig.cs, PortDef.cs, RouteDef.cs, RouteTable.cs, ShipDef.cs, OrderDef.cs, OrderPool.cs, IncidentDef.cs, IncidentPool.cs, RuntimeState.cs, GameState.cs, FlagEvaluator.cs, GameStateBuilder.cs; xóa v2 theo ruling.
+Task 1 cycle 2: OrderScheduler complete - tests: Unity batchmode EditMode -> 10/10 (aa-c2-green.xml). Ruling: fallback re-offer co don id cu thay the OrderState cu (dung mot OrderState cho moi id) - da sua ky vong test (Orders.Count phai tang la sai).
