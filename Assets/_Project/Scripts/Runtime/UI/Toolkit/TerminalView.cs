@@ -86,7 +86,8 @@ namespace AyeAye
                 {
                     Vector3 s = transform.lossyScale;
                     Vector3 b = preview.sprite.bounds.size;
-                    return new Vector2(b.x * s.x, b.y * s.y);
+                    // Abs: scale âm (lật/scene lưu hỏng) không được biến panel thành chiều rộng âm — mesh biến dạng, mất click.
+                    return new Vector2(Mathf.Abs(b.x * s.x), Mathf.Abs(b.y * s.y));
                 }
                 return new Vector2(MachineWorldWidth, MachineWorldHeight);
             }
