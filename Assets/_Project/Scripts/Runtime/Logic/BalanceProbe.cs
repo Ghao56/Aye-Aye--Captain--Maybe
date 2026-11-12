@@ -4,10 +4,11 @@ using AyeAye;
 namespace AyeAye
 {
     /// <summary>
-    /// Dò cân bằng: mô phỏng nhiều ván 8 ngày với chính sách NGẪU NHIÊN
-    /// (chấp nhận đơn theo xúc xắc, gán tuyến ngẫu nhiên trong số hợp lệ, chọn tuỳ chọn sự cố ngẫu nhiên).
-    /// All randomness qua GameState.Rng → cùng seed cho cùng tỉ lệ thắng.
-    /// shortcut: chính sách ngẫu nhiên thô; ngưỡng NFR-07 và chính sách "đọc manh mối" kiểm ở Bước 6.
+    /// Dò cân bằng: mô phỏng nhiều ván 8 ngày với chính sách NGẪU NHIÊN (chấp nhận đơn theo xúc xắc,
+    /// gán tuyến ngẫu nhiên trong số hợp lệ, chọn tuỳ chọn sự cố ngẫu nhiên) hoặc chính sách ĐỌC MANH MỐI
+    /// (nhận đơn có khả năng về kịp hạn, gán tuyến ngắn nhất, chọn tuỳ chọn sự cố ưu tiên Smart + tiến độ, né Slip-up).
+    /// All randomness qua GameState.Rng → cùng seed cho cùng tỉ lệ.
+    /// shortcut: ngưỡng NFR-07 (đọc manh mối ≥ E2 ≥ 70%) đối chiếu ở Bước 6; MeasuredRates log ra Library/probe-rates.txt.
     /// </summary>
     public static class BalanceProbe
     {
@@ -15,7 +16,7 @@ namespace AyeAye
             GameConfig config, OrderPool pool, RouteTable routes,
             IReadOnlyList<IncidentDef> incidents, IncidentDef fixedFirstDay, IncidentDef fixedFinale,
             IReadOnlyList<CrewDefinition> crews, IReadOnlyList<ShipDef> shipDefs,
-            int runs, int seedBase)
+            int runs, int seedBase, bool cluePolicy = false)
         {
             if (runs <= 0) return 0f;
             int wins = 0;
@@ -23,7 +24,7 @@ namespace AyeAye
             {
                 var state = GameStateBuilder.CreateRun(config, shipDefs, seedBase + i);
                 while (!state.IsFinished && state.CurrentDay <= 2 * config.gameLengthDays)
-                    SimulateDay(config, pool, routes, incidents, fixedFirstDay, fixedFinale, crews, state);
+                    SimulateDay(config, pool, routes, incidents, fixedFirstDay, fixedFinale, crews, state, cluePolicy);
                 if (!state.IsFinished)
                     EndingEvaluator.FinishRun(state);
                 if (state.FinalEnding == EndingId.E1_Empire || state.FinalEnding == EndingId.E2_Renowned)
@@ -32,22 +33,38 @@ namespace AyeAye
             return (float)wins / runs;
         }
 
-        /// <summary>Một ngày chơi với chính sách ngẫu nhiên.</summary>
+        /// <summary>Một ngày chơi: chọn tuỳ chọn sự cố bằng xúc xắc hoặc đọc manh mối.</summary>
         public static void SimulateDay(
             GameConfig config, OrderPool pool, RouteTable routes,
             IReadOnlyList<IncidentDef> incidents, IncidentDef fixedFirstDay, IncidentDef fixedFinale,
-            IReadOnlyList<CrewDefinition> crews, GameState state)
+            IReadOnlyList<CrewDefinition> crews, GameState state, bool cluePolicy = false)
         {
             state.Phase = GamePhase.Planning;
 
-            // 1. Chấp nhận đơn trong hộp theo xúc xắc (giới hạn đơn đang chạy).
+            // 1. Chấp nhận đơn trong hộp (giới hạn đơn đang chạy).
+            //    Ngẫu nhiên: theo xúc xắc. Đọc manh mối: nhận đơn có tuyến ngắn nhất vẫn về kịp hạn (ước lượng tốc nhanh nhất).
             foreach (var order in state.Orders.FindAll(o => o.Status == OrderStatus.InInbox))
             {
-                if (state.Rng.Next(2) == 1 && CommandValidator.CanAccept(state, order.Id))
+                bool accept;
+                if (cluePolicy)
+                {
+                    var options = routes.GetOptions(order.FromPortId, order.ToPortId);
+                    float bestLen = float.MaxValue;
+                    if (options != null)
+                        foreach (var opt in options)
+                            if (opt.length < bestLen) bestLen = opt.length;
+                    accept = bestLen <= (order.DeadlineDay - state.CurrentDay) * config.fastSpeed;
+                }
+                else
+                {
+                    accept = state.Rng.Next(2) == 1;
+                }
+                if (accept && CommandValidator.CanAccept(state, order.Id))
                     order.Status = OrderStatus.Accepted;
             }
 
-            // 2. Gán: với mỗi đơn đã nhận chưa gán, gom ứng viên (tàu đứng yên ở bến đi × tuyến hợp lệ) rồi chọn ngẫu nhiên.
+            // 2. Gán: với mỗi đơn đã nhận chưa gán, gom ứng viên (tàu đứng yên ở bến đi × tuyến hợp lệ).
+            //    Ngẫu nhiên: chọn ngẫu nhiên. Đọc manh mối: chọn tuyến ngắn nhất.
             foreach (var order in state.Orders.FindAll(o => o.Status == OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId)))
             {
                 var options = routes.GetOptions(order.FromPortId, order.ToPortId);
@@ -63,7 +80,7 @@ namespace AyeAye
                             candidates.Add((ship, options[i]));
                 }
                 if (candidates.Count == 0) continue;
-                var pick = candidates[state.Rng.Next(candidates.Count)];
+                var pick = cluePolicy ? BestCandidate(candidates) : candidates[state.Rng.Next(candidates.Count)];
                 state.StagedCommands.Add(new StagedCommand
                 {
                     Kind = CommandKind.Assign,
@@ -82,7 +99,9 @@ namespace AyeAye
             var pendings = IncidentScheduler.Schedule(incidents, fixedFirstDay, fixedFinale, state, contexts);
             foreach (var pending in pendings)
             {
-                var option = pending.Incident.options[state.Rng.Next(pending.Incident.options.Count)];
+                var option = cluePolicy
+                    ? CluePolicy.PickByClue(pending.Incident, state, pending.Context.Ship, crews)
+                    : pending.Incident.options[state.Rng.Next(pending.Incident.options.Count)];
                 var resolved = IncidentResolver.Resolve(pending.Incident, option, state, pending.Context.Ship, crews);
                 IncidentResolver.Apply(resolved, state, pending.Context.Ship);
                 SimulationStep.ApplyProgressDelta(state, pending.Context.Ship, resolved.ProgressDelta);
@@ -115,6 +134,15 @@ namespace AyeAye
                 if (cmd.ShipId == shipId)
                     return true;
             return false;
+        }
+
+        // Đọc manh mối: ứng viên (tàu, tuyến) có độ dài tuyến ngắn nhất — hòa thì lấy đầu tiên (deterministic).
+        private static (ShipState ship, RouteOption route) BestCandidate(List<(ShipState ship, RouteOption route)> candidates)
+        {
+            var best = candidates[0];
+            foreach (var c in candidates)
+                if (c.route.length < best.route.length) best = c;
+            return best;
         }
     }
 }

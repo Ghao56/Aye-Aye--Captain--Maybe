@@ -135,6 +135,30 @@ namespace AyeAye.Tests.EditMode
             Assert.AreEqual(2, state.Orders.Count);
         }
 
+        [Test]
+        public void Day1_FixedIncident_LandsOnFirstFogCrossingShip()
+        {
+            // FR-0502: ngày 1, I-01 rơi vào tàu ĐẦU TIÊN đi qua cạnh Sương mù (O-02 đi qua Sương Mù).
+            var state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, 5);
+            OrderScheduler.ScheduleNewOrders(_world.OrderPool, state);
+
+            var o02 = state.Orders.First(o => o.Id == "O-02");
+            o02.Status = OrderStatus.Accepted;
+            var ship = state.Ships.First(s => s.PortId == "goc" && s.Status == ShipStatus.Idle);
+            var options = _world.Routes.GetOptions(o02.FromPortId, o02.ToPortId);
+            var fogRoute = options.First(o => o.hazards.Contains(HazardType.Fog));
+            state.StagedCommands.Add(new StagedCommand { Kind = CommandKind.Assign, ShipId = ship.Id, OrderId = o02.Id, Route = fogRoute });
+
+            SimulationStep.CommitStaged(state);
+            var pendings = IncidentScheduler.Schedule(
+                _world.Incidents, _world.FixedFirstDay, _world.FixedFinale, state, SimulationStep.MovingContexts(state));
+
+            Assert.AreEqual(1, pendings.Count);
+            Assert.AreEqual("I-01", pendings[0].Incident.incidentId);
+            Assert.AreEqual(ship.Id, pendings[0].Context.Ship.Id);
+            Assert.That(pendings[0].Context.EdgeHazards.Contains(HazardType.Fog));
+        }
+
         private (int reputation, int revenue, int delivered, EndingId ending) RunToEnd(int seed)
         {
             var state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed);

@@ -25,9 +25,11 @@ namespace AyeAye
         VisualElement tvFx;
         VisualElement tvLine;
         Camera cam;
-        Canvas uiCanvas;               // Canvas uGUI cũ bị Setup tắt — bật lại sau khi mở màn xong
-        bool bound;
+            bool bound;
         IntroState introState = IntroState.WaitingClick;
+
+        /// Máy đã bật xong (kính CRT mở màn) — TerminalHud chỉ hiện game UI khi true.
+        public bool IsMachineOn => introState == IntroState.Done;
         float introMs;
         Vector3 camStartPos;
         float camStartSize;
@@ -100,10 +102,6 @@ namespace AyeAye
             tvLine = root.Q("tv-line");
             if (stage == null || screen == null) return;
 
-            // UI game (uGUI) chưa chuyển sang panel này: tắt Canvas để không đè lên cảnh lúc chờ bấm,
-            // bật lại trong FinishIntro — khi đó kính đã lấp đầy khung nên overlay trùng màn hình máy.
-            if (uiCanvas == null) uiCanvas = FindFirstObjectByType<Canvas>();
-            if (uiCanvas != null && uiCanvas.enabled) uiCanvas.enabled = false;
 
             // Sự kiện pointer world-space tới panel nhờ PanelInputConfiguration + BoxCollider (Setup tạo).
             root.RegisterCallback<PointerDownEvent>(OnIntroClick); // gỡ khi intro xong và ở OnDisable
@@ -215,8 +213,7 @@ namespace AyeAye
         {
             if (introTick != null) { introTick.Pause(); introTick = null; }
             if (tvFx != null) tvFx.style.display = DisplayStyle.None;
-            if (uiCanvas != null) uiCanvas.enabled = true; // hiện UI game sau khi kính mở màn xong
-            introState = IntroState.Done;
+                introState = IntroState.Done;
             // Gỡ handler click: từ đây nút bấm của game nhận click bình thường (Phase 4).
             if (bound && root != null) root.UnregisterCallback<PointerDownEvent>(OnIntroClick);
             Debug.Log("[TerminalView] Mở màn xong (zoom camera + TV bật).");
@@ -227,11 +224,10 @@ namespace AyeAye
         // ------------------------------------------------------------- thoát máy
 
         // Thoát máy: TV tắt (màn thu về vạch giữa → chấm → tối) rồi camera lerp về chỗ cũ.
-        void ExitTerminal()
+        public void ExitTerminal()
         {
             if (introTick != null) { introTick.Pause(); introTick = null; }
-            if (uiCanvas != null) uiCanvas.enabled = false;
-            if (cam == null || root == null || tvFx == null || tvLine == null) { FinishExit(); return; }
+                if (cam == null || root == null || tvFx == null || tvLine == null) { FinishExit(); return; }
 
             // Lớp đen phủ trọn kính ngay, vạch sáng trải tròn màn hình rồi thu dần.
             tvFx.style.display = DisplayStyle.Flex;
@@ -362,8 +358,7 @@ namespace AyeAye
             tvLine = null;
             document = null;
             cam = null;
-            uiCanvas = null;
-            bound = false;
+                bound = false;
             introState = IntroState.WaitingClick; // Play lại từ đầu → chờ bấm lại
         }
     }

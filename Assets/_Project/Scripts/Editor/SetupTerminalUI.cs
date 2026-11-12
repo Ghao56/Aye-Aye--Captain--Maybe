@@ -36,16 +36,13 @@ namespace AyeAye
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             EnsureSceneObjects(panel, scene);
 
-            // Tắt Canvas uGUI cũ (CHỈ component Canvas, không tắt GameObject:
-            // các MonoBehaviour/coroutine của UI cũ vẫn chạy — Core không bị ảnh hưởng, R1).
+            // Xoá hẳn Canvas uGUI cũ (cả GameObject) — UI Toolkit đã thay thế toàn bộ UI game
+            // (Bước 2), không còn luồng nào dùng uGUI. Bỏ qua đối tượng có UIDocument (panel này).
             foreach (Canvas canvas in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
             {
-                if (canvas.enabled)
-                {
-                    canvas.enabled = false;
-                    EditorUtility.SetDirty(canvas);
-                    Debug.Log("[SetupTerminalUI] Đã tắt Canvas uGUI (component): " + canvas.name);
-                }
+                if (canvas.GetComponent<UIDocument>() != null) continue;
+                Debug.Log("[SetupTerminalUI] Đã xoá Canvas uGUI cũ (cả GameObject): " + canvas.name);
+                Object.DestroyImmediate(canvas.gameObject);
             }
 
             // Camera nền đen, ortho (world-space 2D); vị trí/zoom TerminalView tự lo lúc Play.
@@ -91,7 +88,7 @@ namespace AyeAye
             // Constant Pixel Size, scale 1 — sân khấu 1920x1280 px cố định trong USS.
             if (panel.scaleMode != PanelScaleMode.ConstantPixelSize) panel.scaleMode = PanelScaleMode.ConstantPixelSize;
             if (!Mathf.Approximately(panel.scale, 1f)) panel.scale = 1f;
-            if (!Mathf.Approximately(panel.sortingOrder, 10f)) panel.sortingOrder = 10f; // UIDocument vẽ trên Canvas uGUI cũ (đã tắt)
+            if (!Mathf.Approximately(panel.sortingOrder, 10f)) panel.sortingOrder = 10f; // thứ tự vẽ panel world-space
             // renderMode đang internal ở 6000.3.3f1 → đặt qua SerializedObject
             // (field serial hoá m_RenderMode có sẵn; PanelRenderMode.WorldSpace = 1 theo docs 6000.3).
             SerializedObject so = new SerializedObject(panel);
@@ -177,6 +174,9 @@ namespace AyeAye
 
             TerminalView view = go.GetComponent<TerminalView>();
             if (view == null) view = go.AddComponent<TerminalView>();
+
+            TerminalHud hud = go.GetComponent<TerminalHud>();
+            if (hud == null) go.AddComponent<TerminalHud>();
 
             if (created || document.visualTreeAsset != null)
                 Debug.Log("[SetupTerminalUI] " + MachineName + " sẵn sàng trên scene " + scene.name + ".");

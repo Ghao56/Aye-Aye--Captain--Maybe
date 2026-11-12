@@ -73,3 +73,96 @@
     height: 2%;
     background-color: rgb(220, 255, 230);
 }
+/* === BÆ°á»›c 2: khung game (FR-0201..0203) â€” biáº¿n mĂ u tĂ¡i dĂ¹ng tá»« :root === */
+
+.game {
+    flex-grow: 1; /* láº¥p pháº§n cĂ²n láº¡i trong padding .screen */
+    display: none; /* TerminalHud báº­t khi mĂ¡y Ä‘Ă£ báº­t (CRT on) */
+}
+
+.game.on { display: flex; }
+.game > * { flex-shrink: 0; }
+
+/* Thanh trĂªn */
+.topbar {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-bottom-width: 2px;
+    border-bottom-color: var(--c-frame);
+}
+.topbar-item { color: var(--c-text); font-size: 26px; }
+.topbar-item.phase { color: var(--c-amber); }
+
+/* Tab */
+.tabbar {
+    flex-direction: row;
+    padding: 4px 10px;
+    border-bottom-width: 2px;
+    border-bottom-color: var(--c-frame);
+}
+.tab {
+    margin-right: 12px;
+    padding: 4px 14px;
+    font-size: 26px;
+    color: var(--c-text);
+    border-width: 2px;
+    border-color: var(--c-frame);
+    background-color: rgba(46, 107, 71, 0.25);
+}
+.tab.selected { color: rgb(2, 12, 6); background-color: var(--c-text); }
+.tab.locked { color: var(--c-alert); border-color: var(--c-alert); background-color: transparent; }
+.tab-badge {
+    font-size: 20px;
+    color: var(--c-alert);
+    margin-left: 6px;
+}
+
+/* Ná»™i dung tab */
+.content { flex-grow: 1; overflow: hidden; }
+.panel { display: none; flex-grow: 1; padding: 8px 10px; }
+.panel.on { display: flex; }
+.panel-hint { color: var(--c-text); font-size: 24px; }
+
+/* NĂºt dÆ°á»›i (FR-0203) */
+.bottombar { flex-direction: row; justify-content: flex-end; padding: 8px 10px; }
+.bottombar.hidden { display: none; }
+.bottom-button {
+    padding: 8px 24px;
+    font-size: 30px;
+    color: rgb(2, 12, 6);
+    background-color: var(--c-text);
+    border-width: 0;
+}
+.bottom-button:disabled { opacity: 0.4; }
+
+/* MĂ n Start/Restart (FR-0101) */
+.start-screen {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(2, 10, 6, 0.92);
+    align-items: center;
+    justify-content: center;
+}
+.start-title { color: var(--c-text); font-size: 52px; margin-bottom: 24px; }
+.start-button {
+    margin: 6px 0;
+    padding: 8px 32px;
+    font-size: 30px;
+    color: var(--c-text);
+    border-width: 2px;
+    border-color: var(--c-frame);
+    background-color: transparent;
+}
+.exit-machine {
+    position: absolute;
+    right: 12px; bottom: 10px;
+    padding: 4px 10px;
+    font-size: 20px;
+    color: var(--c-amber);
+    border-width: 1px;
+    border-color: var(--c-frame);
+    background-color: transparent;
+}
+

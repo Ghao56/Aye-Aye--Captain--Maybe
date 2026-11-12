@@ -3,6 +3,42 @@
     <ui:VisualElement name="root" class="root">
         <ui:VisualElement name="stage" class="stage">
             <ui:VisualElement name="screen" class="screen">
+                <ui:VisualElement name="game" class="game">
+                    <!-- FR-0201: thanh trên — Ngày, Uy tín, Doanh thu, tên pha -->
+                    <ui:VisualElement name="topbar" class="topbar">
+                        <ui:Label name="top-day" class="topbar-item" text="Ngày 1/8" />
+                        <ui:Label name="top-reputation" class="topbar-item" text="Uy tín 50" />
+                        <ui:Label name="top-revenue" class="topbar-item" text="Doanh thu 0" />
+                        <ui:Label name="top-phase" class="topbar-item phase" text="Lập kế hoạch" />
+                    </ui:VisualElement>
+                    <!-- FR-0202: 3 tab + huy hiệu -->
+                    <ui:VisualElement name="tabbar" class="tabbar">
+                        <ui:Button name="tab-0" class="tab" text="ĐƠN HÀNG" />
+                        <ui:Button name="tab-1" class="tab" text="ĐỘI TÀU" />
+                        <ui:Button name="tab-2" class="tab" text="SỰ CỐ" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="content" class="content">
+                        <ui:VisualElement name="panel-0" class="panel">
+                            <ui:Label name="panel-0-hint" class="panel-hint" text="Tab ĐƠN HÀNG (đang dựng — Bước 3)." />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="panel-1" class="panel">
+                            <ui:Label name="panel-1-hint" class="panel-hint" text="Tab ĐỘI TÀU (đang dựng — Bước 4)." />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="panel-2" class="panel">
+                            <ui:Label name="panel-2-hint" class="panel-hint" text="Chưa có sự cố. Mừng quá sớm?" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="bottombar" class="bottombar">
+                        <ui:Button name="bottom-button" class="bottom-button" text="MAKE IT SO" />
+                    </ui:VisualElement>
+                    <!-- FR-0101/FR-0703: màn Start/Restart che toàn vùng kính -->
+                    <ui:VisualElement name="start-screen" class="start-screen">
+                        <ui:Label name="start-title" class="start-title" text="AYE AYE, BOSS... MAYBE?" />
+                        <ui:Button name="start-button" class="start-button" text="BẮT ĐẦU" />
+                        <ui:Button name="restart-button" class="start-button restart" text="CHƠI LẠI" />
+                        <ui:Button name="exit-machine" class="exit-machine" text="Rời máy (Esc)" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
                 <ui:VisualElement name="tv-fx" picking-mode="Ignore" class="tv-fx">
                     <ui:VisualElement name="tv-line" picking-mode="Ignore" class="tv-line" />
                 </ui:VisualElement>
