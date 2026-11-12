@@ -50,7 +50,7 @@ namespace AyeAye.Tests
             Assert.AreEqual("VANG", state.Ships[3].PortId);
             Assert.AreEqual(ShipCondition.Good, state.Ships[0].Condition);
             Assert.AreEqual(ShipStatus.Idle, state.Ships[0].Status);
-            Assert.IsNull(state.Ships[0].OrderId);
+            Assert.IsEmpty(state.Ships[0].OrderId);
             Assert.IsNull(state.Ships[0].Route);
             Assert.AreEqual(42, state.Seed);
             Assert.IsFalse(state.IsFinished);

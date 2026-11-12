@@ -15,10 +15,11 @@ namespace AyeAye
         [System.ComponentModel.DefaultValue("")]
         public string PortId = "";
 
-        public string OrderId;                  // đơn đang chở (null = không chở)
+        public string OrderId = "";             // đơn đang chở ("" = không chở)
 
         public RouteOption Route;               // khác null khi đang Moving
         public float DistanceAlongRoute;        // 0..Route.Length
+        public string ArrivedPortId = "";       // node giữa vừa đi qua trong lần chạy gần nhất (FR-0502)
 
         public bool TemporaryRepair;
     }
@@ -63,5 +64,7 @@ namespace AyeAye
         public string ShipId;
         public string OrderId;
         public int RouteOptionIndex;
+        // shortcut: tham chiếu RouteOption đã chọn khi staged (CommandValidator đã kiểm tra bảng tuyến) — nếu sau này cần serialize StagedCommand thì phải đổi sang RouteOptionIndex + bảng tra
+        public RouteOption Route;
     }
 }
