@@ -130,7 +130,8 @@ namespace AyeAye
             foreach (var crew in crews)
             {
                 if (crew == null || crew.id == CrewId.Any) continue;
-                if (!allEntries.Exists(e => e.crew == crew.id))
+                // §5.5: hàng "any" phủ mọi thuyền trưởng không liệt kê — entry Any cũng tính là phủ.
+                if (!allEntries.Exists(e => e.crew == crew.id || e.crew == CrewId.Any))
                     errors.Add($"{def.incidentId}: thiếu entry chính xác cho {crew.displayName}");
             }
             return errors;

@@ -1547,7 +1547,6 @@ GameObject:
   - component: {fileID: 322317236}
   - component: {fileID: 322317239}
   - component: {fileID: 322317238}
-  - component: {fileID: 322317237}
   m_Layer: 0
   m_Name: Inner
   m_TagString: Untagged
@@ -1578,22 +1577,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -4, y: -4}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &322317237
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 322317235}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60554a2dfbff938408f9ca5a27453e08, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.EndScreenUI
-  titleText: {fileID: 23695134}
-  bodyText: {fileID: 2090552505}
-  statsText: {fileID: 56333563}
-  restartButton: {fileID: 667332973}
 --- !u!114 &322317238
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1780,7 +1763,6 @@ GameObject:
   - component: {fileID: 337947076}
   - component: {fileID: 337947079}
   - component: {fileID: 337947078}
-  - component: {fileID: 337947077}
   m_Layer: 0
   m_Name: Inner
   m_TagString: Untagged
@@ -1820,42 +1802,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -4, y: -4}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &337947077
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 337947075}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d88167cb216d3d48b931365e9901179, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.AssignmentScreenUI
-  promptText: {fileID: 132392477}
-  previewText: {fileID: 1482863646}
-  optionButtons:
-  - {fileID: 1683065467}
-  - {fileID: 867441914}
-  - {fileID: 1891205612}
-  optionLabels:
-  - {fileID: 1490810459}
-  - {fileID: 1474729488}
-  - {fileID: 1728155841}
-  crewButtons:
-  - {fileID: 1585923630}
-  - {fileID: 1870600729}
-  - {fileID: 970747584}
-  - {fileID: 1342032308}
-  crewLabels:
-  - {fileID: 74736004}
-  - {fileID: 1315895859}
-  - {fileID: 1951655550}
-  - {fileID: 1173771892}
-  confirmButton: {fileID: 1376592644}
-  endDayButton: {fileID: 1443459076}
-  backButton: {fileID: 363818829}
-  editButton: {fileID: 1698953885}
 --- !u!114 &337947078
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3317,7 +3263,6 @@ GameObject:
   - component: {fileID: 714194987}
   - component: {fileID: 714194990}
   - component: {fileID: 714194989}
-  - component: {fileID: 714194988}
   m_Layer: 0
   m_Name: Inner
   m_TagString: Untagged
@@ -3350,23 +3295,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -4, y: -4}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &714194988
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 714194986}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb1a3caf9919df24595f034eef7d43ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ResultOverlayUI
-  resultLabel: {fileID: 949381784}
-  explanationText: {fileID: 2100768013}
-  quoteText: {fileID: 2123570934}
-  distanceText: {fileID: 583718779}
-  nextButton: {fileID: 1103135881}
 --- !u!114 &714194989
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3551,7 +3479,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 756876913}
-  - component: {fileID: 756876912}
   m_Layer: 0
   m_Name: --ScreenFlow--
   m_TagString: Untagged
@@ -3559,23 +3486,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &756876912
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 756876911}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e03be2ad78d08bc4eb310ff81fac9c36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ScreenFlowController
-  briefingPanel: {fileID: 89662841}
-  statusPanel: {fileID: 663873931}
-  assignmentPanel: {fileID: 1791855265}
-  resultOverlayPanel: {fileID: 1284868464}
-  endPanel: {fileID: 664221599}
 --- !u!4 &756876913
 Transform:
   m_ObjectHideFlags: 0
@@ -3739,7 +3649,6 @@ GameObject:
   - component: {fileID: 863638133}
   - component: {fileID: 863638136}
   - component: {fileID: 863638135}
-  - component: {fileID: 863638134}
   m_Layer: 0
   m_Name: Inner
   m_TagString: Untagged
@@ -3770,21 +3679,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -4, y: -4}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &863638134
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 863638132}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f8f4df272d8bdc489248d1b4a07c9f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ProgressBarUI
-  track: {fileID: 1356251495}
-  marker: {fileID: 911819266}
-  percentText: {fileID: 1837629167}
 --- !u!114 &863638135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4700,7 +4594,6 @@ GameObject:
   - component: {fileID: 1007712734}
   - component: {fileID: 1007712738}
   - component: {fileID: 1007712737}
-  - component: {fileID: 1007712736}
   - component: {fileID: 1007712735}
   m_Layer: 0
   m_Name: Inner
@@ -4746,22 +4639,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.TerminalTextEffect
   target: {fileID: 2108108927}
   cursorText: {fileID: 1048178048}
---- !u!114 &1007712736
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1007712733}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 08c1c780cd6922a4787ad55afe78ee8b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.BriefingScreenUI
-  titleText: {fileID: 1069673663}
-  bodyText: {fileID: 2108108927}
-  typewriter: {fileID: 1007712735}
-  continueButton: {fileID: 592711882}
 --- !u!114 &1007712737
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6529,9 +6406,7 @@ GameObject:
   - component: {fileID: 1340182428}
   - component: {fileID: 1340182433}
   - component: {fileID: 1340182432}
-  - component: {fileID: 1340182431}
   - component: {fileID: 1340182430}
-  - component: {fileID: 1340182429}
   m_Layer: 0
   m_Name: Inner
   m_TagString: Untagged
@@ -6569,19 +6444,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -4, y: -4}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1340182429
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1340182427}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 645fa020f909c5243bdbcff338a37005, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.CakeStatusUI
-  cakeText: {fileID: 323677218}
 --- !u!114 &1340182430
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6596,29 +6458,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.TerminalTextEffect
   target: {fileID: 1522069767}
   cursorText: {fileID: 1456171320}
---- !u!114 &1340182431
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1340182427}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44e14ae5ceb7afb47a3853fc82b344cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.StatusScreenUI
-  statusText: {fileID: 1522069767}
-  warningText: {fileID: 946035123}
-  flagsText: {fileID: 1208016636}
-  crewCards:
-  - {fileID: 679979362}
-  - {fileID: 621340208}
-  - {fileID: 964246856}
-  - {fileID: 521141521}
-  typewriter: {fileID: 1340182430}
-  continueButton: {fileID: 686195064}
-  backButton: {fileID: 1574079477}
 --- !u!114 &1340182432
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8730,8 +8569,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1701245614}
-  - component: {fileID: 1701245613}
-  - component: {fileID: 1701245612}
   m_Layer: 0
   m_Name: --GameManager--
   m_TagString: Untagged
@@ -8739,50 +8576,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1701245612
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1701245611}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85990431200365441875018e1c872ff8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.DayCycleManager
-  progressTweenSeconds: 1
---- !u!114 &1701245613
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1701245611}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c5382d0945f697941a3bda36faec3ee7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.GameManager
-  config: {fileID: 11400000, guid: 9a38df7a0f3fa2343829df7ec6c0bf41, type: 2}
-  eventPool: {fileID: 11400000, guid: 027ae99717b236842a2e52058a5a05a1, type: 2}
-  crews:
-  - {fileID: 11400000, guid: 54a89542837cf8f4890ddf6bb5e342af, type: 2}
-  - {fileID: 11400000, guid: 4688ef59747747740a20c300ef20d2be, type: 2}
-  - {fileID: 11400000, guid: cc6ed98d9952b2a45803c0ab9f84bfd7, type: 2}
-  - {fileID: 11400000, guid: 56175bba0bda6304eac69edfd6148526, type: 2}
-  endings: {fileID: 11400000, guid: 4a578472971ab45498b16e445c2e71a4, type: 2}
-  dayCycle: {fileID: 1701245612}
-  screenFlow: {fileID: 756876912}
-  screenFeedback: {fileID: 1284868466}
-  header: {fileID: 1887078516}
-  briefing: {fileID: 1007712736}
-  status: {fileID: 1340182431}
-  assignment: {fileID: 337947077}
-  resultOverlay: {fileID: 714194988}
-  endScreen: {fileID: 322317237}
-  progressBar: {fileID: 863638134}
-  cakeStatus: {fileID: 1340182429}
 --- !u!4 &1701245614
 Transform:
   m_ObjectHideFlags: 0
@@ -9554,7 +9347,6 @@ GameObject:
   - component: {fileID: 1887078515}
   - component: {fileID: 1887078518}
   - component: {fileID: 1887078517}
-  - component: {fileID: 1887078516}
   m_Layer: 0
   m_Name: Inner
   m_TagString: Untagged
@@ -9587,25 +9379,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -4, y: -4}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1887078516
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1887078514}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 445b440050e0cc148a3603feb737f4d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.HeaderBarUI
-  tripText: {fileID: 1162306921}
-  shipText: {fileID: 1164772021}
-  dayText: {fileID: 1347065523}
-  systemText: {fileID: 107380162}
-  lampText: {fileID: 965158334}
-  showGlyphTest: 0
-  glyphTestText: {fileID: 160662585}
 --- !u!114 &1887078517
 MonoBehaviour:
   m_ObjectHideFlags: 0

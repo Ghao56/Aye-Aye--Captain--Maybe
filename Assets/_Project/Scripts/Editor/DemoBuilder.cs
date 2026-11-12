@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -15,12 +16,14 @@ namespace AyeAye
         const string FontsFolder = ProjectRoot + "/Fonts";
         const string FontSearchFolder = FontsFolder;
         const string TmpSettingsPath = FontsFolder + "/Resources/TMP Settings.asset";
+        const string DataRoot = ProjectRoot + "/Data";
 
         static readonly string[] DataFolders =
         {
-            ProjectRoot, FontsFolder, ProjectRoot + "/Data", ProjectRoot + "/Data/Config",
-            ProjectRoot + "/Data/Crew", ProjectRoot + "/Data/World", ProjectRoot + "/Data/Orders",
-            ProjectRoot + "/Data/Incidents", ProjectRoot + "/Data/Endings",
+            ProjectRoot, FontsFolder, DataRoot, DataRoot + "/Config",
+            DataRoot + "/Crew", DataRoot + "/World", DataRoot + "/Orders",
+            DataRoot + "/Incidents", DataRoot + "/Endings",
+            DataRoot + "/Ports", DataRoot + "/Routes", DataRoot + "/Ships", DataRoot + "/Crews",
             ProjectRoot + "/Scenes", ProjectRoot + "/Scripts",
             ProjectRoot + "/Scripts/Runtime", ProjectRoot + "/Scripts/Runtime/Data",
             ProjectRoot + "/Scripts/Runtime/Logic", ProjectRoot + "/Scripts/Runtime/Core",
@@ -43,11 +46,134 @@ namespace AyeAye
             TMP_FontAsset font = EnsureFontAsset();
             EnsureTmpSettings(font);
 
-            // TODO(v3 Build Demo): dựng dữ liệu mẫu SRS §5 (config v3, crews, ports, routes,
-            // route table, ships, orders, incidents, endings) — bổ sung ở bước UI/đơn hàng.
+            // Dữ liệu mẫu SRS §5 thành assets (FR-0905) — nguồn duy nhất DemoData, chạy lại không phá dữ liệu.
+            EnsureDataAssets();
+
             AssetDatabase.SaveAssets();
-            Debug.Log("[DemoBuilder] Font/TMP sẵn sàng. Dữ liệu mẫu v3 chưa dựng (sẽ có ở bước sau).");
+            Debug.Log("[DemoBuilder] Font/TMP + dữ liệu mẫu §5 sẵn sàng (Assets/_Project/Data). Chạy Tools/AyeAye/Validate để kiểm tra.");
         }
+
+        // ---------------------------------------------------------------- dữ liệu mẫu §5
+
+        static void EnsureDataAssets()
+        {
+            // GameConfig: chỉ tạo khi thiếu — không đè số cân bằng đã chỉnh (idempotent thật sự).
+            string configPath = DataRoot + "/Config/GameConfig.asset";
+            if (AssetDatabase.LoadAssetAtPath<GameConfig>(configPath) == null)
+                CreateAssetAt(DemoData.CreateConfig(), configPath, "GameConfig");
+
+            // Cảng + cạnh + bảng tuyến
+            foreach (var p in DemoData.BuildPorts())
+                RebuildAsset("Ports/Port_" + p.portId + ".asset", p);
+            foreach (var e in DemoData.BuildRouteDefs())
+                RebuildAsset("Routes/Route_" + e.fromPortId + "-" + e.toPortId + ".asset", e);
+            RebuildAsset("Routes/RouteTable.asset", DemoData.BuildRouteTable());
+
+            // Tàu + thuyền trưởng (tham chiếu qua từng asset riêng)
+            foreach (var s in DemoData.BuildShips())
+                RebuildAsset("Ships/Ship_" + s.shipId + ".asset", s);
+            foreach (var c in DemoData.BuildCrews())
+                RebuildAsset("Crews/Crew_" + c.id + ".asset", c);
+
+            // Đơn + pool (pool trỏ tới asset riêng, không copy nội tuyến)
+            var orders = DemoData.BuildOrderPool();
+            var fixedOrders = new List<OrderDef>();
+            foreach (var o in orders.fixedFirstDay) fixedOrders.Add(RebuildAsset("Orders/Order_" + o.orderId + ".asset", o));
+            var poolOrders = new List<OrderDef>();
+            foreach (var o in orders.pool) poolOrders.Add(RebuildAsset("Orders/Order_" + o.orderId + ".asset", o));
+            var orderPool = AssetDatabase.LoadAssetAtPath<OrderPool>(DataRoot + "/Orders/OrderPool.asset");
+            if (orderPool == null)
+                orderPool = CreateAssetAt(ScriptableObject.CreateInstance<OrderPool>(), DataRoot + "/Orders/OrderPool.asset", "OrderPool");
+            orderPool.fixedFirstDay = fixedOrders;
+            orderPool.pool = poolOrders;
+            EditorUtility.SetDirty(orderPool);
+
+            // Sự cố + pool
+            var incidents = DemoData.BuildIncidentPool();
+            var fixedFirst = RebuildAsset("Incidents/Incident_" + incidents.fixedFirstDay.incidentId + ".asset", incidents.fixedFirstDay);
+            var fixedFinale = RebuildAsset("Incidents/Incident_" + incidents.fixedFinale.incidentId + ".asset", incidents.fixedFinale);
+            var poolIncidents = new List<IncidentDef>();
+            foreach (var d in incidents.incidents) poolIncidents.Add(RebuildAsset("Incidents/Incident_" + d.incidentId + ".asset", d));
+            var incidentPool = AssetDatabase.LoadAssetAtPath<IncidentPool>(DataRoot + "/Incidents/IncidentPool.asset");
+            if (incidentPool == null)
+                incidentPool = CreateAssetAt(ScriptableObject.CreateInstance<IncidentPool>(), DataRoot + "/Incidents/IncidentPool.asset", "IncidentPool");
+            incidentPool.fixedFirstDay = fixedFirst;
+            incidentPool.fixedFinale = fixedFinale;
+            incidentPool.incidents = poolIncidents;
+            EditorUtility.SetDirty(incidentPool);
+
+            // 5 đoạn kết
+            RebuildAsset("Endings/Endings.asset", DemoData.BuildEndings());
+        }
+
+        // Dựng lại nội dung asset từ nguồn DemoData (CopySerialized) — idempotent.
+        // GameConfig là ngoại lệ duy nhất: chỉ tạo khi thiếu, giữ nguyên số đã chỉnh.
+        static T RebuildAsset<T>(string relPath, T fresh) where T : ScriptableObject
+        {
+            string path = DataRoot + "/" + relPath;
+            T existing = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (existing == null)
+                return CreateAssetAt(fresh, path, System.IO.Path.GetFileNameWithoutExtension(relPath));
+            EditorUtility.CopySerialized(fresh, existing);
+            ScriptableObject.DestroyImmediate(fresh);
+            EditorUtility.SetDirty(existing);
+            return existing;
+        }
+
+        static T CreateAssetAt<T>(T asset, string path, string assetName) where T : ScriptableObject
+        {
+            asset.name = assetName;
+            AssetDatabase.CreateAsset(asset, path);
+            return asset;
+        }
+
+        // ---------------------------------------------------------------- Tools/AyeAye/Validate
+
+        [MenuItem("Tools/AyeAye/Validate")]
+        public static void Validate()
+        {
+            var config = LoadOne<GameConfig>(DataRoot + "/Config");
+            var ports = LoadAll<PortDef>(DataRoot + "/Ports");
+            var edges = LoadAll<RouteDef>(DataRoot + "/Routes");
+            var routes = LoadOne<RouteTable>(DataRoot + "/Routes");
+            var orderPool = LoadOne<OrderPool>(DataRoot + "/Orders");
+            var incidentPool = LoadOne<IncidentPool>(DataRoot + "/Incidents");
+            var ships = LoadAll<ShipDef>(DataRoot + "/Ships");
+            var crews = LoadAll<CrewDefinition>(DataRoot + "/Crews");
+
+            var errors = DemoValidator.Validate(config, routes, orderPool,
+                incidentPool != null ? incidentPool.incidents : null,
+                incidentPool != null ? incidentPool.fixedFirstDay : null,
+                incidentPool != null ? incidentPool.fixedFinale : null,
+                ships, crews, ports: ports, edges: edges);
+
+            if (errors.Count == 0)
+                Debug.Log($"[Validate] OK: {ports.Count} cảng, {edges.Count} cạnh, {ships.Count} tàu, " +
+                          $"{orderPool.fixedFirstDay.Count + orderPool.pool.Count} đơn, " +
+                          $"{incidentPool.incidents.Count + 2} sự cố (kể cả I-01/I-F), bảng outcome đủ, route nối được.");
+            else
+                foreach (string e in errors)
+                    Debug.LogError("[Validate] " + e);
+        }
+
+        static T LoadOne<T>(string folder) where T : ScriptableObject
+        {
+            var all = LoadAll<T>(folder);
+            return all.Count > 0 ? all[0] : null;
+        }
+
+        static List<T> LoadAll<T>(string folder) where T : ScriptableObject
+        {
+            var list = new List<T>();
+            if (!AssetDatabase.IsValidFolder(folder)) return list;
+            foreach (string guid in AssetDatabase.FindAssets("t:" + typeof(T).Name, new[] { folder }))
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
+                if (asset != null) list.Add(asset);
+            }
+            return list;
+        }
+
 
         // ---------------------------------------------------------------- assets
 
