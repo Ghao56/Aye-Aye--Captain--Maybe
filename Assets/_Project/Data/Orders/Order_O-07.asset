@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 972e14eab3880a64399d38ed47cc587a, type: 3}
+  m_Name: Order_O-07
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.OrderDef
+  orderId: O-07
+  customerName: "\u0110\xE1m C\u01B0\u1EDBi C\xE1 Heo"
+  tags: 5
+  fromPortId: camap
+  toPortId: goc
+  deadlineDay: 6
+  revenue: 160
+  clue: "C\xE1 heo kh\xF4ng \u0111\u1EE3i. H\xE0ng d\u1EC5 v\u1EE1 th\xEC c\xE0ng
+    kh\xF4ng."
+  weight: 1
+  spawnCondition: 0

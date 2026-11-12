@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8df58d36ca143459b80d6fc77627c7, type: 3}
+  m_Name: Incident_I-05
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.IncidentDef
+  incidentId: I-05
+  title: "H\xE0ng rung l\u1EAFc"
+  situationText: "Th\xF9ng h\xE0ng tr\xEAn boong rung nh\u01B0 tr\u1ED1ng h\u1ED9i."
+  clueText: "Mira ch\u1EB1ng h\xE0ng theo s\xE1ch; Chen bi\u1EBFt c\xE1ch ch\xE8n."
+  weight: 1
+  triggers:
+  - requiredHazard: 0
+    requireFragileCargo: 1
+    requireJustArrivedAtPort: 0
+    requireWornCondition: 0
+    requireTemporaryRepair: 0
+    requireCarryingCargo: 0
+    weightMultiplier: 1
+  options:
+  - label: "Gi\u1EA3m t\u1ED1c"
+    description: "Ch\u1EADm l\u1EA1i cho b\u1EDBt rung."
+    baseProgressDelta: 0
+    entries:
+    - crew: 0
+      condition: 0
+      outcome: 0
+      explanation: "Rung \xEDt h\u01A1n, h\xE0ng \u1ED5n."
+      quote: "\u0110i ch\u1EADm th\xF4i, h\xE0ng quan tr\u1ECDng."
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+  - label: "Ch\u1EB1ng l\u1EA1i h\xE0ng gi\u1EEFa bi\u1EC3n"
+    description: "Ai ra bu\u1ED9c d\xE2y?"
+    baseProgressDelta: 0
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 1
+      explanation: "Mira bu\u1ED9c chu\u1EA9n k\u1EF9 thu\u1EADt."
+      quote: "D\xE2y ch\u1EB1ng, hai v\xF2ng, si\u1EBFt ch\xE9o."
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+    - crew: 1
+      condition: 0
+      outcome: 2
+      explanation: "Bob bu\u1ED9c d\xE2y nh\u01B0 bu\u1ED9c gi\xE0y."
+      quote: "Xong! Ch\u1EAFc ch\u1EAFn... ch\u1EAFc l\xE0 ch\u1EAFc."
+      setFlag: 0
+      cargoDelta: -1
+      conditionDown: 0
+      revenueDelta: 0
+  - label: "M\u1EB7c k\u1EC7"
+    description: "H\xE0ng rung th\xEC k\u1EC7 n\xF3."
+    baseProgressDelta: 0
+    entries:
+    - crew: 3
+      condition: 0
+      outcome: 0
+      explanation: "Chen ch\xE8n th\xF9ng b\u1EB1ng... ch\xEDnh m\xECnh ng\u1ED3i
+        l\xEAn."
+      quote: "Ng\u1ED3i l\xEAn l\xE0 h\u1EBFt rung."
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+    - crew: 0
+      condition: 0
+      outcome: 2
+      explanation: "H\xE0ng n\u1EA3y tr\xEAn boong."
+      quote: "Nghe ti\u1EBFng g\xEC \u0111\xF3 v\u1EE1 nh\u1EB9..."
+      setFlag: 0
+      cargoDelta: -1
+      conditionDown: 0
+      revenueDelta: 0

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5946dc25340274747a55d187af4c4036, type: 3}
+  m_Name: Ship_tau-rua-vang
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ShipDef
+  shipId: tau-rua-vang
+  displayName: "R\xF9a V\xE0ng"
+  captain: 3
+  captainName: Chen
+  speedClass: 0
+  traits: "Ch\u1EADm \xB7 Th\xE2n v\u1EEFng \xB7 B\xECnh t\u0129nh"
+  startPortId: goc
+  startCondition: 2

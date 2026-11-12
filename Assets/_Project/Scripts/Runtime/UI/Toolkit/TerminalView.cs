@@ -40,8 +40,15 @@ namespace AyeAye
         float targetOrthoSize;
         IVisualElementScheduledItem introTick;
 
+        [Header("Điều chỉnh máy trong Scene")]
+        [Tooltip("Phóng to/thu nhỏ toàn máy (ảnh + UI + vùng bấm) bằng một số. Đổi vị trí: kéo GameObject trong Scene view.")]
+        public float uiScale = 1f;
+        Vector3 baseScale;
+        float appliedScale = float.NaN;
+
         void OnEnable()
         {
+            baseScale = transform.localScale; // giữ nguyên scale dựng sẵn trên object, uiScale chỉ nhân thêm
             document = GetComponent<UIDocument>();
             TryBind();
         }
@@ -54,6 +61,7 @@ namespace AyeAye
                 TryBind();
                 return;
             }
+            FitPanelToMachine(); // UI luôn phủ đúng ảnh máy, kể cả khi đổi scale giữa lúc chơi
 
             if (cam == null) return;
             // Phím Esc khi đang ở trong máy: thoát về khung nhìn ban đầu, chờ bấm máy lần nữa.
@@ -84,6 +92,18 @@ namespace AyeAye
             }
         }
 
+        // Panel world-space tự bám đúng kích thước ảnh máy (sprite × scale): kéo/scale object thì UI đi theo,
+        // khỏi phải chỉnh tay worldSpaceSize trong PanelSettings.
+        void FitPanelToMachine()
+        {
+            if (document == null) return;
+            Vector2 size = MachineWorldSize;
+            if (document.worldSpaceSizeMode != UIDocument.WorldSpaceSizeMode.Fixed)
+                document.worldSpaceSizeMode = UIDocument.WorldSpaceSizeMode.Fixed;
+            if (!Mathf.Approximately(document.worldSpaceSize.x, size.x) || !Mathf.Approximately(document.worldSpaceSize.y, size.y))
+                document.worldSpaceSize = size;
+        }
+
         void TryBind()
         {
             if (document == null || bound) return;
@@ -94,6 +114,7 @@ namespace AyeAye
                 Debug.LogError("[TerminalView] Không tìm thấy Camera.main — camera game phải có tag MainCamera.");
                 return;
             }
+            FitPanelToMachine();
             root = document.rootVisualElement;
             if (root == null || root.childCount == 0) return;
             stage = root.Q("stage");

@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8df58d36ca143459b80d6fc77627c7, type: 3}
+  m_Name: Incident_I-04
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.IncidentDef
+  incidentId: I-04
+  title: "K\u1EB9t c\u1EA3ng"
+  situationText: "C\u1EA3ng \u0111\xF4ng, t\xE0u x\u1EBFp h\xE0ng d\xE0i."
+  clueText: "Bob quen n\u1EEDa b\u1EBFn c\u1EA3ng."
+  weight: 1
+  triggers:
+  - requiredHazard: 0
+    requireFragileCargo: 0
+    requireJustArrivedAtPort: 1
+    requireWornCondition: 0
+    requireTemporaryRepair: 0
+    requireCarryingCargo: 0
+    weightMultiplier: 1
+  options:
+  - label: "X\u1EBFp h\xE0ng ch\u1EDD"
+    description: "Th\u1EE9 t\u1EF1 \u0111\xE3 c\xF3 lu\u1EADt."
+    baseProgressDelta: 0
+    entries:
+    - crew: 0
+      condition: 0
+      outcome: 0
+      explanation: "Ch\u1EDD theo l\u01B0\u1EE3t."
+      quote: "V\xE0o h\xE0ng \u0111i, l\u1EA7n l\u01B0\u1EE3t."
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+    - crew: 1
+      condition: 0
+      outcome: 1
+      explanation: "Bob chen \u0111\u01B0\u1EE3c nh\u1EDD quen m\u1EB7t."
+      quote: "\xCA already! V\xE0o tr\u01B0\u1EDBc \u0111\u01B0\u1EE3c kh\xF4ng?"
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+  - label: "Nh\u1EDD quan h\u1EC7 chen ngang"
+    description: "G\u1ECDi m\u1ED9t ng\u01B0\u1EDDi quen b\u1EBFn."
+    baseProgressDelta: 0.3
+    entries:
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Ng\u01B0\u1EDDi quen c\u1EE7a Dex h\xF3a ra... h\u1EADn Dex."
+      quote: "C\u1EADu c\xF2n n\u1EE3 t\xF4i b\u1EEFa nh\u1EADu!"
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+  - label: "Chuy\u1EC3n b\u1EBFn ph\u1EE5"
+    description: "C\u1EADp b\u1EBFn ph\u1EE5 c\xE1ch \u0111\xF3 m\u1ED9t ch\xFAt."
+    baseProgressDelta: 0
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 1
+      explanation: "Mira c\xF3 b\u1EA3n \u0111\u1ED3 b\u1EBFn ph\u1EE5 chu\u1EA9n."
+      quote: "S\u01A1 \u0111\u1ED3 c\u1EA3ng, ph\u1EE5 l\u1EE5c 12."
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+    - crew: 3
+      condition: 0
+      outcome: 2
+      explanation: "Chen tr\u1EC5 b\u1EBFn ph\u1EE5 m\u1ED9t ng\xE0y."
+      quote: "C\u1EA3ng ph\u1EE5 n\xE0y... l\xE0 c\u1EA3ng ph\u1EE5 g\xEC?"
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0

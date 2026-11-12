@@ -1,0 +1,375 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36ee85b66812d5d448f3d27fe5850ebe, type: 3}
+  m_Name: RouteTable
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.RouteTable
+  pairs:
+  - fromPortId: goc
+    toPortId: vang
+    options:
+    - label: "Qua th\u1EB3ng"
+      portPath:
+      - goc
+      - vang
+      hazards: 01000000
+      length: 1
+  - fromPortId: vang
+    toPortId: goc
+    options:
+    - label: "Qua th\u1EB3ng (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - vang
+      - goc
+      hazards: 01000000
+      length: 1
+  - fromPortId: goc
+    toPortId: suong
+    options:
+    - label: "\u0110\u01B0\u1EDDng m\xF9"
+      portPath:
+      - goc
+      - suong
+      hazards: 02000000
+      length: 1
+  - fromPortId: suong
+    toPortId: goc
+    options:
+    - label: "\u0110\u01B0\u1EDDng m\xF9 (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - suong
+      - goc
+      hazards: 02000000
+      length: 1
+  - fromPortId: goc
+    toPortId: camap
+    options:
+    - label: "Qua S\u01B0\u01A1ng M\xF9"
+      portPath:
+      - goc
+      - suong
+      - camap
+      hazards: 0200000002000000
+      length: 2
+    - label: "Qua V\xE0ng"
+      portPath:
+      - goc
+      - vang
+      - camap
+      hazards: 0100000004000000
+      length: 3
+  - fromPortId: camap
+    toPortId: goc
+    options:
+    - label: "Qua S\u01B0\u01A1ng M\xF9 (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - camap
+      - suong
+      - goc
+      hazards: 0200000002000000
+      length: 2
+    - label: "Qua V\xE0ng (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - camap
+      - vang
+      - goc
+      hazards: 0400000001000000
+      length: 3
+  - fromPortId: goc
+    toPortId: mogio
+    options:
+    - label: "Qua V\xE0ng"
+      portPath:
+      - goc
+      - vang
+      - mogio
+      hazards: 0100000003000000
+      length: 2
+  - fromPortId: mogio
+    toPortId: goc
+    options:
+    - label: "Qua V\xE0ng (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - mogio
+      - vang
+      - goc
+      hazards: 0300000001000000
+      length: 2
+  - fromPortId: goc
+    toPortId: tram
+    options:
+    - label: "Ven S\u01B0\u01A1ng M\xF9"
+      portPath:
+      - goc
+      - suong
+      - camap
+      - tram
+      hazards: 020000000200000005000000
+      length: 3
+    - label: "Qua M\u1ECFm Gi\xF3"
+      portPath:
+      - goc
+      - vang
+      - mogio
+      - tram
+      hazards: 010000000300000001000000
+      length: 4
+  - fromPortId: tram
+    toPortId: goc
+    options:
+    - label: "Ven S\u01B0\u01A1ng M\xF9 (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - tram
+      - camap
+      - suong
+      - goc
+      hazards: 050000000200000002000000
+      length: 3
+    - label: "Qua M\u1ECFm Gi\xF3 (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - tram
+      - mogio
+      - vang
+      - goc
+      hazards: 010000000300000001000000
+      length: 4
+  - fromPortId: vang
+    toPortId: suong
+    options:
+    - label: "Qua G\u1ED1c"
+      portPath:
+      - vang
+      - goc
+      - suong
+      hazards: 0100000002000000
+      length: 2
+    - label: "V\xF2ng C\xE1 M\u1EADp"
+      portPath:
+      - vang
+      - camap
+      - suong
+      hazards: 0400000002000000
+      length: 3
+  - fromPortId: suong
+    toPortId: vang
+    options:
+    - label: "Qua G\u1ED1c (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - suong
+      - goc
+      - vang
+      hazards: 0200000001000000
+      length: 2
+    - label: "V\xF2ng C\xE1 M\u1EADp (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - suong
+      - camap
+      - vang
+      hazards: 0200000004000000
+      length: 3
+  - fromPortId: vang
+    toPortId: camap
+    options:
+    - label: "Bi\u1EC3n c\u01B0\u1EDBp"
+      portPath:
+      - vang
+      - camap
+      hazards: 04000000
+      length: 2
+  - fromPortId: camap
+    toPortId: vang
+    options:
+    - label: "Bi\u1EC3n c\u01B0\u1EDBp (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - camap
+      - vang
+      hazards: 04000000
+      length: 2
+  - fromPortId: vang
+    toPortId: tram
+    options:
+    - label: "Qua M\u1ECFm Gi\xF3"
+      portPath:
+      - vang
+      - mogio
+      - tram
+      hazards: 0300000001000000
+      length: 3
+    - label: "Qua C\xE1 M\u1EADp"
+      portPath:
+      - vang
+      - camap
+      - tram
+      hazards: 0400000005000000
+      length: 3
+  - fromPortId: tram
+    toPortId: vang
+    options:
+    - label: "Qua M\u1ECFm Gi\xF3 (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - tram
+      - mogio
+      - vang
+      hazards: 0100000003000000
+      length: 3
+    - label: "Qua C\xE1 M\u1EADp (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - tram
+      - camap
+      - vang
+      hazards: 0500000004000000
+      length: 3
+  - fromPortId: suong
+    toPortId: camap
+    options:
+    - label: "\u0110\u01B0\u1EDDng m\xF9"
+      portPath:
+      - suong
+      - camap
+      hazards: 02000000
+      length: 1
+  - fromPortId: camap
+    toPortId: suong
+    options:
+    - label: "\u0110\u01B0\u1EDDng m\xF9 (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - camap
+      - suong
+      hazards: 02000000
+      length: 1
+  - fromPortId: suong
+    toPortId: mogio
+    options:
+    - label: "Qua G\u1ED1c"
+      portPath:
+      - suong
+      - goc
+      - vang
+      - mogio
+      hazards: 020000000100000003000000
+      length: 3
+    - label: "V\xF2ng Tr\u1EA1m L\u1EA1nh"
+      portPath:
+      - suong
+      - camap
+      - tram
+      - mogio
+      hazards: 020000000500000001000000
+      length: 4
+  - fromPortId: mogio
+    toPortId: suong
+    options:
+    - label: "Qua G\u1ED1c (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - mogio
+      - vang
+      - goc
+      - suong
+      hazards: 030000000100000002000000
+      length: 3
+    - label: "V\xF2ng Tr\u1EA1m L\u1EA1nh (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - mogio
+      - tram
+      - camap
+      - suong
+      hazards: 010000000500000002000000
+      length: 4
+  - fromPortId: suong
+    toPortId: tram
+    options:
+    - label: "Qua C\xE1 M\u1EADp"
+      portPath:
+      - suong
+      - camap
+      - tram
+      hazards: 0200000005000000
+      length: 2
+  - fromPortId: tram
+    toPortId: suong
+    options:
+    - label: "Qua C\xE1 M\u1EADp (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - tram
+      - camap
+      - suong
+      hazards: 0500000002000000
+      length: 2
+  - fromPortId: camap
+    toPortId: mogio
+    options:
+    - label: "Qua V\xE0ng"
+      portPath:
+      - camap
+      - vang
+      - mogio
+      hazards: 0400000003000000
+      length: 3
+    - label: "Qua Tr\u1EA1m L\u1EA1nh"
+      portPath:
+      - camap
+      - tram
+      - mogio
+      hazards: 0500000001000000
+      length: 3
+  - fromPortId: mogio
+    toPortId: camap
+    options:
+    - label: "Qua V\xE0ng (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - mogio
+      - vang
+      - camap
+      hazards: 0300000004000000
+      length: 3
+    - label: "Qua Tr\u1EA1m L\u1EA1nh (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - mogio
+      - tram
+      - camap
+      hazards: 0100000005000000
+      length: 3
+  - fromPortId: camap
+    toPortId: tram
+    options:
+    - label: "Bi\u1EC3n b\u0103ng"
+      portPath:
+      - camap
+      - tram
+      hazards: 05000000
+      length: 1
+  - fromPortId: tram
+    toPortId: camap
+    options:
+    - label: "Bi\u1EC3n b\u0103ng (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - tram
+      - camap
+      hazards: 05000000
+      length: 1
+  - fromPortId: mogio
+    toPortId: tram
+    options:
+    - label: "\u0110\u01B0\u1EDDng th\u1EB3ng"
+      portPath:
+      - mogio
+      - tram
+      hazards: 01000000
+      length: 2
+  - fromPortId: tram
+    toPortId: mogio
+    options:
+    - label: "\u0110\u01B0\u1EDDng th\u1EB3ng (chi\u1EC1u v\u1EC1)"
+      portPath:
+      - tram
+      - mogio
+      hazards: 01000000
+      length: 2

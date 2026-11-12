@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8df58d36ca143459b80d6fc77627c7, type: 3}
+  m_Name: Incident_I-07
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.IncidentDef
+  incidentId: I-07
+  title: "T\xEDn hi\u1EC7u c\u1EA7u c\u1EE9u"
+  situationText: "M\u1ED9t t\xEDn hi\u1EC7u lo\xE9 gi\u1EEFa bi\u1EC3n, kh\xF4ng
+    r\xF5 ai."
+  clueText: "Bob th\xEDch phi\xEAu l\u01B0u; Dex ngh\u0129 n\xF3 l\xE0 b\u1EABy."
+  weight: 1
+  triggers:
+  - requiredHazard: 0
+    requireFragileCargo: 0
+    requireJustArrivedAtPort: 0
+    requireWornCondition: 0
+    requireTemporaryRepair: 0
+    requireCarryingCargo: 0
+    weightMultiplier: 1
+  options:
+  - label: "B\u1ECF qua"
+    description: "Kh\xF4ng ph\u1EA3i vi\u1EC7c c\u1EE7a ta."
+    baseProgressDelta: 0
+    entries:
+    - crew: 0
+      condition: 0
+      outcome: 0
+      explanation: "Ta c\xF3 l\u1ECBch tr\xECnh."
+      quote: "Chuy\u1EC7n c\u1EE7a ng\u01B0\u1EDDi ta."
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+  - label: "\u0110i gi\xFAp"
+    description: "R\u1EBD h\u01B0\u1EDBng \u0111i ki\u1EC3m tra."
+    baseProgressDelta: 0
+    entries:
+    - crew: 1
+      condition: 0
+      outcome: 1
+      explanation: "Bob c\u1EE9u \u0111\u01B0\u1EE3c ng\u01B0\u1EDDi, nh\u1EADn qu\xE0
+        b\xE1nh."
+      quote: "\u0110\xE2y, qu\xE0 nh\xE9! B\xE1nh mi\u1EBFng to l\u1EAFm!"
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+    - crew: 3
+      condition: 0
+      outcome: 2
+      explanation: "Chen \u0111i sai t\u1ECDa \u0111\u1ED9."
+      quote: "\u1EE6a, d\u1EA5u ch\u1EA5m tr\xEAn b\u1EA3n \u0111\u1ED3 l\xE0 g\xEC?"
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+  - label: "Ki\u1EC3m tra t\xEDn hi\u1EC7u"
+    description: "\u0110\u1ECDc k\u1EF9 ngu\u1ED3n t\xEDn hi\u1EC7u tr\u01B0\u1EDBc."
+    baseProgressDelta: 0
+    entries:
+    - crew: 2
+      condition: 0
+      outcome: 0
+      explanation: "Mira x\xE1c nh\u1EADn l\xE0 tin nh\u1EAFn gi\u1EA3."
+      quote: "T\xEDn hi\u1EC7u l\u1EB7p chu k\u1EF3 7 gi\xE2y \u2014 m\xE1y ph\xE1t."
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0
+    - crew: 4
+      condition: 0
+      outcome: 2
+      explanation: "Dex qu\xE1 tin m\xE1y ph\xE1t c\u1EE7a 'ai \u0111\xF3'."
+      quote: "Qu\xE1 tr\xF9ng h\u1EE3p. Ai l\u1EA1i m\u1EA5t t\xEDn hi\u1EC7u \u0111\xFAng
+        l\xFAc c\u1EA7n ti\u1EC7c?"
+      setFlag: 0
+      cargoDelta: 0
+      conditionDown: 0
+      revenueDelta: 0

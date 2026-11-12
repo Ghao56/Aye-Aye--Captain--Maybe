@@ -10,30 +10,31 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3b80e714133316f48b7a6082c19709dd, type: 3}
-  m_Name: Endings
+  m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.EndingDefinitions
   endings:
-  - id: 0
-    title: "GIAO H\xC0NG HO\xC0N H\u1EA2O"
-    body: "Chi\u1EBFc b\xE1nh \u0111\u1EBFn n\u01A1i nguy\xEAn v\u1EB9n. Ng\u01B0\u1EDDi
-      nh\u1EADn th\u1ED5i n\u1EBFn th\xE0nh c\xF4ng v\xE0 h\u1EE9a s\u1EBD \u0111\u1EC3
-      l\u1EA1i \u0111\xE1nh gi\xE1 n\u0103m sao."
   - id: 1
-    title: "H\u01A0I TR\u1EA6Y, V\u1EAAN NGON"
-    body: "B\xE1nh \u0111\u1EBFn \u0111\xFAng h\u1EA1n nh\u01B0ng h\u01A1i tr\u1EA7y.
-      Ng\u01B0\u1EDDi nh\u1EADn v\u1EABn c\u01B0\u1EDDi v\xE0 th\u1ED5i n\u1EBFn."
+    title: "\u0110\u1EBF ch\u1EBF \"S\u1EBFp V\u0129 \u0110\u1EA1i\""
+    body: "Uy t\xEDn 85+. M\u1ECDi t\xE0u h\xE1t vang tr\xEAn boong. \xCDt nh\u1EA5t
+      m\u1ED9t thuy\u1EC1n tr\u01B0\u1EDFng kh\xF3c v\xEC c\u1EA3m \u0111\u1ED9ng
+      \u2014 m\u1ECDi nghi ng\u1EDD l\xE0 Bob, nh\u01B0ng Bob th\u1EC1 l\xE0 d\u1ECB
+      \u1EE9ng b\u1EE5i bi\u1EC3n."
   - id: 2
-    title: "GIAO H\xC0NG TH\u1EA2M H\u1ECCA"
-    body: "B\xE1nh \u0111\u1EBFn \u0111\xFAng h\u1EA1n nh\u01B0ng \u0111\xE3 n\xE1t.
-      H\u1ECD v\u1EABn \u0103n b\u1EB1ng th\xECa v\xE0 c\u1ED1 t\u1ECF ra l\u1ECBch
-      s\u1EF1."
+    title: "C\xF4ng ty c\xF3 ti\u1EBFng"
+    body: "Uy t\xEDn 65\u201384. Kh\xE1ch quay l\u1EA1i \u0111\u1EB7t \u0111\u01A1n
+      ti\u1EBFp, Dex v\u1EABn nghi ng\u1EDD: \"\u0110\u01A1n t\u1ED1t nh\u01B0 v\u1EADy?
+      C\u1EA9n th\u1EADn \u0111\xF3 l\xE0 b\u1EABy.\""
   - id: 3
-    title: "\u0110\u1EB8P NH\u01AFNG TR\u1EC4"
-    body: "B\xE1nh nguy\xEAn v\u1EB9n nh\u01B0ng \u0111\xE3 qua gi\u1EDD th\u1ED5i
-      n\u1EBFn. H\u1ECD th\u1ED5i n\u1EBFn mu\u1ED9n v\xE0 n\xF3i kh\xF4ng sao. Ch\u1EAFc
-      v\u1EADy."
+    title: "S\u1ED1ng s\xF3t qua tu\u1EA7n"
+    body: "Uy t\xEDn 40\u201364. H\xF2a v\u1ED1n v\u1EEBa \u0111\u1EE7. Chen nh\u1EAFn:
+      \"T\xF4i \u0111ang t\u1EDBi. \u0110\u1EEBng h\u1ECFi t\u1EDBi \u0111\xE2u.\""
   - id: 4
-    title: "GIAO H\xC0NG TR\u1EC4"
-    body: "B\xE1nh \u0111\u1EBFn sau gi\u1EDD th\u1ED5i n\u1EBFn. Ch\u1EC9 c\xF2n
-      l\u1EA1i m\u1ED9t l\u1EDDi xin l\u1ED7i v\xE0 m\u1ED9t chi\u1EBFc b\xE1nh kh\xF4ng
-      c\xF2n \u0111\u1EB9p."
+    title: "N\u1EE3 ng\u1EADp \u0111\u1EA7u"
+    body: "Uy t\xEDn 20\u201339. Bob \u0111\u1EC1 xu\u1EA5t: \"B\xE1n t\xE0u cho
+      kh\u1ECFe, s\u1EBFp. T\xE0u n\xE0o c\u0169ng \u0111\u01B0\u1EE3c. Tr\u1EEB
+      t\xE0u t\xF4i.\""
+  - id: 5
+    title: "Ph\xE1 s\u1EA3n"
+    body: "Uy t\xEDn d\u01B0\u1EDBi 20. C\u1EA3 \u0111\u1ED9i t\xE0u \u0111\xF2i
+      l\u01B0\u01A1ng b\u1EB1ng... b\xE1nh. B\xE1nh sinh nh\u1EADt nhi\u1EC1u t\u1EA7ng
+      \u1EA5y. \u0110\xE3 v\u1EE1 r\u1ED3i."

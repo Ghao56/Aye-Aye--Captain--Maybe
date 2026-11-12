@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bc3125767a9f154aa717949f145ab48, type: 3}
+  m_Name: Route_vang-mogio
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.RouteDef
+  fromPortId: vang
+  toPortId: mogio
+  length: 1
+  hazard: 3

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 972e14eab3880a64399d38ed47cc587a, type: 3}
+  m_Name: Order_O-01
+  m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.OrderDef
+  orderId: O-01
+  customerName: "Ti\u1EC7m B\xE1nh H\xE0nh Tinh Xa"
+  tags: 1
+  fromPortId: goc
+  toPortId: vang
+  deadlineDay: 3
+  revenue: 120
+  clue: "Th\xF9ng ghi DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES"
+  weight: 1
+  spawnCondition: 0
