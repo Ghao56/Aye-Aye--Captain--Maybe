@@ -3,73 +3,65 @@ using System.Collections.Generic;
 
 namespace AyeAye
 {
-    // Trạng thái game thuần C# (không MonoBehaviour, không UI) để unit test được.
-    public class GameState
+    // Trạng thái runtime thuần C# của cả ván (FR-0902). Mọi ngẫu nhiên đi qua Rng với Seed (mục 2.4).
+    public sealed class GameState
     {
-        readonly CargoCondition startingCargo;
+        public GameConfig Config;
 
-        public int CurrentDay;
-        public float Progress;
-        public float TotalDistance;
-        public int DeadlineDay;
-        public CargoCondition Cargo;
-        public bool CargoShifted;
-        public bool TemporaryRepair;
-        public ResolvedDecision PendingResolved;
-        public bool IsFinished;
-        public EndingId? FinalEnding;
-        public bool ReachedEarly;
+        public int CurrentDay = 1;
+        public GamePhase Phase = GamePhase.Planning;
+
+        public int Reputation;
+        public int Revenue;
+
+        public List<ShipState> Ships = new List<ShipState>();
+        public List<OrderState> Orders = new List<OrderState>();
+        public List<StagedCommand> StagedCommands = new List<StagedCommand>();
+
+        // Cờ khóa theo ID tường minh: cờ của đơn/tàu này không lẫn sang đơn/tàu khác.
+        public HashSet<string> CargoShiftedOrderIds = new HashSet<string>();
+        public HashSet<string> TemporaryRepairShipIds = new HashSet<string>();
+
+        // Pool đã bốc trong ván — không lặp; fallback cho phép lặp khi cạn.
+        public HashSet<string> UsedOrderIds = new HashSet<string>();
+        public HashSet<string> UsedIncidentIds = new HashSet<string>();
 
         public int Seed;
-        public System.Random Rng;
-        public DayDefinition CurrentEvent;
-        public readonly List<DayDefinition> UsedEvents = new List<DayDefinition>();
+        public Random Rng;
 
-        public GameState(GameConfig config) : this(config, Environment.TickCount) { }
+        public bool IsFinished;
+        public EndingId FinalEnding = EndingId.None;
 
-        // Overload seed cho test: cùng seed + cùng chuỗi lựa chọn → cùng kết quả (SRS NFR-06).
-        public GameState(GameConfig config, int seed)
+        public GameState(GameConfig config)
         {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            TotalDistance = config.totalDistance;
-            DeadlineDay = config.deadlineDay;
-            startingCargo = config.startingCargo;
-            NewRun(seed);
+            Config = config;
+            NewRun(MakeDefaultSeed());
         }
 
-        // Bắt đầu một ván mới: Reset() rồi thiết lập seed/RNG. Dùng cho cả chạy đầu và Restart.
+        // Ván mới: reset toàn bộ trạng thái (FR-0703). Tàu phải nạp lại qua GameStateBuilder.InitializeShips.
         public void NewRun(int seed)
         {
-            Reset();
             Seed = seed;
-            Rng = new System.Random(seed);
-        }
-
-        // Đưa về trạng thái ban đầu theo config; cờ và Hàng cũng được dọn sạch.
-        // Không đụng Seed/Rng — việc đó là của NewRun.
-        public void Reset()
-        {
+            Rng = new Random(seed);
             CurrentDay = 1;
-            Progress = 0f;
-            Cargo = startingCargo;
-            CargoShifted = false;
-            TemporaryRepair = false;
-            PendingResolved = null;
+            Phase = GamePhase.Planning;
+            Reputation = Config != null ? Config.startReputation : 50;
+            Revenue = 0;
+            Ships.Clear();
+            Orders.Clear();
+            StagedCommands.Clear();
+            CargoShiftedOrderIds.Clear();
+            TemporaryRepairShipIds.Clear();
+            UsedOrderIds.Clear();
+            UsedIncidentIds.Clear();
             IsFinished = false;
-            FinalEnding = null;
-            ReachedEarly = false;
-            CurrentEvent = null;
-            UsedEvents.Clear();
+            FinalEnding = EndingId.None;
         }
 
-        // Dùng Math để logic không phụ thuộc UnityEngine.
-        public float ProgressPercent
+        static int MakeDefaultSeed()
         {
-            get
-            {
-                if (TotalDistance <= 0f) return 1f;
-                return Math.Min(1f, Math.Max(0f, Progress / TotalDistance));
-            }
+            // Seed mặc định từ tick hệ thống; UI truyền seed riêng khi cần tái lập.
+            return Environment.TickCount & 0x7fffffff;
         }
     }
 }

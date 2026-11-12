@@ -1,5 +1,5 @@
 ﻿<Solution>
-  <Project Path="AyeAye.Tests.EditMode.csproj" />
   <Project Path="AyeAye.Runtime.csproj" />
+  <Project Path="AyeAye.Tests.EditMode.csproj" />
   <Project Path="AyeAye.Editor.csproj" />
 </Solution>
