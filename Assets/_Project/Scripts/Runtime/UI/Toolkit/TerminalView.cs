@@ -55,6 +55,13 @@ namespace AyeAye
 
         void Update()
         {
+            // Áp uiScale mới (kể cả khi chưa bind): giữ scale dựng sẵn trên object, uiScale chỉ nhân thêm.
+            if (!Mathf.Approximately(appliedScale, uiScale))
+            {
+                appliedScale = uiScale;
+                transform.localScale = baseScale * uiScale;
+            }
+
             // rootVisualElement có thể chưa dựng cây lúc OnEnable (R-02): thử bind lại đến khi xong.
             if (!bound)
             {
