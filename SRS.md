@@ -4,9 +4,9 @@
 | Mục | Giá trị |
 |---|---|
 | Tài liệu | SRS dựa trên GDD v0.4 ("Bản chốt cho jam") |
-| Ngày lập | 11/11/2026 |
+| Ngày lập | 11/11/2026 · **Bản 2 — cập nhật 12/11/2026: kiến trúc B (máy tính là vật thể world-space), mục 2.1/3.10/Phụ lục A** |
 | Sự kiện | Week Sauce · Tháng 11/2026 · Chủ đề "Make It So" |
-| Nền tảng | Unity 2D · C# · uGUI · TextMeshPro · WebGL / itch.io |
+| Nền tảng | Unity 6000.3 · C# · UI Toolkit (UIDocument world-space) + uGUI/TextMeshPro · Input System Package · WebGL / itch.io |
 | Đối tượng đọc | Dev, tester, và các AI/agent phân tích, estimate, dựng backlog |
 | Ngôn ngữ | Tiếng Việt (mã yêu cầu FR/NFR giữ tiếng Anh để truy vết máy) |
 
@@ -39,34 +39,38 @@ Game quản lý–giải đố hài hước theo ngày: người chơi là thuy�
 - IEEE 830-1998 (khung cấu trúc tài liệu).
 
 ### 1.5 Tổng quan tài liệu
-Mục 2 mô tả tổng quan; mục 3 là yêu cầu chức năng chi tiết; mục 4 là yêu cầu phi chức năng; mục 5 là đặc tả nội dung ngày và pool event (dữ liệu game); mục 6 là phạm vi loại trừ; mục 7 là ma trận truy vết GDD ↔ SRS; phụ lục ghi trạng thái triển khai hiện tại.
+Mục 2 mô tả tổng quan; mục 3 là yêu cầu chức năng chi tiết (3.10 bổ sung kiến trúc B — hệ máy tính vật thể); mục 4 là yêu cầu phi chức năng; mục 5 là đặc tả nội dung ngày và pool event (dữ liệu game); mục 6 là phạm vi loại trừ; mục 7 là ma trận truy vết GDD ↔ SRS; phụ lục ghi trạng thái triển khai hiện tại.
 
 ---
 
 ## 2. Mô tả tổng quan
 
 ### 2.1 Góc nhìn sản phẩm
-Game độc lập, một Scene duy nhất, tất cả tương tác qua UI Panel (không có gameplay 3D/tựa trực tiếp). Tham chiếu thẩm mỹ: máy tính/thiết bị điều khiển thập niên 1960 (terminal CRT). Kiện hàng duy nhất là chiếc bánh sinh nhật nhiều tầng ("The Birthday Cake – Fragile"), thùng có 3 dòng cảnh báo: DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES. Số nến = số tuổi người nhận, lớn một cách vô lý (chất hài).
+**Kiến trúc B (duyệt 11/11/2026, hoàn thiện 12/11/2026):** một Scene duy nhất; chiếc máy tính điều khiển tàu là **vật thể world-space** — kéo đi đặt đâu cũng được, bấm vào để vào dùng, `Esc` để ra. UI game vẽ trong vùng "màn hình kính" của máy: vào máy thì camera zoom vào đúng vùng kính, hiệu ứng CRT bật, sau đó giao diện game (Briefing/Status/Assignment…) hiển thị lấp đầy khung nhìn. Tham chiếu thẩm mỹ: máy điều khiển thập niên 1960 (terminal CRT). Kiện hàng duy nhất là chiếc bánh sinh nhật nhiều tầng ("The Birthday Cake – Fragile"), thùng có 3 dòng cảnh báo: DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES. Số nến = số tuổi người nhận, lớn một cách vô lý (chất hài).
+
+Chi tiết kỹ thuật hệ máy tính: đặc tả tại mục 3.10; trạng thái chuyển tiếp UI (uGUI → UI Toolkit) tại Phụ lục A.
 
 ### 2.2 Chức năng chính
 1. Vòng lặp ngày 3 trang (Briefing → Status → Assignment) rồi End Day — lặp tối đa 7 ngày.
-2. Hệ thống quyết định: phương án + thủy thủ → 1 trong 3 outcome kèm lời giải thích và thoại.
-3. Hệ quả: quãng đường (theo outcome), tình trạng Hàng (chỉ tại điểm ghi rõ), tối đa 1 cờ mỗi quyết định.
-4. Thanh tiến độ dưới màn hình cập nhật sau mỗi End Day; đạt 100% trước hoặc vào cuối Ngày 7 = thắng.
-5. 5 đoạn kết theo thời hạn và tình trạng Hàng; màn hình kết thúc + nút Restart.
+2. Máy tính điều khiển tàu là vật thể world-space tương tác được: bấm vào máy → camera zoom vào màn hình kính → hiệu ứng CRT bật → UI game; `Esc` → hiệu ứng CRT tắt → camera lùi ra (mục 3.10).
+3. Hệ thống quyết định: phương án + thủy thủ → 1 trong 3 outcome kèm lời giải thích và thoại.
+4. Hệ quả: quãng đường (theo outcome), tình trạng Hàng (chỉ tại điểm ghi rõ), tối đa 1 cờ mỗi quyết định.
+5. Thanh tiến độ dưới màn hình cập nhật sau mỗi End Day; đạt 100% trước hoặc vào cuối Ngày 7 = thắng.
+6. 5 đoạn kết theo thời hạn và tình trạng Hàng; màn hình kết thúc + nút Restart.
 
 ### 2.3 Người dùng
 Người chơi web (itch.io), điều khiển bằng chuột, chơi một lần 8–12 phút (tối đa ~15 phút nếu chữ dài), không cần kiến thức trước. Không có save dài hạn, không multiplayer.
 
 ### 2.4 Ràng buộc
-- Engine Unity 2D, C#, uGUI, TextMeshPro; build WebGL, submit lên itch.io.
-- Một Scene chính; chuyển trang bằng UI Panel; ngày/hành trình quản lý bằng dữ liệu trạng thái.
+- Engine Unity 6000.3, C#; build WebGL, submit lên itch.io.
+- Input System Package (legacy Input Manager tắt) — mọi phím qua `UnityEngine.InputSystem`; các asmdef (`AyeAye.Runtime`, `AyeAye.Editor`, `AyeAye.Tests.EditMode`) phải khai tham chiếu tường minh (ví dụ `Unity.InputSystem`, `Unity.TextMeshPro`).
+- Một Scene chính; UI dùng hai hệ song song trong giai đoạn chuyển tiếp: panel world-space UI Toolkit cho máy tính, uGUI/TextMeshPro cho các màn hình game (Phụ lục A).
 - Dữ liệu quyết định/nhân vật/diễn biến dùng ScriptableObject.
 - Nguyên tắc sản xuất đã chốt: **mỗi ngày một quyết định, mỗi quyết định đẩy con tàu và chiếc bánh đến gần đích** (Ngày 4 là ngoại lệ có hai việc nhưng vẫn một lần Confirm — hiện ngoài phạm vi triển khai, xem mục 5).
 - Kiến trúc ngày đã chốt: **Ngày 1 cố định (ngày hướng dẫn); Ngày 2 → deadlineDay bốc ngẫu nhiên từ Event Pool; ngày cuối dùng `fixedFinale` nếu được gán.** Không lặp event trong một ván; hết pool → cho phép lặp (fallback), không bao giờ kẹt game.
 
 ### 2.5 Giả định & phụ thuộc
-- Thang quãng đường prototype: Normal = 1 đơn vị; Smart = 1,5–2; Slip-up = 0,25–0,5; tổng quãng đường chuẩn hóa 100%. Con số chốt sau khi nội dung 7 ngày chạy được và cân bằng (mục "điểm cần chốt" của GDD).
+- Thang quãng đường **ĐÃ CHỐT** (NFR-07): `totalDistance` = 8.5; Normal = 1.0; Smart = 1.5; Slip-up = 0.3; `deadlineDay` = 7. Con số sống trong `GameConfig` asset, không hard-code.
 - Hiệu ứng gõ chữ phải bỏ qua được (skip) hoặc hiện toàn bộ ngay.
 - Asset nguồn phải ghi chú khi submit itch.io; khai báo AI nếu quy định yêu cầu.
 
@@ -132,9 +136,10 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 - AC: cấu hình đúng trong bảng Ngày 4 mục 5; một lần Confirm duy nhất.
 
 **FR-0406 — Không có thủy thủ "luôn đúng".** Bảng ngày phải đảm bảo: mỗi ngày có ít nhất 2 cách đạt Smart; không có thủy thủ nào là lựa chọn tối ưu mọi tình huống; Dex đúng ở Ngày 1, sai ở Ngày 5 (người chơi phải tự đọc manh mối).
+- ⚠️ Khoảng hở dữ liệu đã biết (cần xử lý trước khi nghiệm thu AC): Ngày 1 trong mục 5 hiện chỉ có 1 tổ hợp Smart (Dex + B) — cần thêm Smart thứ hai vào asset hoặc nới AC; 5 event hài (mục 5) chưa có bảng outcome trong tài liệu (dữ liệu nằm trong asset `Assets/_Project/Data`) — cần bổ sung đặc tả để "đếm theo bảng" kiểm được.
 - AC: đếm theo bảng mục 5 — mỗi ngày ≥ 2 tổ hợp Smart; mỗi nhân vật có ít nhất 1 ngày hợp và 1 ngày không hợp trong pool mẫu.
 
-**FR-0407 — Bốc event từ Event Pool.** Từ Ngày 2 đến `deadlineDay`, hệ thống bốc ngẫu nhiên một event từ pool:
+**FR-0407 — Bốc event từ Event Pool.** Từ Ngày 2 đến ngày cuối trừ một (`deadlineDay − 1`), hệ thống bốc ngẫu nhiên một event từ pool (ngày cuối dùng `fixedFinale` — xem cuối danh sách):
 - Mỗi event có `eventId`, `weight` (≥1) và `spawnCondition` (điều kiện cờ). `EventScheduler` lọc event đã dùng / không thỏa cờ, bốc theo trọng số.
 - Định danh theo **seed** (xem NFR-06): cùng seed + cùng chuỗi lựa chọn → cùng chuỗi event. RNG (System.Random từ seed) CHỈ dùng để bốc event; tuyệt đối không dùng trong DecisionResolver / DeliveryEvaluator / TravelProgress.
 - Event được bốc **đúng 1 lần mỗi ngày và cache**: quay lại Briefing ↔ Status ↔ Assignment trong cùng ngày KHÔNG bốc lại. Event được dùng bị loại khỏi pool của ván.
@@ -148,7 +153,7 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 **FR-0501 — Ba loại kết quả hiển thị.** Sau End Day, hiển thị outcome + lời giải thích + thoại của nhân vật.
 - AC: từng outcome trong 7 ngày mẫu có thoại khớp mục 5 (thoại gợi ý, được phép polish lời nhưng giữ ý).
 
-**FR-0502 — Quãng đường theo outcome.** TravelProgress nhận outcome, trả về distanceDelta: Normal = 1; Smart = 1,5–2; Slip-up = 0,25–0,5 (giá trị prototype, cân bằng sau).
+**FR-0502 — Quãng đường theo outcome.** TravelProgress nhận outcome, trả về distanceDelta từ `GameConfig`: Normal = 1.0; Smart = 1.5; Slip-up = 0.3; `totalDistance` = 8.5 (giá trị đã chốt, NFR-07).
 - AC: quãng đường chưa khóa là giá trị cấu hình được, không hard-code trong UI.
 - AC: UI không tự tính quãng đường; chỉ hiển thị giá trị từ GameState.
 
@@ -161,16 +166,16 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 ### 3.6 Hàng và cờ hệ quả (FR-06xx)
 
 **FR-0601 — Tình trạng Hàng (3 mức).** `CargoCondition ∈ {Intact, Scratched, Ruined}`, bắt đầu Intact. Chỉ giảm tại các điểm ghi rõ trong bảng ngày (không giảm mỗi ngày). Ảnh hưởng đoạn kết, không ảnh hưởng quãng đường.
-- Điểm giảm theo bảng mẫu: Ngày 3 — Bob + C khi `CargoShifted = true` → Hàng giảm 1 mức; Ngày 7 — chọn A khi `CargoShifted = true` → Hàng giảm 1 mức.
+- Điểm giảm theo bảng mẫu: event **Trạm hải quan** — Bob + C khi `CargoShifted = true` → Hàng giảm 1 mức; event **Hạ cánh** (`fixedFinale`) — chọn A khi `CargoShifted = true` → Hàng giảm 1 mức.
 - AC: một ngày chỉ giảm tối đa 1 mức; từ Intact không thể nhảy thẳng Ruined trong một quyết định.
 
-**FR-0602 — Hai cờ Boolean độc lập.** `CargoShifted` đặt ở Ngày 2 (Bob xuyên thiêng thạch); `TemporaryRepair` đặt ở Ngày 6 (Bob sửa tạm). Hai cờ có thể cùng tồn tại đến Ngày 7. Mỗi quyết định đặt tối đa 1 cờ.
+**FR-0602 — Hai cờ Boolean độc lập.** `CargoShifted` đặt bởi event **Mưa thiên thạch** (Bob + B xuyên thẳng); `TemporaryRepair` đặt bởi event **Hỏng hóc kỹ thuật** (Bob + B sửa tạm). Vì ngày 2–6 bốc ngẫu nhiên từ pool (FR-0407), cờ gắn với **event**, không gắn với số ngày — có thể đặt sớm hơn hoặc muộn hơn tùy ván. Hai cờ có thể cùng tồn tại đến ngày cuối. Mỗi quyết định đặt tối đa 1 cờ.
 - AC: cả hai cờ có thể đồng thời true; không có hệ thống thể lực/nghỉ ngơi/tinh thần đi kèm.
 
 **FR-0603 — Hiển thị bánh.** Bánh hiển thị bằng biểu tượng ASCII/pixel 7 tầng trong Status; hư hỏng thể hiện bằng đổi biểu tượng và dòng chữ trên bánh (ví dụ "CHÚC MỪNG SINH NHẬT" mất phần cuối); không cần animation.
 - AC: 3 mức tình trạng có 3 biểu hiện phân biệt được; 7 tầng có mặt ở biểu tượng.
 
-**FR-0604 — Cờ tác động Ngày cuối (Landing).** Khi `CargoShifted = true` và chọn A: Hàng giảm 1 mức. Khi `TemporaryRepair = true` và chọn A: kết quả Slip-up (vá tạm rung rời khi hạ gắt) kèm cảnh báo hiển thị ở Status (`tempRepairWarning`).
+**FR-0604 — Cờ tác động event hạ cánh (`fixedFinale`).** Khi `CargoShifted = true` và chọn A: Hàng giảm 1 mức. Khi `TemporaryRepair = true` và chọn A: kết quả Slip-up (vá tạm rung rời khi hạ gắt) kèm cảnh báo hiển thị ở Status (`tempRepairWarning`).
 - Quyết định đã chốt: luật "khóa phương án A" KHÔNG khả thi trên data model hiện tại (chưa hỗ trợ khóa phương án theo cờ); thay bằng entry hệ quả Slip-up + manh mối cảnh báo trước đó.
 - AC: với mọi tổ hợp cờ, chọn A luôn cho kết quả có lời giải thích rõ ràng; Hàng tối đa giảm 1 mức mỗi quyết định.
 
@@ -230,6 +235,32 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 
 **FR-0904 — Luồng kỹ thuật.** Start Game → Begin Day → Screen 1 Briefing → Screen 2 Status → Screen 3 Assign → Confirm Decision → DecisionResolver (Normal/Smart/Slip-up + flags, cargoDelta) → End Day → TravelProgress áp distance; CargoTracker áp cargo/flags → Progress ≥ 100%? Victory (đoạn kết theo cargo) : Day ≥ 7? Defeat (Late) : advance day và lặp.
 
+### 3.10 Máy tính điều khiển tàu — vật thể world-space (FR-10xx, kiến trúc B)
+
+Đặc tả hành vi camera + hiệu ứng + tương tác. Implement trong `TerminalView` trên GameObject `Terminal` (scene Main). Đơn vị world; camera ortho, nền đen.
+
+**FR-1001 — Máy là vật thế world-space, camera đứng yên lúc chờ.** GameObject `Terminal` gồm: `UIDocument` (PanelSettings `TerminalPanelSettings`, renderMode WorldSpace, `worldSpaceSizeMode` Fixed = 19.2×12.8 unit, sân khấu 1920×1280 px), `BoxCollider` trigger 19.2×12.8×0.5, `PanelInputConfiguration` (raycast camera → collider → sự kiện pointer vào UXML), `TerminalView`, và con `ImagePreview` (SpriteRenderer vẽ ảnh máy từ `TerminalPreview.png`, PPU 80). Người chơi kéo object tới vị trí nào camera cũng giữ nguyên lúc Play — máy chỉ là một vật thể trong cảnh.
+- AC: Play mà không bấm gì → camera đúng transform đặt trong scene, không bám/đổi vị trí theo máy.
+- AC: kéo máy tới vị trí khác → panel UI và ảnh máy đi theo object.
+
+**FR-1002 — Vào máy bằng chuột.** Bấm trúng máy (raycast qua collider) → camera lerp 0.6s (`ZoomSeconds`, smoothstep) dời + thu vào đúng tâm vùng kính `#screen`, chế độ "contain": **orthoSize = max(halfH, halfW / aspect) × Zoom Out Factor** (halfW/halfH lấy từ layout `#screen` quy ra world unit). Hai núm chỉnh trong Inspector trên `TerminalView`: `Zoom Out Factor` (0.3–4; mặc định 1 = vừa khít kính, >1 lùi ra xa) và `Zoom Offset` (Vector2, world unit — lệch tâm zoom; mặc định (0,0)). Cả hai áp dụng cho khung giữ sau khi vào (`KeepScreenFitted`, giữ khi đổi tỉ lệ cửa sổ). Vào lại máy lần 2 chạy lại đầy đủ chuỗi zoom + hiệu ứng mở màn.
+- AC: sau zoom, vùng kính chiếm đúng khung nhìn theo hai núm trên; đổi kích thước cửa sổ khung không méo.
+- AC: bấm trong lúc chưa sẵn sàng hoặc bấm lần nữa trong lúc đang zoom không gây lỗi trạng thái.
+
+**FR-1003 — Hiệu ứng CRT bật trước khi hiện UI.** Sau zoom (tổng 0.5s, `PowerOnSeconds`): vạch sáng giãn ngang toàn kính trong **40% thời lượng đầu**, rồi **nở đối xứng từ giữa phủ trọn kính** trong 60% còn lại (top = 50% − height/2, phủ cả nửa trên), đồng thời lớp đen mờ dần; xong mới bật UI game. Canvas uGUI của UI game bị tắt lúc chờ bấm và chỉ được bật tại thời điểm này (bản vá chuyển tiếp — Phụ lục A).
+- AC: UI game không hiện trước khi hiệu ứng mở màn kết thúc.
+- AC: nửa trên kính được phủ bởi vạch sáng (không chỉ nở một chiều xuống dưới).
+
+**FR-1004 — Thoát máy bằng `Esc` với hiệu ứng CRT tắt.** Trong máy, nhấn `Esc` (Input System, `Keyboard.current.escapeKey`; phím được phát qua Input System nên hoạt động cả WebGL, cần smoke-test trên build): UI game tắt ngay → hiệu ứng tắt 0.5s không khoảng chết: màn thu dọc về vạch sáng giữa (0→60% thời lượng), vạch thu ngang về chấm (60→100%) → tắt lớp hiệu ứng **ngay trước khi** camera lùi → camera lerp 0.6s về đúng transform trước khi vào máy → trạng thái chờ, bấm máy lại vào được (máy ở trạng thái "tắt", kính về hiển thị thường).
+- AC: camera trả về đúng vị trí + ortho size trước khi zoom (giá trị chụp tại lúc bấm vào).
+- AC: không còn lớp hiệu ứng nào đọng lại sau khi camera về chỗ (kính về trạng thái thường).
+- AC: không có nhịp đứng hình giữa hai pha thu màn.
+
+**FR-1005 — Gizmo vùng zoom.** Chọn object `Terminal` trong Scene view: khung vàng wireframe = khung camera sau khi zoom. Edit mode vẽ theo 4 hằng khớp `.screen` trong `Terminal.uss` (shortcut: đổi USS phải đổi hằng — `TerminalView.cs`); Play mode vẽ theo layout thật của panel. Khung có cả `Zoom Out Factor` + `Zoom Offset` và theo vị trí/scale object.
+- AC: gizmo hiện cả ở edit mode (không cần Play) và cập nhật khi kéo object.
+
+**FR-1006 — Nội dung panel theo sân khấu cố định.** Panel world-space cố định 1920×1280 px (1px = 0.01 unit, tức sân khấu = 19.2×12.8 unit). Vùng kính `#screen` trên sân khấu: **x = 375 px, y = 106.25 px (từ mép trên), w = 1218.75 px, h = 862.5 px** — chiếm cùng tỉ lệ vị trí trên ảnh máy gốc 1536×1024 (3:2) là 300/85/975×690. Ảnh máy (1536×1024 @ PPU 80 = 19.2×12.8 unit) khớp đúng panel. Toàn bộ số đo nằm trong `Terminal.uss` (R6). Chữ hiệu ứng gõ CRT thuộc pha sau (Phase 4, Phụ lục A).
+
 ---
 
 ## 4. Yêu cầu phi chức năng
@@ -249,9 +280,9 @@ Quy ước: mỗi FR có tiêu chí nghiệm thu (AC). "Hệ thống" = toàn b�
 
 ## 5. Đặc tả nội dung 7 ngày (dữ liệu game)
 
-Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "Smart: Dex + B" = chọn phương án B, giao cho Dex. Nội dung nằm trong ScriptableObject (FR-0901), resolver không hard-code.
+Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "Smart: Dex + B" = chọn phương án B, giao cho Dex. Nội dung nằm trong ScriptableObject (FR-0901), resolver không hard-code. **Chú ý**: bảng dưới đặc tả theo event gốc của GDD (4 event có cờ/Hàng + Ngày 1 hướng dẫn + Ngày 7 finale); 5 event hài bổ sung (TollBooth, SpaceTraffic, RadioBlast, SpaceSnail, StardustFog) không đặt cờ, không hạ Hàng — bảng outcome của chúng chỉ có đầy đủ trong asset `Assets/_Project/Data/Events`, cần chuyển vào bảng này để kiểm AC được.
 
-**Cấu trúc pool đã chốt:** Ngày 1 cố định (`openingDay`); Ngày 2–6 bốc ngẫu nhiên từ pool (FR-0407); Ngày 7 dùng `fixedFinale` = event Hạ cánh. Pool hiện có 9 event cho 5 slot ngẫu nhiên: Meteor, Customs, Distress, Breakdown, TollBooth, SpaceTraffic, RadioBlast, SpaceSnail, StardustFog. Bốn event sau (TollBooth, SpaceTraffic, RadioBlast, SpaceSnail, StardustFog) là event gốc mới tông hài, không đặt cờ, không hạ Hàng — bổ sung ngoài GDD để pool đủ lớn cho FR-0406 (mỗi nhân vật có ≥1 event hợp và ≥1 event không hợp). Mỗi event tự đủ manh mối trong briefing/status của chính nó (NFR-05); không event nào giả định event khác đã xuất hiện trước đó.
+**Cấu trúc pool đã chốt:** Ngày 1 cố định (`openingDay`); Ngày 2 đến ngày cuối trừ một bốc ngẫu nhiên từ pool (FR-0407); ngày cuối dùng `fixedFinale` = event Hạ cánh. Pool hiện có 9 event cho **4 slot ngẫu nhiên** (Ngày 4 hai việc ngoài phạm vi triển khai): Meteor, Customs, Distress, Breakdown, TollBooth, SpaceTraffic, RadioBlast, SpaceSnail, StardustFog. Năm event sau (TollBooth, SpaceTraffic, RadioBlast, SpaceSnail, StardustFog) là event gốc mới tông hài, không đặt cờ, không hạ Hàng — bổ sung ngoài GDD để pool đủ lớn cho FR-0406 (mỗi nhân vật có ≥1 event hợp và ≥1 event không hợp). Mỗi event tự đủ manh mối trong briefing/status của chính nó (NFR-05); không event nào giả định event khác đã xuất hiện trước đó.
 
 ### Ngày 1 — Rời bến (ngày hướng dẫn)
 - **Tình huống:** Bến yêu cầu xác nhận niêm phong thùng bánh trước khi rời.
@@ -263,9 +294,9 @@ Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "
 - **Hệ quả:** không đặt cờ, không trừ Hàng.
 - **Thoại Slip-up (Bob):** "Chắc chắn là tốt! Tôi đã siết thêm hai vòng nữa!"
 
-### Ngày 2 — Mưa thiêng thạch nhỏ
-- **Tình huống:** Tàu đi vào vùng thiêng thạch nhỏ.
-- **Manh mối:** Briefing: mật độ thiêng thạch thấp ở rìa bên phải.
+### Ngày 2 — Mưa thiên thạch nhỏ
+- **Tình huống:** Tàu đi vào vùng thiên thạch nhỏ.
+- **Manh mối:** Briefing: mật độ thiên thạch thấp ở rìa bên phải.
 - **Phương án:** A. Vòng theo rìa phải (chậm, an toàn) · B. Xuyên thẳng (nhanh) · C. Tắt động cơ, trôi qua.
 - **Smart:** Mira + A (đúng theo manh mối); Bob + B (nhanh, nhưng xem Hệ quả).
 - **Normal:** Chen + C.
@@ -326,7 +357,7 @@ Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "
 ---
 
 ## 6. Phạm vi loại trừ (không làm trong jam)
-- Điều khiển tàu trực tiếp; bản đồ không gian tự do; camera di chuyển.
+- Điều khiển tàu trực tiếp; bản đồ không gian tự do; camera tự do do người chơi điều khiển (camera chỉ bị hệ máy tính điều khiển theo FR-10xx).
 - Animation nhân vật nhiều khung; vật lý; chiến đấu thời gian thực.
 - Hệ thống thể lực, nghỉ ngơi, tinh thần; mất thủy thủ; nhiên liệu, tiền, nâng cấp, sửa tàu phức tạp.
 - Đối thoại phân nhánh quá nhiều; AI sinh hội thoại; multiplayer; lưu game dài hạn.
@@ -357,8 +388,23 @@ Bảng dưới là yêu cầu nội dung bắt buộc của MVP. Cách đọc: "
 
 ---
 
-## Phụ lục A — Trạng thái triển khai hiện tại (phục vụ phân tích)
-Repo đã có bộ khung khớp kiến trúc GDD mục 10: `Assets/_Project/Scripts/Runtime/{Core, Data, Logic, UI, Presentation}` + `Editor`. Kiến trúc Event Pool đã triển khai xong: `EventScheduler` (bốc theo weight + spawnCondition, pure C#), `GameState` có `Seed`/`Rng`/`CurrentEvent`/`UsedEvents`/`NewRun(seed)`, `GameManager.GetCurrentEvent()` cache-once, `EventPool` SO với `fixedFinale` = Hạ cánh. Dữ liệu mẫu `Assets/_Project/Data/{Events, Decisions, Config, Crew, Endings}`: `EventPool.asset` + 9 event (mỗi event có asset day + decision riêng), dựng tự động bằng `Tools/AyeAye/Build Demo` (idempotent, không ghi đè asset đã có). Test EditMode: 37/37 pass (EventScheduler 7 test, GameStateFlow + flow 7 ngày theo seed, DecisionResolver, CargoTracker, DeliveryEvaluator, TravelProgress, RandomPlayBalance). `Validate Demo` chạy kèm đo cân bằng ngẫu nhiên. Font: JetBrains Mono (OFL) thay consola. Chưa triển khai: FR-0101 (màn hình Start), FR-0402 (cảnh báo dự kiến ở Assignment), FR-0405 (Ngày 4 hai việc), FR-0603 (bánh 7 tầng).
+## Phụ lục A — Trạng thái triển khai hiện tại (phục vụ phân tích) — cập nhật 12/11/2026
+
+**Chạy project (dành cho người nhận):** Unity **6000.3.3f1**; mở scene `Assets/_Project/Scenes/Main.unity`. Nếu scene trống/thiếu object: chạy menu `Tools/AyeAye/Build Demo` (dựng dữ liệu) rồi `Tools/AyeAye/Setup Terminal UI` (dựng object Terminal) — cả hai idempotent. Test: Window → General → Test Runner → EditMode (37/37 pass).
+
+**Kiến trúc B (máy tính world-space) đã triển khai:**
+- `Terminal` GameObject: UIDocument world-space (19.2×12.8, sân khấu 1920×1280, PanelSettings `m_RenderMode=WorldSpace` đặt qua SerializedObject do field internal ở 6000.3.3f1), BoxCollider + PanelInputConfiguration (raycast input), SpriteRenderer `ImagePreview` vẽ ảnh máy (panel KHÔNG vẽ ảnh, tránh chồng đôi).
+- `TerminalView`: camera đứng yên lúc chờ; bấm máy → zoom contain vào `#screen` với `Zoom Out Factor` (0.3–4) + `Zoom Offset` (Vector2); hiệu ứng CRT bật (vạch nở đối xứng) → bật Canvas uGUI cũ → UI game; `Esc` → hiệu ứng tắt (thu dọc → vạch → chấm, không nhịp chết) → gỡ lớp hiệu ứng → camera lerp về transform trước zoom; gizmo khung vàng vùng zoom (edit mode theo hằng khớp USS, play mode theo layout thật).
+- `SetupTerminalUI` (menu `Tools/AyeAye/Setup Terminal UI`): dựng idempotent toàn bộ object Terminal + PanelSettings + preview; tắt Canvas uGUI cũ lúc setup.
+- Input System Package (legacy tắt); `AyeAye.Runtime.asmdef` đã tham chiếu `Unity.InputSystem`, `Unity.TextMeshPro`, `UnityEngine.UI`.
+
+**Chuyển tiếp UI (chưa xong — Phase 4):** các màn hình game (Briefing/Status/Assignment/ResultOverlay/End + header/progress/cake) vẫn là **uGUI trên Canvas bị tắt**; `TerminalView` bật Canvas ngay sau hiệu ứng mở màn — UI overlay fullscreen, nhìn như nằm trên kính vì camera đã zoom cho kính lấp đầy khung. Việc còn lại: chuyển các màn hình sang UXML trong `#screen` của panel, sau đó bỏ đoạn bật Canvas trong `FinishIntro`.
+
+**Kiến trúc game core (đã xong):** `Assets/_Project/Scripts/Runtime/{Core, Data, Logic, UI, Presentation}` + `Editor`. `EventScheduler` (bốc theo weight + spawnCondition, pure C#), `GameState` có `Seed`/`Rng`/`CurrentEvent`/`UsedEvents`/`NewRun(seed)`, `GameManager.GetCurrentEvent()` cache-once, `EventPool` SO với `fixedFinale` = Hạ cánh. Dữ liệu mẫu `Assets/_Project/Data/{Events, Decisions, Config, Crew, Endings}`: `EventPool.asset` + 9 event (mỗi event có asset day + decision riêng), dựng tự động bằng `Tools/AyeAye/Build Demo` (idempotent). Test EditMode: 37/37 pass (EventScheduler, GameStateFlow + flow 7 ngày theo seed, DecisionResolver, CargoTracker, DeliveryEvaluator, TravelProgress, RandomPlayBalance). Font: JetBrains Mono (OFL).
+
+**Giá trị cân bằng đang chạy:** `deadlineDay=7, totalDistance=8.5, normal=1.0, smart=1.5, slipUp=0.3` (asset demo do `DemoBuilder` tạo; default trong `GameConfig.cs` là bản prototype 3 ngày/3.2 — không dùng lúc runtime).
+
+**Chưa triển khai:** FR-0101 (màn hình Start), FR-0402 (cảnh báo dự kiến ở Assignment), FR-0405 (Ngày 4 hai việc), FR-0603 (bánh 7 tầng), FR-1003 phần chữ gõ trong kính (Phase 4), nút thoát máy trên UI game (hiện chỉ `Esc`).
 
 ## Phụ lục B — Điểm mở cần chốt khi prototype
 1. ~~Tổng quãng đường và giá trị cụ thể Normal / Smart / Slip-up~~ — **ĐÃ CHỐT**: 8.5 / 1.0 / 1.5 / 0.3; chơi ngẫu nhiên thắng ~5% (NFR-07).
