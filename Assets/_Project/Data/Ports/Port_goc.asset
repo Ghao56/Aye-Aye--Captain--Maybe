@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b35f5a23e3230d48be51d100ca8c814, type: 3}
-  m_Name: Port_goc
+  m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.PortDef
   portId: goc
   displayName: "C\u1EA3ng G\u1ED1c"

@@ -135,6 +135,7 @@ namespace AyeAye
             // Sự kiện pointer world-space tới panel nhờ PanelInputConfiguration + BoxCollider (Setup tạo).
             root.RegisterCallback<PointerDownEvent>(OnIntroClick); // gỡ khi intro xong và ở OnDisable
             bound = true;
+            Debug.Log($"[TerminalView] Bind OK: panel={document.worldSpaceSize}, máy={MachineWorldSize}, camera={cam.name}, collider={(GetComponent<Collider>() != null ? "có" : "KHÔNG")}.");
         }
 
         // ------------------------------------------------------------- mở màn
@@ -143,6 +144,7 @@ namespace AyeAye
         {
             if (introState != IntroState.WaitingClick) return;
             // PointerDown tới được root của panel này = click đã trúng vật thể (raycast world-space lo việc lọc).
+            Debug.Log("[TerminalView] Nhận click — bắt đầu zoom.");
 
             introState = IntroState.Zooming;
             introMs = 0f;

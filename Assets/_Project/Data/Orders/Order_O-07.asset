@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 972e14eab3880a64399d38ed47cc587a, type: 3}
-  m_Name: Order_O-07
+  m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.OrderDef
   orderId: O-07
   customerName: "\u0110\xE1m C\u01B0\u1EDBi C\xE1 Heo"
