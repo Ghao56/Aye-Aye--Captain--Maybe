@@ -153,8 +153,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.TerminalView
   uiScale: 1
-  zoomOutFactor: 0.7
-  zoomOffset: {x: 0, y: -0.06}
+  zoomOutFactor: 1.27
+  zoomOffset: {x: -0.06, y: -0.1}
 --- !u!114 &180734834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -215,9 +215,9 @@ MonoBehaviour:
   sourceAsset: {fileID: 9197481963319205126, guid: 37ff5755df347744d837142fe78a8366, type: 3}
   m_SortingOrder: 0
   m_Position: 0
-  m_WorldSpaceSizeMode: 0
-  m_WorldSpaceWidth: -0.7
-  m_WorldSpaceHeight: -1.3
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 19.2
+  m_WorldSpaceHeight: 12.8
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}

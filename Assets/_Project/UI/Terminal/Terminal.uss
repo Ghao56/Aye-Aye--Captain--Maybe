@@ -157,9 +157,9 @@
 }
 .exit-machine {
     position: absolute;
-    right: 12px; bottom: 10px;
-    padding: 4px 10px;
-    font-size: 20px;
+    left: 12px; bottom: 10px;
+    padding: 2px 8px;
+    font-size: 16px;
     color: var(--c-amber);
     border-width: 1px;
     border-color: var(--c-frame);

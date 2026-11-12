@@ -71,16 +71,6 @@ namespace AyeAye
             FitPanelToMachine(); // UI luôn phủ đúng ảnh máy, kể cả khi đổi scale giữa lúc chơi
 
             if (cam == null) return;
-            // [Chẩn đoán tạm] Raycast Game-view: click chuột trúng collider nào trong cảnh?
-            if (bound && introState == IntroState.WaitingClick && Mouse.current != null
-                && Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Physics.Raycast(ray, out var hit, 100f))
-                    Debug.Log($"[TerminalView] Ray trúng {hit.collider.name} (trên GO máy={hit.collider.gameObject == gameObject}, layer={LayerMask.LayerToName(hit.collider.gameObject.layer)}) tại {hit.point}");
-                else
-                    Debug.Log("[TerminalView] Ray KHÔNG trúng collider nào.");
-            }
             // Phím Esc khi đang ở trong máy: thoát về khung nhìn ban đầu, chờ bấm máy lần nữa.
             if (introState == IntroState.Done && Keyboard.current != null
                 && Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -89,7 +79,7 @@ namespace AyeAye
             if (introState == IntroState.WaitingClick)
                 ComputeZoomTarget();           // tính sớm để gizmo Scene view hiện vùng zoom trước khi bấm
             else if (introState == IntroState.Done)
-                KeepScreenFitted();            // sau mở màn: kính lấp đầy khung, giữ khi đổi tỉ lệ cửa sổ
+                FitScreenToFrame();            // UI trong kính phóng đúng bằng khung vàng, giữ khi đổi tỉ lệ cửa sổ
         }
 
         // Ảnh máy giờ do SpriteRenderer "ImagePreview" vẽ → mọi kích thước camera/zoom lấy theo sprite thật,
@@ -110,16 +100,15 @@ namespace AyeAye
             }
         }
 
-        // Panel world-space tự bám đúng kích thước ảnh máy (sprite × scale): kéo/scale object thì UI đi theo,
-        // khỏi phải chỉnh tay worldSpaceSize trong PanelSettings.
+        // Panel world-space để Dynamic: container tự bám nội dung thiết kế (stage 1920x1280 px @ PPU 100),
+        // scale của GO thì scale cả panel → luôn khớp ảnh máy ở mọi scale.
+        // shortcut: KHÔNG ép Fixed + worldSpaceSize theo sprite×scale — làm panel px lệch thiết kế,
+        // raycast EventSystem rơi ngoài vùng pick → mất click (lỗi 12/11/2026).
         void FitPanelToMachine()
         {
             if (document == null) return;
-            Vector2 size = MachineWorldSize;
-            if (document.worldSpaceSizeMode != UIDocument.WorldSpaceSizeMode.Fixed)
-                document.worldSpaceSizeMode = UIDocument.WorldSpaceSizeMode.Fixed;
-            if (!Mathf.Approximately(document.worldSpaceSize.x, size.x) || !Mathf.Approximately(document.worldSpaceSize.y, size.y))
-                document.worldSpaceSize = size;
+            if (document.worldSpaceSizeMode != UIDocument.WorldSpaceSizeMode.Dynamic)
+                document.worldSpaceSizeMode = UIDocument.WorldSpaceSizeMode.Dynamic;
         }
 
         void TryBind()
@@ -168,32 +157,27 @@ namespace AyeAye
             introTick = root.schedule.Execute(ZoomTick).Every(16);
         }
 
-        // panel px → world: container world = worldSpaceSize (Fixed), panel px = 1920x1280.
-        float UnitsPerPixel
-        {
-            get
-            {
-                float px = root != null && root.layout.width > 0f ? root.layout.width : 1920f;
-                return MachineWorldSize.x / px;
-            }
-        }
-
-        [SerializeField, Range(0.3f, 4f)] private float zoomOutFactor = 1f; // 1 = vừa khít kính; >1 lùi ra xa, <1 zoom sát hơn
+        [SerializeField, Range(0.3f, 4f)] private float zoomOutFactor = 1f; // 1 = khung vàng đúng bằng vùng kính; 0.8 = kính chiếm 80% khung (luôn nằm trọn, không cắt)
         [SerializeField] private Vector2 zoomOffset = Vector2.zero;        // lệch tâm zoom (world unit): x phải, y lên
+
+        // Vùng kính gốc theo USS (% trên sân khấu 1920x1280 px). Đọc hằng chứ KHÔNG đọc layout live —
+        // vì .screen bị override kích thước khi đang bật máy (UI phóng đúng bằng khung vàng).
+        const float ScreenLeftPct = 19.53125f, ScreenTopPct = 8.30078125f;
+        const float ScreenWidthPct = 63.4765625f, ScreenHeightPct = 67.3828125f;
+
+        static Rect ScreenRectPx => new Rect(
+            ScreenLeftPct / 100f * 1920f, ScreenTopPct / 100f * 1280f,
+            ScreenWidthPct / 100f * 1920f, ScreenHeightPct / 100f * 1280f);
 
         void ComputeZoomTarget()
         {
-            float upp = UnitsPerPixel;
-            // Vùng kính trong toạ độ px của container (#stage nằm ở góc container).
-            Rect r = new Rect(stage.layout.position + screen.layout.position, screen.layout.size);
-            Vector2 containerCenterPx = new Vector2(root.layout.width, root.layout.height) * 0.5f;
-            Vector2 pxOffset = new Vector2(r.center.x - containerCenterPx.x, containerCenterPx.y - r.center.y); // world y hướng lên
+            // Khung vàng = vùng kính (giữ config của boss). upp gồm cả scale GO (panel px thiết kế = 1920).
+            float upp = MachineWorldSize.x / 1920f;
+            Rect r = ScreenRectPx;
+            Vector2 pxOffset = new Vector2(r.center.x - 960f, 640f - r.center.y); // world y hướng lên
             screenCenterWorld = (Vector2)transform.position + pxOffset * upp + zoomOffset;
-
-            float halfW = r.width * upp * 0.5f;
-            float halfH = r.height * upp * 0.5f;
             float aspect = cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
-            targetOrthoSize = Mathf.Max(halfH, halfW / aspect) * zoomOutFactor; // contain: kính nằm gọn trong khung, không méo
+            targetOrthoSize = Mathf.Max(r.height * upp * 0.5f, r.width * upp * 0.5f / aspect) / zoomOutFactor;
         }
 
         void ZoomTick()
@@ -257,6 +241,7 @@ namespace AyeAye
         {
             if (introTick != null) { introTick.Pause(); introTick = null; }
             if (tvFx != null) tvFx.style.display = DisplayStyle.None;
+            if (cam != null && screen != null) FitScreenToFrame(); // UI vào đúng khung vàng ngay khi mở màn xong
                 introState = IntroState.Done;
             // Gỡ handler click: từ đây nút bấm của game nhận click bình thường (Phase 4).
             if (bound && root != null) root.UnregisterCallback<PointerDownEvent>(OnIntroClick);
@@ -316,6 +301,7 @@ namespace AyeAye
         {
             if (introTick != null) { introTick.Pause(); introTick = null; }
             if (cam == null || root == null) { FinishExit(); return; }
+            if (screen != null) RestoreScreen(); // kính về % gốc — tvFx đen đang che nên không thấy
             exitMs = 0f;
             exitStartPos = cam.transform.position;
             exitStartSize = cam.orthographicSize;
@@ -338,6 +324,7 @@ namespace AyeAye
         {
             if (introTick != null) { introTick.Pause(); introTick = null; }
             if (tvFx != null) tvFx.style.display = DisplayStyle.None; // gỡ lớp hiệu ứng đọng — kính về trạng thái thường
+            if (screen != null) RestoreScreen(); // đề phòng thoát sớm qua FinishExit trực tiếp
             introState = IntroState.WaitingClick;
             if (bound && root != null) root.RegisterCallback<PointerDownEvent>(OnIntroClick);
             Debug.Log("[TerminalView] Đã thoát máy (Esc) — camera về khung nhìn ban đầu.");
@@ -345,13 +332,8 @@ namespace AyeAye
 
         // ------------------------------------------------------------- gizmo vùng zoom
 
-        // Edit mode không có layout panel → fallback khớp .screen trong Terminal.uss:
-        // 375 / 106.25 / 1218.75 x 862.5 px trên sân khấu 1920x1280 (1px = 0.01 unit, sân khấu lệch (-9.6, +6.4) so với tâm).
-        // shortcut: USS đổi số thì phải đổi 4 hằng này, khi nào cần mới chuyển sang đọc USS thật.
-        const float ScreenX = 3.75f, ScreenY = 1.0625f, ScreenW = 12.1875f, ScreenH = 8.625f;
-
-        // Chọn object Terminal trong Scene view: khung vàng = vùng camera sẽ thu vào sau khi bấm.
-        // Edit mode vẽ theo hằng USS; Play mode vẽ theo layout thật (chính xác hơn).
+        // Chọn object Terminal trong Scene view: khung vàng = vùng camera sẽ thu vào sau khi bấm
+        // (= đúng hình UIDocument). Edit mode vẽ theo hằng thiết kế; Play mode vẽ theo tính toán thật.
         void OnDrawGizmosSelected()
         {
             bool playing = Application.isPlaying;
@@ -368,12 +350,14 @@ namespace AyeAye
             }
             else
             {
+                // Edit mode: dùng vùng kính gốc theo USS (px sân khấu 1920x1280, 1px = 0.01 unit @ scale 1).
+                Rect r = ScreenRectPx;
                 center = transform.position + Vector3.Scale(
-                    new Vector3(-9.6f + ScreenX + ScreenW * 0.5f, 6.4f - ScreenY - ScreenH * 0.5f, 0f), scale)
+                    new Vector3(-9.6f + r.x * 0.01f + r.width * 0.005f, 6.4f - r.y * 0.01f - r.height * 0.005f, 0f), scale)
                     + new Vector3(zoomOffset.x, zoomOffset.y, 0f);
-                float halfW = ScreenW * 0.5f * scale.x * zoomOutFactor;
-                float halfH = ScreenH * 0.5f * scale.y * zoomOutFactor;
-                ortho = Mathf.Max(halfH, halfW / aspect);
+                float halfW = r.width * 0.005f * scale.x;
+                float halfH = r.height * 0.005f * scale.y;
+                ortho = Mathf.Max(halfH, halfW / aspect) / zoomOutFactor;
             }
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(center, new Vector3(ortho * 2f * aspect, ortho * 2f, 0f));
@@ -381,11 +365,31 @@ namespace AyeAye
 
         // ------------------------------------------------------------- căn camera
 
-        // Sau mở màn: kính lấp đầy khung (đổi kích thước cửa sổ cũng giữ).
-        void KeepScreenFitted()
+        // UI trong kính có kích thước = khung camera CHÍNH XÁC cả 2 chiều (ngang nới theo tỉ lệ cửa sổ).
+        void FitScreenToFrame()
         {
             ComputeZoomTarget();
             cam.orthographicSize = targetOrthoSize;
+            float upp = MachineWorldSize.x / 1920f;
+            float frameH = targetOrthoSize * 2f;
+            float frameW = frameH * cam.aspect;
+            Vector2 centerPx = ScreenRectPx.center + new Vector2(zoomOffset.x, -zoomOffset.y) / upp;
+            float w = frameW / upp, h = frameH / upp;
+            screen.style.left = centerPx.x - w * 0.5f;
+            screen.style.top = centerPx.y - h * 0.5f;
+            screen.style.width = w;
+            screen.style.height = h;
+            root.style.overflow = Overflow.Visible; // UI có thể rộng hơn sân khấu ở cửa sổ rộng — tắt clip
+        }
+
+        // Trả .screen về % gốc trong USS (chạy khi tắt máy — lớp tvFx đen che sẵn nên không thấy nhảy).
+        void RestoreScreen()
+        {
+            screen.style.left = new Length(ScreenLeftPct, LengthUnit.Percent);
+            screen.style.top = new Length(ScreenTopPct, LengthUnit.Percent);
+            screen.style.width = new Length(ScreenWidthPct, LengthUnit.Percent);
+            screen.style.height = new Length(ScreenHeightPct, LengthUnit.Percent);
+            root.style.overflow = Overflow.Hidden;
         }
 
         // ------------------------------------------------------------- vòng đời

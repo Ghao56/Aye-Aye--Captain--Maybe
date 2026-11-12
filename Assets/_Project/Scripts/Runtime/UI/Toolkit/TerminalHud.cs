@@ -47,6 +47,9 @@ namespace AyeAye
             if (!bound) { TryBind(); if (!bound) return; }
             if (machine != null && game != null)
                 game.EnableInClassList("on", machine.IsMachineOn);
+            // Máy bật lần đầu: vào thẳng ván mới — bỏ màn "AYE AYE, BOSS..." (boss duyệt bỏ 12/11/2026).
+            if (machine != null && machine.IsMachineOn && state == null)
+                StartNewRun();
             if (state != null)
             {
                 int key = state.CurrentDay * 100 + (int)state.Phase * 10 + (state.IsFinished ? 1 : 0);

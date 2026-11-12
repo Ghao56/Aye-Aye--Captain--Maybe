@@ -149,11 +149,10 @@ namespace AyeAye
             }
             if (document.panelSettings != panel) document.panelSettings = panel;
 
-            // Container world-space: 19.2x12.8 unit, pivot giữa trùng transform của object.
-            if (document.worldSpaceSizeMode != UIDocument.WorldSpaceSizeMode.Fixed)
-                document.worldSpaceSizeMode = UIDocument.WorldSpaceSizeMode.Fixed;
-            if (document.worldSpaceSize != new Vector2(MachineWorldWidth, MachineWorldHeight))
-                document.worldSpaceSize = new Vector2(MachineWorldWidth, MachineWorldHeight);
+            // Container world-space: Dynamic — bám nội dung USS 1920x1280 px = 19.2x12.8 unit @ PPU 100,
+            // GO scale thì scale cả panel. Ép Fixed theo scale gây mất click (xem TerminalView.FitPanelToMachine).
+            if (document.worldSpaceSizeMode != UIDocument.WorldSpaceSizeMode.Dynamic)
+                document.worldSpaceSizeMode = UIDocument.WorldSpaceSizeMode.Dynamic;
 
             // Collider (3D, trigger) cho raycast input world-space của PanelInputConfiguration — chỉ giữ 1.
             BoxCollider[] colliders = go.GetComponents<BoxCollider>();
