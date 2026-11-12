@@ -166,3 +166,51 @@
     background-color: transparent;
 }
 
+/* === Buoc 3: tab DON HANG (FR-03xx) === */
+.panel.on { flex-direction: column; }
+
+.orders-scroll { flex-grow: 1; }
+
+.section-title {
+    color: var(--c-amber);
+    font-size: 28px;
+    margin: 12px 0 6px 0;
+}
+
+.order-card {
+    border-width: 2px;
+    border-color: var(--c-frame);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.order-title { color: var(--c-text); font-size: 27px; }
+.order-line { color: var(--c-text); font-size: 23px; }
+.order-clue { color: var(--c-amber); }
+.order-warn { color: var(--c-alert); }
+
+.order-active {
+    border-left-width: 4px;
+    border-left-color: var(--c-frame);
+    padding: 4px 0 4px 10px;
+    margin-bottom: 6px;
+}
+
+.btn-row { flex-direction: row; align-items: center; margin-top: 6px; }
+.btn-row Button {
+    padding: 2px 16px;
+    margin-right: 10px;
+    font-size: 24px;
+    color: rgb(2, 12, 6);
+    background-color: var(--c-text);
+    border-width: 0;
+}
+.btn-row Button:disabled { opacity: 0.4; }
+.btn-row Button:last-child {
+    color: var(--c-text);
+    background-color: transparent;
+    border-width: 2px;
+    border-color: var(--c-alert);
+}
+.btn-row Button:last-child:disabled { opacity: 0.4; }
+

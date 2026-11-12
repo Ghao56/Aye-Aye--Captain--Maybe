@@ -30,11 +30,11 @@ namespace AyeAye
         // Dữ liệu mẫu §5 (nguồn duy nhất DemoData, khớp TestWorld + Build Demo).
         GameConfig config;
         OrderPool pool;
-        RouteTable routes;
         IncidentPool incidents;
         List<CrewDefinition> crews;
         List<ShipDef> shipDefs;
         EndingDefinitions endings;
+        Dictionary<string, string> portNames;
 
         void OnEnable()
         {
@@ -106,11 +106,13 @@ namespace AyeAye
             if (config != null) return;
             config = DemoData.CreateConfig();
             pool = DemoData.BuildOrderPool();
-            routes = DemoData.BuildRouteTable();
             incidents = DemoData.BuildIncidentPool();
             crews = DemoData.BuildCrews();
             shipDefs = DemoData.BuildShips();
             endings = DemoData.BuildEndings();
+            portNames = new Dictionary<string, string>();
+            foreach (var p in DemoData.BuildPorts())
+                portNames[p.portId] = p.displayName;
         }
 
         void StartNewRun()
@@ -118,9 +120,15 @@ namespace AyeAye
             LoadWorld();
             int seed = (state != null && config.repeatSeedOnRestart) ? state.Seed : System.Environment.TickCount;
             state = GameStateBuilder.CreateRun(config, shipDefs, seed);
+            OrderScheduler.ScheduleNewOrders(pool, state); // Ngày 1: 2 đơn cố định (FR-0301)
             startScreen.style.display = DisplayStyle.None;
             lastRefreshKey = int.MinValue;
             Refresh();
+        }
+
+        void Dirty()
+        {
+            lastRefreshKey = int.MinValue; // hành động của người chơi đổi state → Refresh ở Update kế
         }
 
         void OnBottomButton()
@@ -129,13 +137,16 @@ namespace AyeAye
             switch (PhaseGate.BottomButton(state.Phase))
             {
                 case BottomAction.MakeItSo:
-                    // Bước 2: tự chơi thay người — Bước 3-5 thay bằng tab thật.
-                    BalanceProbe.SimulateDay(config, pool, routes,
-                        incidents.incidents, incidents.fixedFirstDay, incidents.fixedFinale, crews, state);
-                    lastRefreshKey = int.MinValue;
-                    Refresh();
+                    DayRunner.CommitPlanning(state);
+                    DayRunner.Simulate(state, incidents.incidents, incidents.fixedFirstDay,
+                        incidents.fixedFinale, crews);
+                    Dirty();
                     break;
-                // Continue / NextDay: dây ở Bước 5 (SỰ CỐ + tổng kết).
+                // Continue: dây ở Bước 5 (tab SỰ CỐ tương tác).
+                case BottomAction.NextDay:
+                    DayRunner.CompleteSummary(state, pool);
+                    Dirty();
+                    break;
             }
         }
 
@@ -168,6 +179,8 @@ namespace AyeAye
                 ? "Chưa có sự cố. Mừng quá sớm?"
                 : "Sự cố đang xử lý...";
 
+            BuildOrdersPanel();
+
             // Nút dưới theo pha (FR-0203).
             var action = PhaseGate.BottomButton(state.Phase);
             bool hidden = action == BottomAction.Hidden;
@@ -186,6 +199,117 @@ namespace AyeAye
                 startButton.style.display = DisplayStyle.None;
                 startScreen.style.display = DisplayStyle.Flex;
             }
+        }
+
+        // ============================================== Bước 3: tab ĐƠN HÀNG (FR-03xx)
+        // Render-only: đọc state + config, phát intent qua OrderActions — không chứa luật game.
+
+        void BuildOrdersPanel()
+        {
+            var panel = panels[0];
+            panel.Clear();
+
+            var scroll = new ScrollView();
+            scroll.AddToClassList("orders-scroll");
+            panel.Add(scroll);
+
+            scroll.Add(Section("HỘP THƯ"));
+            var inbox = state.Orders.FindAll(o => o.Status == OrderStatus.InInbox);
+            if (inbox.Count == 0) scroll.Add(Line("Hộp thư trống."));
+            foreach (var o in inbox) scroll.Add(InboxCard(o));
+
+            scroll.Add(Section("ĐƠN ĐÃ NHẬN"));
+            var active = state.Orders.FindAll(o => o.Status == OrderStatus.Accepted || o.Status == OrderStatus.Assigned);
+            if (active.Count == 0) scroll.Add(Line("Chưa nhận đơn nào."));
+            foreach (var o in active) scroll.Add(ActiveRow(o));
+        }
+
+        VisualElement InboxCard(OrderState o)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("order-card");
+            card.Add(Title(o.CustomerName));
+            card.Add(Line($"{CargoLabel(o.Tags)} · {PortName(o.FromPortId)} → {PortName(o.ToPortId)}"));
+            card.Add(Line($"Hạn: Ngày {o.DeadlineDay} · Doanh thu {o.Revenue} · " +
+                $"Trễ: Uy tín {config.lateReputationPenalty}, doanh thu ×{config.lateRevenueFactor:0.##}"));
+            if (!string.IsNullOrEmpty(o.Clue)) card.Add(Clue(o.Clue));
+
+            var row = new VisualElement();
+            row.AddToClassList("btn-row");
+            // FR-0303: vượt giới hạn đơn đang hoạt động → NHẬN vô hiệu kèm lý do.
+            bool canAccept = CommandValidator.CanAccept(state, o.Id);
+            var accept = new Button(() => { OrderActions.Accept(state, o.Id); Dirty(); }) { text = "NHẬN" };
+            accept.SetEnabled(canAccept);
+            row.Add(accept);
+            if (!canAccept)
+            {
+                var reason = new Label($"Đã đủ {config.maxActiveOrders} đơn đang hoạt động");
+                reason.AddToClassList("order-line");
+                reason.AddToClassList("order-warn");
+                row.Add(reason);
+            }
+            row.Add(new Button(() => { OrderActions.Decline(state, o.Id); Dirty(); }) { text = "TỪ CHỐI" });
+            card.Add(row);
+            return card;
+        }
+
+        VisualElement ActiveRow(OrderState o)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("order-active");
+            string ship = "";
+            if (!string.IsNullOrEmpty(o.AssignedShipId))
+            {
+                var s = state.Ships.Find(x => x.Id == o.AssignedShipId);
+                if (s != null) ship = $" · tàu {s.DisplayName}";
+            }
+            string status = o.Status == OrderStatus.Assigned ? "Đang chở" : "Chưa có tàu";
+            row.Add(Title($"{o.CustomerName} — {status}{ship}"));
+            row.Add(Line($"{CargoLabel(o.Tags)} · {PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Hạn: Ngày {o.DeadlineDay}"));
+            return row;
+        }
+
+        static string CargoLabel(OrderTag tags)
+        {
+            var names = new List<string>();
+            if ((tags & OrderTag.Fragile) != 0) names.Add("Dễ vỡ");
+            if ((tags & OrderTag.Cold) != 0) names.Add("Lạnh");
+            if ((tags & OrderTag.Urgent) != 0) names.Add("Khẩn");
+            return names.Count == 0 ? "Hàng Thường" : "Hàng " + string.Join(" + ", names);
+        }
+
+        string PortName(string portId)
+        {
+            return portNames != null && portNames.TryGetValue(portId, out var name) ? name : portId;
+        }
+
+        static VisualElement Section(string text)
+        {
+            var label = new Label(text);
+            label.AddToClassList("section-title");
+            return label;
+        }
+
+        static VisualElement Title(string text)
+        {
+            var label = new Label(text);
+            label.AddToClassList("order-title");
+            return label;
+        }
+
+        static VisualElement Line(string text)
+        {
+            var label = new Label(text);
+            label.AddToClassList("order-line");
+            return label;
+        }
+
+        static VisualElement Clue(string text)
+        {
+            var label = new Label("» " + text);
+            label.AddToClassList("order-line");
+            label.AddToClassList("order-clue");
+            return label;
         }
     }
 }
