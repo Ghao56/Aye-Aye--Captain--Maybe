@@ -68,7 +68,7 @@
 .tv-line {
     position: absolute;
     left: 0;
-    top: 49%;
+    top: 50%;
     width: 0%;
     height: 2%;
     background-color: rgb(220, 255, 230);

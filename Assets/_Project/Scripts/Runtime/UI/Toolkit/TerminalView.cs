@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace AyeAye
@@ -9,7 +10,7 @@ namespace AyeAye
     [RequireComponent(typeof(UIDocument))]
     public class TerminalView : MonoBehaviour
     {
-        enum IntroState { WaitingClick, Zooming, PowerOn, Done }
+        enum IntroState { WaitingClick, Zooming, PowerOn, Done, TvOff, ZoomOut }
 
         const float ZoomSeconds = 0.6f;
         const float PowerOnSeconds = 0.5f;
@@ -24,11 +25,15 @@ namespace AyeAye
         VisualElement tvFx;
         VisualElement tvLine;
         Camera cam;
+        Canvas uiCanvas;               // Canvas uGUI cũ bị Setup tắt — bật lại sau khi mở màn xong
         bool bound;
         IntroState introState = IntroState.WaitingClick;
         float introMs;
         Vector3 camStartPos;
         float camStartSize;
+        Vector3 exitStartPos;          // vị trí/zoom camera lúc bắt đầu thoát (Esc)
+        float exitStartSize;
+        float exitMs;
         Vector2 screenCenterWorld;
         float targetOrthoSize;
         IVisualElementScheduledItem introTick;
@@ -49,8 +54,13 @@ namespace AyeAye
             }
 
             if (cam == null) return;
+            // Phím Esc khi đang ở trong máy: thoát về khung nhìn ban đầu, chờ bấm máy lần nữa.
+            if (introState == IntroState.Done && Keyboard.current != null
+                && Keyboard.current.escapeKey.wasPressedThisFrame)
+                ExitTerminal();
+            // Camera đứng yên lúc chờ bấm — máy là 1 vật thể đặt đâu ở đấy, không bám theo.
             if (introState == IntroState.WaitingClick)
-                FitCameraToMachine();          // chưa zoom: khung hình thấy trọn chiếc máy, bám theo vị trí object
+                ComputeZoomTarget();           // tính sớm để gizmo Scene view hiện vùng zoom trước khi bấm
             else if (introState == IntroState.Done)
                 KeepScreenFitted();            // sau mở màn: kính lấp đầy khung, giữ khi đổi tỉ lệ cửa sổ
         }
@@ -90,6 +100,11 @@ namespace AyeAye
             tvLine = root.Q("tv-line");
             if (stage == null || screen == null) return;
 
+            // UI game (uGUI) chưa chuyển sang panel này: tắt Canvas để không đè lên cảnh lúc chờ bấm,
+            // bật lại trong FinishIntro — khi đó kính đã lấp đầy khung nên overlay trùng màn hình máy.
+            if (uiCanvas == null) uiCanvas = FindFirstObjectByType<Canvas>();
+            if (uiCanvas != null && uiCanvas.enabled) uiCanvas.enabled = false;
+
             // Sự kiện pointer world-space tới panel nhờ PanelInputConfiguration + BoxCollider (Setup tạo).
             root.RegisterCallback<PointerDownEvent>(OnIntroClick); // gỡ khi intro xong và ở OnDisable
             bound = true;
@@ -121,6 +136,9 @@ namespace AyeAye
             }
         }
 
+        [SerializeField, Range(0.3f, 4f)] private float zoomOutFactor = 1f; // 1 = vừa khít kính; >1 lùi ra xa, <1 zoom sát hơn
+        [SerializeField] private Vector2 zoomOffset = Vector2.zero;        // lệch tâm zoom (world unit): x phải, y lên
+
         void ComputeZoomTarget()
         {
             float upp = UnitsPerPixel;
@@ -128,12 +146,12 @@ namespace AyeAye
             Rect r = new Rect(stage.layout.position + screen.layout.position, screen.layout.size);
             Vector2 containerCenterPx = new Vector2(root.layout.width, root.layout.height) * 0.5f;
             Vector2 pxOffset = new Vector2(r.center.x - containerCenterPx.x, containerCenterPx.y - r.center.y); // world y hướng lên
-            screenCenterWorld = (Vector2)transform.position + pxOffset * upp;
+            screenCenterWorld = (Vector2)transform.position + pxOffset * upp + zoomOffset;
 
             float halfW = r.width * upp * 0.5f;
             float halfH = r.height * upp * 0.5f;
             float aspect = cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
-            targetOrthoSize = Mathf.Max(halfH, halfW / aspect); // contain: kính nằm gọn trong khung, không méo
+            targetOrthoSize = Mathf.Max(halfH, halfW / aspect) * zoomOutFactor; // contain: kính nằm gọn trong khung, không méo
         }
 
         void ZoomTick()
@@ -166,6 +184,7 @@ namespace AyeAye
             tvFx.style.opacity = 1f;
             tvLine.style.width = Length.Percent(0f);
             tvLine.style.height = Length.Percent(2f);
+            tvLine.style.top = Length.Percent(50f); // giữa kính — nở đối xứng lên cả xuống (CRT bật)
             introTick = root.schedule.Execute(PowerOnTick).Every(16);
         }
 
@@ -181,10 +200,12 @@ namespace AyeAye
             }
             else
             {
-                // Vạch giãn dọc lấp màn + lớp đen mờ dần đi.
+                // Vạch nở đối xứng từ giữa lấp trọn kính + lớp đen mờ dần đi.
                 float k2 = (k - 0.4f) / 0.6f;
+                float h = Mathf.Lerp(2f, 100f, Smooth(k2));
                 tvLine.style.width = Length.Percent(100f);
-                tvLine.style.height = Length.Percent(Mathf.Lerp(2f, 100f, Smooth(k2)));
+                tvLine.style.height = Length.Percent(h);
+                tvLine.style.top = Length.Percent(50f - h * 0.5f); // bám tâm: nở lên trên lẫn xuống dưới
                 tvFx.style.opacity = 1f - Smooth(k2);
             }
             if (k >= 1f) FinishIntro();
@@ -194,6 +215,7 @@ namespace AyeAye
         {
             if (introTick != null) { introTick.Pause(); introTick = null; }
             if (tvFx != null) tvFx.style.display = DisplayStyle.None;
+            if (uiCanvas != null) uiCanvas.enabled = true; // hiện UI game sau khi kính mở màn xong
             introState = IntroState.Done;
             // Gỡ handler click: từ đây nút bấm của game nhận click bình thường (Phase 4).
             if (bound && root != null) root.UnregisterCallback<PointerDownEvent>(OnIntroClick);
@@ -202,17 +224,122 @@ namespace AyeAye
 
         static float Smooth(float k) => k * k * (3f - 2f * k);
 
-        // ------------------------------------------------------------- căn camera
+        // ------------------------------------------------------------- thoát máy
 
-        // Chưa mở màn: thấy trọn chiếc máy (contain theo tỉ lệ cửa sổ), camera bám tâm object.
-        void FitCameraToMachine()
+        // Thoát máy: TV tắt (màn thu về vạch giữa → chấm → tối) rồi camera lerp về chỗ cũ.
+        void ExitTerminal()
         {
-            Vector2 size = MachineWorldSize;
-            float aspect = cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
-            cam.orthographicSize = Mathf.Max(size.y * 0.5f, size.x * 0.5f / aspect);
-            Vector3 p = cam.transform.position;
-            cam.transform.position = new Vector3(transform.position.x, transform.position.y, p.z);
+            if (introTick != null) { introTick.Pause(); introTick = null; }
+            if (uiCanvas != null) uiCanvas.enabled = false;
+            if (cam == null || root == null || tvFx == null || tvLine == null) { FinishExit(); return; }
+
+            // Lớp đen phủ trọn kính ngay, vạch sáng trải tròn màn hình rồi thu dần.
+            tvFx.style.display = DisplayStyle.Flex;
+            tvFx.style.opacity = 1f;
+            tvLine.style.width = Length.Percent(100f);
+            tvLine.style.height = Length.Percent(100f);
+            tvLine.style.top = Length.Percent(0f);
+            exitMs = 0f;
+            introState = IntroState.TvOff;
+            introTick = root.schedule.Execute(TvOffTick).Every(16);
         }
+
+        void TvOffTick()
+        {
+            if (introTick == null) return;
+            if (tvFx == null || tvLine == null) { StartZoomOut(); return; }
+            exitMs += 16f;
+            float k = Mathf.Clamp01(exitMs / (PowerOnSeconds * 1000f));
+            if (k < 0.6f)
+            {
+                // Màn thu dọc về vạch sáng ở giữa (đảo ngược lúc mở).
+                float k1 = Smooth(k / 0.6f);
+                float h = Mathf.Lerp(100f, 2f, k1);
+                tvLine.style.height = Length.Percent(h);
+                tvLine.style.top = Length.Percent(50f - h * 0.5f);
+            }
+            else
+            {
+                // Vạch thu ngang về một chấm giữa — chạy đến hết timeline, không chặn khoảng chết.
+                float k2 = Smooth((k - 0.6f) / 0.4f);
+                tvLine.style.width = Length.Percent(Mathf.Lerp(100f, 0f, k2));
+            }
+            // Tắt hiệu ứng NGAY khi chấm biến mất — trước khi camera lùi.
+            if (k >= 1f)
+            {
+                tvFx.style.display = DisplayStyle.None;
+                StartZoomOut();
+            }
+        }
+
+        void StartZoomOut()
+        {
+            if (introTick != null) { introTick.Pause(); introTick = null; }
+            if (cam == null || root == null) { FinishExit(); return; }
+            exitMs = 0f;
+            exitStartPos = cam.transform.position;
+            exitStartSize = cam.orthographicSize;
+            introState = IntroState.ZoomOut;
+            introTick = root.schedule.Execute(ZoomOutTick).Every(16);
+        }
+
+        void ZoomOutTick()
+        {
+            if (cam == null || introTick == null) { FinishExit(); return; }
+            exitMs += 16f;
+            float k = Mathf.Clamp01(exitMs / (ZoomSeconds * 1000f));
+            float s = Smooth(k);
+            cam.orthographicSize = Mathf.Lerp(exitStartSize, camStartSize, s);
+            cam.transform.position = Vector3.Lerp(exitStartPos, camStartPos, s);
+            if (k >= 1f) FinishExit();
+        }
+
+        void FinishExit()
+        {
+            if (introTick != null) { introTick.Pause(); introTick = null; }
+            if (tvFx != null) tvFx.style.display = DisplayStyle.None; // gỡ lớp hiệu ứng đọng — kính về trạng thái thường
+            introState = IntroState.WaitingClick;
+            if (bound && root != null) root.RegisterCallback<PointerDownEvent>(OnIntroClick);
+            Debug.Log("[TerminalView] Đã thoát máy (Esc) — camera về khung nhìn ban đầu.");
+        }
+
+        // ------------------------------------------------------------- gizmo vùng zoom
+
+        // Edit mode không có layout panel → fallback khớp .screen trong Terminal.uss:
+        // 375 / 106.25 / 1218.75 x 862.5 px trên sân khấu 1920x1280 (1px = 0.01 unit, sân khấu lệch (-9.6, +6.4) so với tâm).
+        // shortcut: USS đổi số thì phải đổi 4 hằng này, khi nào cần mới chuyển sang đọc USS thật.
+        const float ScreenX = 3.75f, ScreenY = 1.0625f, ScreenW = 12.1875f, ScreenH = 8.625f;
+
+        // Chọn object Terminal trong Scene view: khung vàng = vùng camera sẽ thu vào sau khi bấm.
+        // Edit mode vẽ theo hằng USS; Play mode vẽ theo layout thật (chính xác hơn).
+        void OnDrawGizmosSelected()
+        {
+            bool playing = Application.isPlaying;
+            if (playing && targetOrthoSize <= 0f) return;
+
+            float aspect = cam != null && cam.aspect > 0.01f ? cam.aspect : 16f / 9f;
+            Vector3 scale = transform.lossyScale;
+            Vector3 center;
+            float ortho;
+            if (playing)
+            {
+                center = new Vector3(screenCenterWorld.x, screenCenterWorld.y, transform.position.z);
+                ortho = targetOrthoSize;
+            }
+            else
+            {
+                center = transform.position + Vector3.Scale(
+                    new Vector3(-9.6f + ScreenX + ScreenW * 0.5f, 6.4f - ScreenY - ScreenH * 0.5f, 0f), scale)
+                    + new Vector3(zoomOffset.x, zoomOffset.y, 0f);
+                float halfW = ScreenW * 0.5f * scale.x * zoomOutFactor;
+                float halfH = ScreenH * 0.5f * scale.y * zoomOutFactor;
+                ortho = Mathf.Max(halfH, halfW / aspect);
+            }
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(center, new Vector3(ortho * 2f * aspect, ortho * 2f, 0f));
+        }
+
+        // ------------------------------------------------------------- căn camera
 
         // Sau mở màn: kính lấp đầy khung (đổi kích thước cửa sổ cũng giữ).
         void KeepScreenFitted()
@@ -235,6 +362,7 @@ namespace AyeAye
             tvLine = null;
             document = null;
             cam = null;
+            uiCanvas = null;
             bound = false;
             introState = IntroState.WaitingClick; // Play lại từ đầu → chờ bấm lại
         }
