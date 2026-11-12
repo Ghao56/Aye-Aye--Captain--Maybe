@@ -102,7 +102,8 @@ namespace AyeAye
             state.Revenue = System.Math.Max(0, state.Revenue + resolved.RevenueDelta);
         }
 
-        /// FR-0505 — bảng hệ quả phải đầy đủ: mỗi option có entry, mỗi outcome đạt được cho từng thuyền trưởng.
+        /// FR-0505 — bảng hệ quả phải đầy đủ ở mức SỰ CỐ: mỗi option có entry,
+        /// mỗi outcome đạt được ở đâu đó, mỗi thuyền trưởng có ít nhất một entry chính xác.
         public static List<string> ValidateDef(IncidentDef def, IReadOnlyList<CrewDefinition> crews)
         {
             var errors = new List<string>();
@@ -111,6 +112,7 @@ namespace AyeAye
                 errors.Add($"{def.incidentId}: không có lựa chọn nào");
                 return errors;
             }
+            var allEntries = new List<IncidentOutcomeEntry>();
             foreach (var opt in def.options)
             {
                 if (opt.entries == null || opt.entries.Count == 0)
@@ -118,22 +120,18 @@ namespace AyeAye
                     errors.Add($"{def.incidentId}/{opt.label}: bảng hệ quả trống");
                     continue;
                 }
-                foreach (DecisionOutcome outcome in System.Enum.GetValues(typeof(DecisionOutcome)))
-                {
-                    foreach (var crew in crews)
-                    {
-                        if (crew == null || crew.id == CrewId.Any) continue;
-                        bool reachable = false;
-                        foreach (var e in opt.entries)
-                        {
-                            if (e.outcome == outcome &&
-                                (e.crew == crew.id || (e.crew == CrewId.Any && e.condition == FlagCondition.Always)))
-                            { reachable = true; break; }
-                        }
-                        if (!reachable)
-                            errors.Add($"{def.incidentId}/{opt.label}: thiếu {outcome} cho {crew.displayName}");
-                    }
-                }
+                allEntries.AddRange(opt.entries);
+            }
+            foreach (DecisionOutcome outcome in System.Enum.GetValues(typeof(DecisionOutcome)))
+            {
+                if (!allEntries.Exists(e => e.outcome == outcome))
+                    errors.Add($"{def.incidentId}: không có outcome nào là {outcome}");
+            }
+            foreach (var crew in crews)
+            {
+                if (crew == null || crew.id == CrewId.Any) continue;
+                if (!allEntries.Exists(e => e.crew == crew.id))
+                    errors.Add($"{def.incidentId}: thiếu entry chính xác cho {crew.displayName}");
             }
             return errors;
         }

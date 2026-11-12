@@ -26,11 +26,11 @@ namespace AyeAye.Tests.EditMode
             };
         }
 
-        private static IncidentDef NewDef(IncidentOption option)
+        private static IncidentDef NewDef(params IncidentOption[] options)
         {
             var def = ScriptableObject.CreateInstance<IncidentDef>();
             def.incidentId = "I-T"; def.title = "Sự cố thử nghiệm";
-            def.options = new List<IncidentOption> { option };
+            def.options = new List<IncidentOption>(options);
             return def;
         }
 
@@ -212,35 +212,65 @@ namespace AyeAye.Tests.EditMode
         public void ValidateDef_DuBanLaOk_ThieuLaBaoLoi()
         {
             var crews = NewCrews();
-            var ok = NewDef(new IncidentOption
-            {
-                label = "O", baseProgressDelta = 0.3f,
-                entries = new List<IncidentOutcomeEntry>
+            // Bảng kiểu §5.5: mỗi thuyền trưởng có đúng một (option, outcome) xác định; option không khớp → Normal mặc định.
+            var ok = NewDef(
+                new IncidentOption
                 {
-                    new IncidentOutcomeEntry { crew = CrewId.Bob, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
-                    new IncidentOutcomeEntry { crew = CrewId.Mira, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
-                    new IncidentOutcomeEntry { crew = CrewId.Chen, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
-                    new IncidentOutcomeEntry { crew = CrewId.Dex, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
-                    new IncidentOutcomeEntry { crew = CrewId.Any, outcome = DecisionOutcome.Normal, explanation = "e", quote = "q" },
-                    new IncidentOutcomeEntry { crew = CrewId.Any, outcome = DecisionOutcome.SlipUp, explanation = "e", quote = "q" },
+                    label = "A", baseProgressDelta = 0.3f,
+                    entries = new List<IncidentOutcomeEntry>
+                    {
+                        new IncidentOutcomeEntry { crew = CrewId.Bob, outcome = DecisionOutcome.SlipUp, explanation = "e", quote = "q" },
+                    },
                 },
-            });
+                new IncidentOption
+                {
+                    label = "B",
+                    entries = new List<IncidentOutcomeEntry>
+                    {
+                        new IncidentOutcomeEntry { crew = CrewId.Any, outcome = DecisionOutcome.Normal, explanation = "e", quote = "q" },
+                        new IncidentOutcomeEntry { crew = CrewId.Chen, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
+                    },
+                },
+                new IncidentOption
+                {
+                    label = "C",
+                    entries = new List<IncidentOutcomeEntry>
+                    {
+                        new IncidentOutcomeEntry { crew = CrewId.Mira, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
+                        new IncidentOutcomeEntry { crew = CrewId.Dex, outcome = DecisionOutcome.SlipUp, explanation = "e", quote = "q" },
+                    },
+                });
             Assert.IsEmpty(IncidentResolver.ValidateDef(ok, crews));
 
             var emptyOption = NewDef(new IncidentOption { label = "O", entries = new List<IncidentOutcomeEntry>() });
             Assert.IsNotEmpty(IncidentResolver.ValidateDef(emptyOption, crews));
 
-            // Thiếu SlipUp cho toàn bộ
-            var noSlipUp = NewDef(new IncidentOption
-            {
-                label = "O",
-                entries = new List<IncidentOutcomeEntry>
+            // Thiếu SlipUp cho toàn bộ sự cố
+            var noSlipUp = NewDef(
+                new IncidentOption
                 {
-                    new IncidentOutcomeEntry { crew = CrewId.Any, outcome = DecisionOutcome.Normal, explanation = "e", quote = "q" },
-                    new IncidentOutcomeEntry { crew = CrewId.Any, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
-                },
-            });
+                    label = "O",
+                    entries = new List<IncidentOutcomeEntry>
+                    {
+                        new IncidentOutcomeEntry { crew = CrewId.Any, outcome = DecisionOutcome.Normal, explanation = "e", quote = "q" },
+                        new IncidentOutcomeEntry { crew = CrewId.Any, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
+                    },
+                });
             Assert.IsNotEmpty(IncidentResolver.ValidateDef(noSlipUp, crews));
+
+            // Thiếu hẳn một thuyền trưởng (Dex không có entry nào)
+            var missingCaptain = NewDef(
+                new IncidentOption
+                {
+                    label = "O",
+                    entries = new List<IncidentOutcomeEntry>
+                    {
+                        new IncidentOutcomeEntry { crew = CrewId.Bob, outcome = DecisionOutcome.Smart, explanation = "e", quote = "q" },
+                        new IncidentOutcomeEntry { crew = CrewId.Mira, outcome = DecisionOutcome.Normal, explanation = "e", quote = "q" },
+                        new IncidentOutcomeEntry { crew = CrewId.Chen, outcome = DecisionOutcome.SlipUp, explanation = "e", quote = "q" },
+                    },
+                });
+            Assert.IsNotEmpty(IncidentResolver.ValidateDef(missingCaptain, crews));
         }
 
         private static GameConfig NewConfig()
