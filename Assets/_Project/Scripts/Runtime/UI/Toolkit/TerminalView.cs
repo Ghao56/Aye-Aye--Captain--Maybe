@@ -71,6 +71,16 @@ namespace AyeAye
             FitPanelToMachine(); // UI luôn phủ đúng ảnh máy, kể cả khi đổi scale giữa lúc chơi
 
             if (cam == null) return;
+            // [Chẩn đoán tạm] Raycast Game-view: click chuột trúng collider nào trong cảnh?
+            if (bound && introState == IntroState.WaitingClick && Mouse.current != null
+                && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+                if (Physics.Raycast(ray, out var hit, 100f))
+                    Debug.Log($"[TerminalView] Ray trúng {hit.collider.name} (trên GO máy={hit.collider.gameObject == gameObject}, layer={LayerMask.LayerToName(hit.collider.gameObject.layer)}) tại {hit.point}");
+                else
+                    Debug.Log("[TerminalView] Ray KHÔNG trúng collider nào.");
+            }
             // Phím Esc khi đang ở trong máy: thoát về khung nhìn ban đầu, chờ bấm máy lần nữa.
             if (introState == IntroState.Done && Keyboard.current != null
                 && Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -135,7 +145,10 @@ namespace AyeAye
             // Sự kiện pointer world-space tới panel nhờ PanelInputConfiguration + BoxCollider (Setup tạo).
             root.RegisterCallback<PointerDownEvent>(OnIntroClick); // gỡ khi intro xong và ở OnDisable
             bound = true;
-            Debug.Log($"[TerminalView] Bind OK: panel={document.worldSpaceSize}, máy={MachineWorldSize}, camera={cam.name}, collider={(GetComponent<Collider>() != null ? "có" : "KHÔNG")}.");
+            var cols = GetComponentsInChildren<Collider>(false);
+            var list = new System.Text.StringBuilder();
+            foreach (var c in cols) list.Append(c.name).Append("(layer ").Append(LayerMask.LayerToName(c.gameObject.layer)).Append(") ");
+            Debug.Log($"[TerminalView] Bind OK: panel={document.worldSpaceSize}, máy={MachineWorldSize}, camera={cam.name}, collider={cols.Length}: {list}");
         }
 
         // ------------------------------------------------------------- mở màn
