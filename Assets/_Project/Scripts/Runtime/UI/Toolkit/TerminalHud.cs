@@ -8,7 +8,7 @@ namespace AyeAye
     // Bước 2 chỉ dựng khung: nội dung tab là placeholder; MAKE IT SO chạy ngày bằng BalanceProbe (tự chơi thay người).
     // shortcut: ngày chạy tự động, tab trả về dữ liệu thật ở Bước 3-5; lúc đó bỏ loop này.
     [RequireComponent(typeof(UIDocument))]
-    public class TerminalHud : MonoBehaviour
+    public partial class TerminalHud : MonoBehaviour
     {
         static readonly string[] PhaseNames = { "Lập kế hoạch", "Diễn tập", "Sự cố", "Tổng kết" };
         static readonly string[] TabNames = { "ĐƠN HÀNG", "ĐỘI TÀU", "SỰ CỐ" };
@@ -35,6 +35,9 @@ namespace AyeAye
         List<ShipDef> shipDefs;
         EndingDefinitions endings;
         Dictionary<string, string> portNames;
+        Dictionary<string, PortDef> portDefs;   // G3: tọa độ bản đồ
+        RouteTable routeTable;                  // G3: tra tuyến cho panel lệnh
+        List<RouteDef> mapRouteDefs;            // G3: các cạnh vẽ trên bản đồ
 
         void OnEnable()
         {
@@ -110,8 +113,15 @@ namespace AyeAye
             shipDefs = DemoData.BuildShips();
             endings = DemoData.BuildEndings();
             portNames = new Dictionary<string, string>();
-            foreach (var p in DemoData.BuildPorts())
+            portDefs = new Dictionary<string, PortDef>();
+            var ports = DemoData.BuildPorts();
+            foreach (var p in ports)
+            {
                 portNames[p.portId] = p.displayName;
+                portDefs[p.portId] = p;
+            }
+            routeTable = DemoData.BuildRouteTable();
+            mapRouteDefs = DemoData.BuildRouteDefs();
         }
 
         void StartNewRun()
@@ -136,6 +146,7 @@ namespace AyeAye
             switch (PhaseGate.BottomButton(state.Phase))
             {
                 case BottomAction.MakeItSo:
+                    pendingSimSnapshot = CaptureSimSnapshot(); // G3: dùng cho animation tàu, không đổi state
                     DayRunner.CommitPlanning(state);
                     DayRunner.Simulate(state, incidents.incidents, incidents.fixedFirstDay,
                         incidents.fixedFinale, crews);
@@ -179,6 +190,8 @@ namespace AyeAye
                 : "Sự cố đang xử lý...";
 
             BuildOrdersPanel();
+            BuildFleetPanel();
+            StartFleetAnimationIfPending();
 
             // Nút dưới theo pha (FR-0203): ẩn riêng nút pha, footer luôn hiện để nút Rời máy truy cập được.
             var action = PhaseGate.BottomButton(state.Phase);

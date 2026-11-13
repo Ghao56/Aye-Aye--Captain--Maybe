@@ -38,13 +38,6 @@ namespace AyeAye
             }
         }
 
-        // shortcut: các cạnh của một RouteOption coi như đều nhau (length chia theo số cạnh) — dữ liệu mẫu chỉ cần hazard theo cạnh, không cần độ dài từng cạnh
-        private static float Cumulative(RouteOption route, int nodeIndex)
-        {
-            int edges = route.portPath.Count - 1;
-            return edges <= 0 ? 0f : route.length * nodeIndex / edges;
-        }
-
         // FR-0501: mỗi tàu Moving tiến speed route-units; tới đích thì giao (FR-0409).
         public static void MoveAll(GameState state)
         {
@@ -57,7 +50,7 @@ namespace AyeAye
                 // node giữa vừa đi qua (không tính đích cuối)
                 for (int i = 1; i < route.portPath.Count - 1; i++)
                 {
-                    float nodeDist = Cumulative(route, i);
+                    float nodeDist = RouteProgress.CumulativeDistance(route, i);
                     if (ship.DistanceAlongRoute >= nodeDist - 0.0001f && nodeDist < route.length - 0.0001f)
                         ship.ArrivedPortId = route.portPath[i];
                 }

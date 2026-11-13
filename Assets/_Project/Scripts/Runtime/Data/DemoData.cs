@@ -34,19 +34,21 @@ namespace AyeAye
 
         public static List<PortDef> BuildPorts()
         {
-            PortDef P(string id, string name, bool hq = false)
+            PortDef P(string id, string name, bool hq = false, float x = 0.5f, float y = 0.5f)
             {
                 var p = ScriptableObject.CreateInstance<PortDef>();
                 p.portId = id; p.displayName = name; p.isHeadquarters = hq;
+                p.mapPosition = new Vector2(x, y);
                 return p;
             }
+            // G3: hình sao 4 cánh — 4 hành tinh ở 4 góc, HQ ở giữa; cạnh phụ suong-camap là đáy, camap-tram là phải.
             return new List<PortDef>
             {
                 P(Goc, "Trạm Trung Chuyển", hq: true),
-                P(Vang, "Phố Cảng Vàng"),
-                P(Suong, "Đảo Sương Mù"),
-                P(Camap, "Bến Cá Mập"),
-                P(Tram, "Trạm Lạnh Bắc"),
+                P(Vang, "Phố Cảng Vàng", x: 0.2f, y: 0.25f),
+                P(Suong, "Đảo Sương Mù", x: 0.2f, y: 0.75f),
+                P(Camap, "Bến Cá Mập", x: 0.8f, y: 0.75f),
+                P(Tram, "Trạm Lạnh Bắc", x: 0.8f, y: 0.25f),
             };
         }
 

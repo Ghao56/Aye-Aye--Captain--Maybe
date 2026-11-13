@@ -67,6 +67,9 @@ namespace AyeAye
         [Tooltip("Nếu bật: Restart chơi lại với đúng seed cũ (chuỗi sự cố/đơn lặp lại).")]
         public bool repeatSeedOnRestart = false;
 
+        [Tooltip("Thời lượng animation tàu chạy trên bản đồ sau MAKE IT SO (ms).")]
+        public int fleetAnimMs = 1200;
+
         public float SpeedValue(SpeedClass speed)
         {
             switch (speed)

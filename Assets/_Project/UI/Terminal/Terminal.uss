@@ -245,3 +245,128 @@
 .chip-fragile { color: var(--c-fragile); border-color: var(--c-fragile); }
 .chip-cold { color: var(--c-cold); border-color: var(--c-cold); }
 .chip-urgent { color: var(--c-urgent); border-color: var(--c-urgent); }
+
+/* === G3: tab ĐỘI TÀU — bản đồ hình sao + thẻ tàu + panel lệnh (FR-04xx) === */
+
+.fleet-row {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    flex-direction: row;
+}
+
+/* Bản đồ ~60% bên trái; cạnh vẽ bằng Painter2D (generateVisualContent). */
+.fleet-map {
+    flex-grow: 3;
+    flex-shrink: 1;
+    min-height: 0;
+    margin-right: 12px;
+    border-width: 2px;
+    border-color: var(--c-frame);
+    background-color: rgba(4, 16, 10, 0.35);
+}
+
+.fleet-side {
+    flex-grow: 2;
+    flex-shrink: 1;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.fleet-cards { flex-grow: 1; flex-shrink: 1; min-height: 0; }
+
+.ship-card {
+    border-width: 2px;
+    border-color: var(--c-frame);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+.ship-card.selected { border-color: var(--c-amber); }
+
+.fleet-commands {
+    flex-shrink: 0;
+    border-width: 2px;
+    border-color: var(--c-frame);
+    padding: 8px 12px;
+    margin-top: 8px;
+}
+
+/* Nút chọn tuyến RouteOption — viền, khi được chọn thành nền hổ phách */
+.btn-route {
+    color: var(--c-text);
+    background-color: transparent;
+    border-width: 2px;
+    border-color: var(--c-frame);
+    padding: 2px 12px;
+    margin-right: 10px;
+    margin-bottom: 6px;
+    font-size: 22px;
+}
+.btn-route:hover { border-color: var(--c-amber); }
+.btn-route.selected { color: rgb(2, 12, 6); background-color: var(--c-amber); border-color: var(--c-amber); }
+
+/* Nút hành tinh / trạm: tọa độ do C# đặt (PortDef.mapPosition), kích thước nằm ở đây. */
+.map-node {
+    position: absolute;
+    translate: -50% -50%;
+    align-items: center;
+}
+.map-hq {
+    width: 46px;
+    height: 46px;
+    background-color: var(--c-amber);
+    border-width: 2px;
+    border-color: var(--c-text);
+}
+.map-planet {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: var(--c-text);
+    border-width: 2px;
+    border-color: var(--c-frame);
+}
+.map-node-label {
+    color: var(--c-text);
+    font-size: 22px;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+/* Chấm tàu: nhỏ, tròn, màu theo thuyền trưởng (dot-0..3), chọn → viền sáng */
+.map-dot {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border-width: 2px;
+    border-color: rgb(2, 12, 6);
+    translate: -50% -50%;
+}
+.dot-0 { background-color: var(--c-text); }
+.dot-1 { background-color: var(--c-cold); }
+.dot-2 { background-color: var(--c-amber); }
+.dot-3 { background-color: var(--c-alert); }
+.map-dot.selected { width: 28px; height: 28px; border-color: rgb(255, 255, 255); }
+
+/* Chú giải hazard — màu phải khớp HazardColor trong TerminalHud.Fleet.cs */
+.map-legend {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+:root {
+    --c-h-clear: rgb(107, 122, 89);
+    --c-h-fog: rgb(158, 181, 201);
+    --c-h-storm: rgb(217, 161, 74);
+    --c-h-pirates: rgb(191, 92, 77);
+    --c-h-ice: rgb(112, 184, 201);
+}
+.chip-h-clear { color: var(--c-h-clear); border-color: var(--c-h-clear); }
+.chip-h-fog { color: var(--c-h-fog); border-color: var(--c-h-fog); }
+.chip-h-storm { color: var(--c-h-storm); border-color: var(--c-h-storm); }
+.chip-h-pirates { color: var(--c-h-pirates); border-color: var(--c-h-pirates); }
+.chip-h-ice { color: var(--c-h-ice); border-color: var(--c-h-ice); }
