@@ -324,7 +324,8 @@ namespace AyeAye
                 var card = new VisualElement();
                 card.AddToClassList("order-card");
                 card.Add(Title(o.CustomerName));
-                card.Add(Line($"{PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Doanh thu {o.Revenue} · Hạn: {(o.IsLate ? "TRỄ" : $"còn {Mathf.Max(0f, o.DeadlineAtSeconds - state.ElapsedSeconds):0}s")}"));
+                card.Add(Line($"{PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Doanh thu {o.Revenue}"));
+                card.Add(CountdownLabel(o, "Hạn: "));
 
                 var options = routeTable.GetOptions(o.FromPortId, o.ToPortId);
                 if (options == null || options.Count == 0) { card.Add(Line("Không có tuyến đường.")); area.Add(card); continue; }

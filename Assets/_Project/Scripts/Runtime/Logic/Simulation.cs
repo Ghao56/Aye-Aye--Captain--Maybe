@@ -29,6 +29,7 @@ namespace AyeAye
             OrderScheduler.SpawnOrders(world.Pool, state);
             ExpireInbox(state);   // hộp thư không nhận quá hạn → xóa, KHÔNG tính trễ (FR-0304 bản liên tục)
             MarkLate(state);      // chốt trễ TRƯỚC khi tàu chạy: thua vì trễ ưu tiên hơn thắng cùng tick
+            if (state.IsFinished) return; // đã chốt thua trong tick đó → tàu không chạy, không giao thêm
 
             foreach (var ship in state.Ships)
                 AdvanceShip(world, state, ship, dt);
@@ -58,6 +59,7 @@ namespace AyeAye
                 OrderScheduler.SpawnOrders(world.Pool, state);
                 ExpireInbox(state);   // hộp thư không nhận quá hạn → xóa, KHÔNG tính trễ (FR-0304 bản liên tục)
                 MarkLate(state);      // chốt trễ TRƯỚC khi tàu chạy: thua vì trễ ưu tiên hơn thắng cùng tick
+                if (state.IsFinished) return; // đã chốt thua trong tick đó → tàu không chạy, không giao thêm
 
                 foreach (var ship in state.Ships)
                     AdvanceShip(world, state, ship, actualTickTime);

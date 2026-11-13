@@ -175,6 +175,7 @@
     justify-content: center;
 }
 .start-title { color: var(--c-text); font-size: 52px; margin-bottom: 24px; }
+.start-hint { color: var(--c-plain); font-size: 22px; margin-bottom: 24px; white-space: normal; text-align: center; }
 .start-button {
     margin: 6px 0;
     padding: 8px 32px;

@@ -123,14 +123,21 @@ namespace AyeAye
         static void Policy(SimWorld world, GameState state, bool cluePolicy)
         {
             // 1. Chấp nhận đơn trong hộp (giới hạn đơn đang chạy).
-            //    Ngẫu nhiên: theo xúc xắc. Đọc manh mối: nhận đơn có tuyến ngắn nhất vẫn về kịp hạn (ước lượng tốc nhanh nhất).
+            //    Ngẫu nhiên: theo xúc xắc. Đọc manh mối: nhận khi có tàu rảnh đi đủ tới cảng lấy hàng rồi về kịp hạn.
             foreach (var order in state.Orders.FindAll(o => o.Status == OrderStatus.InInbox))
             {
                 bool accept;
                 if (cluePolicy)
                 {
-                    float fastest = FastestSeconds(world.Routes, order.FromPortId, order.ToPortId, state.Config);
-                    accept = fastest <= order.DeadlineAtSeconds - state.ElapsedSeconds;
+                    accept = false;
+                    float remaining = order.DeadlineAtSeconds - state.ElapsedSeconds;
+                    float haul = FastestSeconds(world.Routes, order.FromPortId, order.ToPortId, state.Config);
+                    foreach (var ship in state.Ships)
+                    {
+                        if (ship.Status != ShipStatus.Idle || !string.IsNullOrEmpty(ship.OrderId)) continue;
+                        float toPickup = FastestSeconds(world.Routes, ship.PortId, order.FromPortId, state.Config);
+                        if (toPickup + haul <= remaining) { accept = true; break; }
+                    }
                 }
                 else
                 {
@@ -157,6 +164,23 @@ namespace AyeAye
                 if (candidates.Count == 0) continue;
                 var pick = cluePolicy ? BestCandidate(candidates) : candidates[state.Rng.Next(candidates.Count)];
                 FleetActions.Assign(state, world.Routes, pick.ship.Id, order.Id, IndexOf(options, pick.route));
+            }
+
+            // 3. Đọc manh mối: tàu rảnh rỗi không có việc ở cảng hiện tại → chạy về cảng lấy hàng của
+            //    đơn đã nhận chưa có tàu (cổ nhất). Người chơi thật cũng làm đúng thế này.
+            if (!cluePolicy) return;
+            var demand = state.Orders.Find(o => o.Status == OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId));
+            if (demand == null) return;
+            foreach (var ship in state.Ships)
+            {
+                if (ship.Status != ShipStatus.Idle || !string.IsNullOrEmpty(ship.OrderId)) continue;
+                if (ship.PortId == demand.FromPortId) continue;
+                var options = world.Routes.GetOptions(ship.PortId, demand.FromPortId);
+                if (options == null || options.Count == 0) continue;
+                int best = 0;
+                for (int i = 1; i < options.Count; i++)
+                    if (options[i].length < options[best].length) best = i;
+                FleetActions.Reposition(state, world.Routes, ship.Id, demand.FromPortId, best);
             }
         }
 
