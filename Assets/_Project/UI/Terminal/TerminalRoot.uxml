@@ -26,7 +26,9 @@
                             <ui:Label name="panel-2-hint" text="Chưa có sự cố. Mừng quá sớm?" class="panel-hint"/>
                         </ui:VisualElement>
                     </ui:VisualElement>
+                    <!-- Footer: nút Rời máy (trái, luôn truy cập) + nút pha (phải, ẩn riêng theo PhaseGate) -->
                     <ui:VisualElement name="bottombar" class="bottombar">
+                        <ui:Button name="exit-machine" text="Rời máy (Esc)" class="exit-machine"/>
                         <ui:Button name="bottom-button" text="MAKE IT SO" class="bottom-button"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="start-screen" class="start-screen">
@@ -34,8 +36,6 @@
                         <ui:Button name="start-button" text="BẮT ĐẦU" class="start-button"/>
                         <ui:Button name="restart-button" text="CHƠI LẠI" class="start-button restart"/>
                     </ui:VisualElement>
-                    <!-- Nút rời máy: tách khỏi start-screen để luôn hiện khi máy bật (kể cả khi start-screen ẩn) -->
-                    <ui:Button name="exit-machine" text="Rời máy (Esc)" class="exit-machine"/>
                 </ui:VisualElement>
                 <ui:VisualElement name="tv-fx" picking-mode="Ignore" class="tv-fx">
                     <ui:VisualElement name="tv-line" picking-mode="Ignore" class="tv-line"/>

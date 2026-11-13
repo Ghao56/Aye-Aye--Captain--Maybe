@@ -9,6 +9,10 @@
     --c-amber: rgb(255, 184, 77);            /* hổ phách #FFB84D */
     --c-alert: rgb(255, 90, 77);             /* đỏ cảnh báo #FF5A4D */
     --c-frame: rgb(46, 107, 71);             /* viền khung terminal */
+    --c-fragile: rgb(255, 184, 77);          /* chip Dễ vỡ — hổ phách */
+    --c-cold: rgb(120, 200, 255);            /* chip Lạnh — xanh băng */
+    --c-urgent: rgb(255, 90, 77);            /* chip Khẩn — đỏ */
+    --c-plain: rgb(110, 150, 120);           /* chip Hàng Thường */
 }
 
 /* Container world-space (kiến trúc B): lấp vừa khít vùng worldSpaceSize của UIDocument.
@@ -73,17 +77,21 @@
     height: 2%;
     background-color: rgb(220, 255, 230);
 }
-/* === BÆ°á»›c 2: khung game (FR-0201..0203) â€” biáº¿n mĂ u tĂ¡i dĂ¹ng tá»« :root === */
+
+/* === Bước 2: khung game (FR-0201..0203) — biến màu tái dùng từ :root === */
 
 .game {
-    flex-grow: 1; /* láº¥p pháº§n cĂ²n láº¡i trong padding .screen */
-    display: none; /* TerminalHud báº­t khi mĂ¡y Ä‘Ă£ báº­t (CRT on) */
+    flex-grow: 1;   /* lấp phần còn lại trong padding .screen */
+    display: none;  /* TerminalHud bật khi máy đã bật (CRT on) */
 }
 
 .game.on { display: flex; }
-.game > * { flex-shrink: 0; }
 
-/* Thanh trĂªn */
+/* Cột dọc của .game: hàng cố định (topbar/tabbar/footer shrink 0)
+   → content co giãn phần còn lại (shrink 1 + min-height 0) để footer luôn trong kính. */
+.topbar, .tabbar, .bottombar { flex-shrink: 0; }
+
+/* Thanh trên */
 .topbar {
     flex-direction: row;
     justify-content: space-between;
@@ -118,15 +126,32 @@
     margin-left: 6px;
 }
 
-/* Ná»™i dung tab */
-.content { flex-grow: 1; overflow: hidden; }
-.panel { display: none; flex-grow: 1; padding: 8px 10px; }
-.panel.on { display: flex; }
+/* Nội dung tab: co được + min-height 0 để không đẩy footer ra ngoài kính */
+.content {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.panel { display: none; flex-grow: 1; min-height: 0; padding: 8px 10px; }
+.panel.on { display: flex; flex-direction: column; }
 .panel-hint { color: var(--c-text); font-size: 24px; }
 
-/* NĂºt dÆ°á»›i (FR-0203) */
-.bottombar { flex-direction: row; justify-content: flex-end; padding: 8px 10px; }
-.bottombar.hidden { display: none; }
+/* Footer: nút Rời máy (trái) + nút pha (phải). Thanh LUÔN hiện — ẩn riêng nút pha. */
+.bottombar {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px 10px;
+}
+.exit-machine {
+    padding: 2px 8px;
+    font-size: 20px;
+    color: var(--c-amber);
+    border-width: 1px;
+    border-color: var(--c-frame);
+    background-color: transparent;
+}
+.exit-machine:hover { border-color: var(--c-amber); }
 .bottom-button {
     padding: 8px 24px;
     font-size: 30px;
@@ -136,7 +161,7 @@
 }
 .bottom-button:disabled { opacity: 0.4; }
 
-/* MĂ n Start/Restart (FR-0101) */
+/* Màn Start/Restart (FR-0101) */
 .start-screen {
     position: absolute;
     left: 0; top: 0;
@@ -155,21 +180,10 @@
     border-color: var(--c-frame);
     background-color: transparent;
 }
-.exit-machine {
-    position: absolute;
-    left: 12px; bottom: 10px;
-    padding: 2px 8px;
-    font-size: 16px;
-    color: var(--c-amber);
-    border-width: 1px;
-    border-color: var(--c-frame);
-    background-color: transparent;
-}
 
-/* === Buoc 3: tab DON HANG (FR-03xx) === */
-.panel.on { flex-direction: column; }
+/* === Bước 3: tab ĐƠN HÀNG (FR-03xx) === */
 
-.orders-scroll { flex-grow: 1; }
+.orders-scroll { flex-grow: 1; flex-shrink: 1; min-height: 0; }
 
 .section-title {
     color: var(--c-amber);
@@ -202,15 +216,32 @@
     margin-right: 10px;
     font-size: 24px;
     color: rgb(2, 12, 6);
-    background-color: var(--c-text);
     border-width: 0;
 }
-.btn-row Button:disabled { opacity: 0.4; }
-.btn-row Button:last-child {
+.btn-accept { background-color: var(--c-text); }
+.btn-accept:hover { background-color: rgb(200, 255, 210); }
+.btn-accept:disabled { opacity: 0.4; background-color: var(--c-text); }
+.btn-decline {
     color: var(--c-text);
     background-color: transparent;
     border-width: 2px;
     border-color: var(--c-alert);
 }
-.btn-row Button:last-child:disabled { opacity: 0.4; }
+.btn-decline:hover { background-color: rgba(255, 90, 77, 0.25); }
+.btn-decline:disabled { opacity: 0.4; }
 
+/* Tóm tắt đầu tab + hàng chip hàng hóa */
+.order-summary { color: var(--c-text); font-size: 25px; margin-bottom: 4px; }
+.order-main { flex-direction: row; align-items: center; margin-top: 2px; }
+.chip-row { flex-direction: row; margin-left: 10px; }
+.chip {
+    margin-right: 6px;
+    padding: 0 8px;
+    font-size: 19px;
+    border-width: 1px;
+    border-radius: 10px;
+}
+.chip-plain { color: var(--c-plain); border-color: var(--c-plain); }
+.chip-fragile { color: var(--c-fragile); border-color: var(--c-fragile); }
+.chip-cold { color: var(--c-cold); border-color: var(--c-cold); }
+.chip-urgent { color: var(--c-urgent); border-color: var(--c-urgent); }

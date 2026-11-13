@@ -16,7 +16,7 @@ namespace AyeAye
         UIDocument document;
         TerminalView machine;
 
-        VisualElement game, startScreen, bottomBar;
+        VisualElement game, startScreen;
         Label topDay, topReputation, topRevenue, topPhase, startTitle;
         Button[] tabs = new Button[3];
         VisualElement[] panels = new VisualElement[3];
@@ -65,7 +65,6 @@ namespace AyeAye
 
             game = root.Q("game");
             startScreen = root.Q("start-screen");
-            bottomBar = root.Q("bottombar");
             topDay = root.Q<Label>("top-day");
             topReputation = root.Q<Label>("top-reputation");
             topRevenue = root.Q<Label>("top-revenue");
@@ -181,10 +180,10 @@ namespace AyeAye
 
             BuildOrdersPanel();
 
-            // Nút dưới theo pha (FR-0203).
+            // Nút dưới theo pha (FR-0203): ẩn riêng nút pha, footer luôn hiện để nút Rời máy truy cập được.
             var action = PhaseGate.BottomButton(state.Phase);
             bool hidden = action == BottomAction.Hidden;
-            bottomBar.EnableInClassList("hidden", hidden);
+            bottomButton.style.display = hidden ? DisplayStyle.None : DisplayStyle.Flex;
             if (!hidden)
                 bottomButton.text = action == BottomAction.MakeItSo ? "MAKE IT SO"
                     : action == BottomAction.Continue ? "TIẾP TỤC" : "NGÀY KẺ";
@@ -207,21 +206,36 @@ namespace AyeAye
         void BuildOrdersPanel()
         {
             var panel = panels[0];
+            var oldScroll = panel.Q<ScrollView>();
+            float savedOffset = oldScroll != null ? oldScroll.scrollOffset.y : 0f; // giữ vị trí cuộn qua lần dựng lại
             panel.Clear();
 
             var scroll = new ScrollView();
             scroll.AddToClassList("orders-scroll");
             panel.Add(scroll);
 
-            scroll.Add(Section("HỘP THƯ"));
-            var inbox = state.Orders.FindAll(o => o.Status == OrderStatus.InInbox);
-            if (inbox.Count == 0) scroll.Add(Line("Hộp thư trống."));
-            foreach (var o in inbox) scroll.Add(InboxCard(o));
+            // Dòng tóm tắt đầu tab (FR-0303): số đơn đang hoạt động, số liệu từ config.
+            int activeCount = state.Orders.FindAll(o => o.Status == OrderStatus.Accepted || o.Status == OrderStatus.Assigned).Count;
+            var summary = new Label($"Đơn đang hoạt động {activeCount}/{config.maxActiveOrders}");
+            summary.AddToClassList("order-summary");
+            scroll.Add(summary);
 
+            // ĐƠN ĐÃ NHẬN lên trước hộp thư: người chơi thấy kết quả ngay khi bấm NHẬN.
             scroll.Add(Section("ĐƠN ĐÃ NHẬN"));
             var active = state.Orders.FindAll(o => o.Status == OrderStatus.Accepted || o.Status == OrderStatus.Assigned);
             if (active.Count == 0) scroll.Add(Line("Chưa nhận đơn nào."));
             foreach (var o in active) scroll.Add(ActiveRow(o));
+
+            scroll.Add(Section("HỘP THƯ"));
+            var note = new Label($"Trễ: Uy tín -{config.lateReputationPenalty}, doanh thu ×{config.lateRevenueFactor:0.##} (áp cho mọi đơn)");
+            note.AddToClassList("order-line");
+            note.AddToClassList("order-clue");
+            scroll.Add(note);
+            var inbox = state.Orders.FindAll(o => o.Status == OrderStatus.InInbox);
+            if (inbox.Count == 0) scroll.Add(Line("Hộp thư trống."));
+            foreach (var o in inbox) scroll.Add(InboxCard(o));
+
+            scroll.schedule.Execute(() => scroll.scrollOffset = new Vector2(0, savedOffset)).ExecuteLater(1);
         }
 
         VisualElement InboxCard(OrderState o)
@@ -229,9 +243,16 @@ namespace AyeAye
             var card = new VisualElement();
             card.AddToClassList("order-card");
             card.Add(Title(o.CustomerName));
-            card.Add(Line($"{CargoLabel(o.Tags)} · {PortName(o.FromPortId)} → {PortName(o.ToPortId)}"));
-            card.Add(Line($"Hạn: Ngày {o.DeadlineDay} · Doanh thu {o.Revenue} · " +
-                $"Trễ: Uy tín {config.lateReputationPenalty}, doanh thu ×{config.lateRevenueFactor:0.##}"));
+            var main = new VisualElement();
+            main.AddToClassList("order-main");
+            main.Add(Line($"{PortName(o.FromPortId)} → {PortName(o.ToPortId)}"));
+            var chips = new VisualElement();
+            chips.AddToClassList("chip-row");
+            foreach (var (tag, name) in CargoTags(o.Tags)) chips.Add(Chip(CargoChipClass(tag), name));
+            main.Add(chips);
+            card.Add(main);
+            int daysLeft = o.DeadlineDay - state.CurrentDay;
+            card.Add(Line($"Hạn: Ngày {o.DeadlineDay} (còn {daysLeft} ngày) · Doanh thu {o.Revenue}"));
             if (!string.IsNullOrEmpty(o.Clue)) card.Add(Clue(o.Clue));
 
             var row = new VisualElement();
@@ -239,6 +260,7 @@ namespace AyeAye
             // FR-0303: vượt giới hạn đơn đang hoạt động → NHẬN vô hiệu kèm lý do.
             bool canAccept = CommandValidator.CanAccept(state, o.Id);
             var accept = new Button(() => { OrderActions.Accept(state, o.Id); Dirty(); }) { text = "NHẬN" };
+            accept.AddToClassList("btn-accept");
             accept.SetEnabled(canAccept);
             row.Add(accept);
             if (!canAccept)
@@ -248,7 +270,9 @@ namespace AyeAye
                 reason.AddToClassList("order-warn");
                 row.Add(reason);
             }
-            row.Add(new Button(() => { OrderActions.Decline(state, o.Id); Dirty(); }) { text = "TỪ CHỐI" });
+            var decline = new Button(() => { OrderActions.Decline(state, o.Id); Dirty(); }) { text = "TỪ CHỐI" };
+            decline.AddToClassList("btn-decline");
+            row.Add(decline);
             card.Add(row);
             return card;
         }
@@ -264,18 +288,32 @@ namespace AyeAye
                 if (s != null) ship = $" · tàu {s.DisplayName}";
             }
             string status = o.Status == OrderStatus.Assigned ? "Đang chở" : "Chưa có tàu";
-            row.Add(Title($"{o.CustomerName} — {status}{ship}"));
-            row.Add(Line($"{CargoLabel(o.Tags)} · {PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Hạn: Ngày {o.DeadlineDay}"));
+            row.Add(Line($"{o.CustomerName} — {status}{ship} · {PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Hạn: Ngày {o.DeadlineDay}"));
             return row;
         }
 
-        static string CargoLabel(OrderTag tags)
+        static IEnumerable<(OrderTag tag, string name)> CargoTags(OrderTag tags)
         {
-            var names = new List<string>();
-            if ((tags & OrderTag.Fragile) != 0) names.Add("Dễ vỡ");
-            if ((tags & OrderTag.Cold) != 0) names.Add("Lạnh");
-            if ((tags & OrderTag.Urgent) != 0) names.Add("Khẩn");
-            return names.Count == 0 ? "Hàng Thường" : "Hàng " + string.Join(" + ", names);
+            if ((tags & OrderTag.Fragile) != 0) yield return (OrderTag.Fragile, "Dễ vỡ");
+            if ((tags & OrderTag.Cold) != 0) yield return (OrderTag.Cold, "Lạnh");
+            if ((tags & OrderTag.Urgent) != 0) yield return (OrderTag.Urgent, "Khẩn");
+            if (tags == OrderTag.None) yield return (OrderTag.None, "Hàng Thường");
+        }
+
+        static string CargoChipClass(OrderTag tag) => tag switch
+        {
+            OrderTag.Fragile => "chip-fragile",
+            OrderTag.Cold => "chip-cold",
+            OrderTag.Urgent => "chip-urgent",
+            _ => "chip-plain",
+        };
+
+        static VisualElement Chip(string cls, string text)
+        {
+            var label = new Label(text);
+            label.AddToClassList("chip");
+            label.AddToClassList(cls);
+            return label;
         }
 
         string PortName(string portId)
