@@ -112,7 +112,7 @@ namespace AyeAye.Tests.EditMode
             var def = NewDef(new IncidentOption { label = "O", entries = new List<IncidentOutcomeEntry> { entry } });
             var state = new GameState(NewConfig());
             var ship = NewShip(CrewId.Bob);
-            var order = new OrderState { Id = "O-1", CustomerName = "c", Tags = OrderTag.None, FromPortId = "GOC", ToPortId = "VANG", DeadlineDay = 3, Revenue = 100, Clue = "", Status = OrderStatus.Assigned };
+            var order = new OrderState { Id = "O-1", CustomerName = "c", Tags = OrderTag.None, FromPortId = "GOC", ToPortId = "VANG", DeadlineAtSeconds = 300f, Revenue = 100, Clue = "", Status = OrderStatus.Assigned };
             ship.OrderId = order.Id;
             state.Orders.Add(order);
 
@@ -275,9 +275,7 @@ namespace AyeAye.Tests.EditMode
 
         private static GameConfig NewConfig()
         {
-            var config = ScriptableObject.CreateInstance<GameConfig>();
-            config.gameLengthDays = 8;
-            return config;
+            return ScriptableObject.CreateInstance<GameConfig>();
         }
     }
 }

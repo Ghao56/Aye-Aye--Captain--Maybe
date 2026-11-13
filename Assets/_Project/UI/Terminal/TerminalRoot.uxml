@@ -5,8 +5,8 @@
             <ui:VisualElement name="screen" class="screen" style="opacity: 1;">
                 <ui:VisualElement name="game" class="game">
                     <ui:VisualElement name="topbar" class="topbar">
-                        <ui:Label name="top-day" text="Ngày 1/8" class="topbar-item"/>
-                        <ui:Label name="top-reputation" text="Uy tín 50" class="topbar-item"/>
+                        <ui:Label name="top-day" text="Thời gian 0:00" class="topbar-item"/>
+                        <ui:Label name="top-late" text="Trễ 0/3" class="topbar-item"/>
                         <ui:Label name="top-revenue" text="Doanh thu 0" class="topbar-item"/>
                         <ui:Label name="top-phase" text="Lập kế hoạch" class="topbar-item phase"/>
                     </ui:VisualElement>

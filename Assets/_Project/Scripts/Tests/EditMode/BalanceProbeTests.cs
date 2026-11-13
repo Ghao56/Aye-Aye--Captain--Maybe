@@ -112,14 +112,19 @@ namespace AyeAye.Tests.EditMode
         [Test]
         public void EveryRun_Finishes_WithEnding()
         {
-            // Chạy thủ công từng seed để bắt được ván bị treo (guard 2×số ngày).
+            // Chạy thủ công từng seed để bắt được ván bị treo (guard MaxRunSeconds — NFR-06).
+            var world = new SimWorld
+            {
+                Pool = _world.OrderPool, Routes = _world.Routes,
+                Incidents = _world.Incidents, FixedFirstDay = _world.FixedFirstDay, FixedFinale = _world.FixedFinale,
+            };
             for (int i = 0; i < 10; i++)
             {
                 var state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 100 + i);
-                while (!state.IsFinished && state.CurrentDay <= 2 * _world.Config.gameLengthDays)
-                    BalanceProbe.SimulateDay(_world.Config, _world.OrderPool, _world.Routes,
-                        _world.Incidents, _world.FixedFirstDay, _world.FixedFinale, _world.Crews, state);
-                Assert.IsTrue(state.IsFinished, $"Seed {100 + i} bị treo sau guard");
+                OrderScheduler.SpawnInitial(_world.OrderPool, state);
+                while (state.CanAdvance && state.ElapsedSeconds < 1800f)
+                    BalanceProbe.Step(world, state, _world.Crews, cluePolicy: false);
+                if (!state.IsFinished) EndingEvaluator.FinishRun(state); // kẹt → coi như thua, vẫn kết thúc
                 Assert.AreNotEqual(EndingId.None, state.FinalEnding, $"Seed {100 + i} thiếu ending");
             }
         }

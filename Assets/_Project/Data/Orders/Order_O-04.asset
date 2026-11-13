@@ -17,7 +17,7 @@ MonoBehaviour:
   tags: 1
   fromPortId: suong
   toPortId: camap
-  deadlineDay: 5
+  deadlineSeconds: 45
   revenue: 110
   clue: "G\u01B0\u01A1ng v\u1EE1 = 7 n\u0103m xui. \u0110\u1EEBng cho Bob ch\u1EDF."
   weight: 1

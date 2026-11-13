@@ -1,25 +1,31 @@
 namespace AyeAye
 {
-    // FR-0701/FR-0105: kết thúc theo danh tiếng, áp phạt đơn chưa giao ở cuối ván.
+    // Kết cục theo luật MỚI (bỏ ngày, xem ASSUMPTIONS.md G1):
+    // thắng với 0 lần trễ → E1, 1 → E2, 2 → E3; thua → E4; thua quá sớm (giao ít hơn earlyLoseDeliveries) → E5.
+    // Reputation đã bỏ hoàn toàn (chỉnh 4) — kết thúc chỉ theo số đơn thắng/số đơn trễ.
     public static class EndingEvaluator
     {
-        public static EndingId FromReputation(int reputation, GameConfig config)
+        public static EndingId FromOutcome(GameState state)
         {
-            if (reputation >= config.endingE1Threshold) return EndingId.E1_Empire;
-            if (reputation >= config.endingE2Threshold) return EndingId.E2_Renowned;
-            if (reputation >= config.endingE3Threshold) return EndingId.E3_Survived;
-            if (reputation >= config.endingE4Threshold) return EndingId.E4_Debt;
-            return EndingId.E5_Bankrupt;
+            // Thắng phải đủ đơn: kết thúc cưỡng bức (kẹt/hết giờ) khi chưa đủ winDeliveries là THUA, không phải E1–E3.
+            if (state.DeliveredCount >= state.Config.winDeliveries &&
+                state.LateCount < state.Config.maxLateDeliveries)
+            {
+                switch (state.LateCount)
+                {
+                    case 0: return EndingId.E1_Empire;
+                    case 1: return EndingId.E2_Renowned;
+                    default: return EndingId.E3_Survived;
+                }
+            }
+            if (state.DeliveredCount < state.Config.earlyLoseDeliveries) return EndingId.E5_Bankrupt;
+            return EndingId.E4_Debt;
         }
 
         public static void FinishRun(GameState state)
         {
-            int penalty = 0;
-            int undelivered = ScoreCalculator.UndeliveredCount(state);
-            if (undelivered > 0)
-                penalty = undelivered * state.Config.undeliveredReputationPenalty;
-            state.Reputation -= penalty;
-            state.FinalEnding = FromReputation(state.Reputation, state.Config);
+            if (state.IsFinished) return;
+            state.FinalEnding = FromOutcome(state);
             state.IsFinished = true;
         }
     }

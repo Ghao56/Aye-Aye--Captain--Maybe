@@ -80,7 +80,7 @@ namespace AyeAye.Tests.EditMode
         {
             _world = TestWorld.Create();
             _state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 5);
-            OrderScheduler.ScheduleNewOrders(_world.OrderPool, _state);
+            OrderScheduler.SpawnInitial(_world.OrderPool, _state); // 2 đơn tutorial lúc 0 giây
             foreach (var order in _state.Orders.Where(o => o.Status == OrderStatus.InInbox))
                 order.Status = OrderStatus.Accepted;
         }
@@ -92,17 +92,19 @@ namespace AyeAye.Tests.EditMode
         }
 
         [Test]
-        public void Assign_HopLe_StageLenhVoiRouteDaChon()
+        public void Assign_HopLe_ApNgay_TauXuatPhat()
         {
             var ship = _state.Ships.First(s => s.PortId == TestWorld.Goc);
             string error = FleetActions.Assign(_state, _world.Routes, ship.Id, "O-01", 0);
             Assert.IsNull(error);
-            Assert.AreEqual(1, _state.StagedCommands.Count);
-            var cmd = _state.StagedCommands[0];
-            Assert.AreEqual(CommandKind.Assign, cmd.Kind);
-            Assert.AreEqual(ship.Id, cmd.ShipId);
-            Assert.AreEqual("O-01", cmd.OrderId);
-            Assert.AreEqual(_world.Routes.GetOptions(TestWorld.Goc, TestWorld.Vang)[0], cmd.Route);
+            // MAKE IT SO áp NGAY (không staged): tàu xuất phát tức thì với route đã chọn.
+            Assert.AreEqual(ShipStatus.Moving, ship.Status);
+            Assert.AreEqual(_world.Routes.GetOptions(TestWorld.Goc, TestWorld.Vang)[0], ship.Route);
+            Assert.AreEqual(0f, ship.DistanceAlongRoute);
+            Assert.AreEqual("O-01", ship.OrderId);
+            var order = _state.Orders.First(o => o.Id == "O-01");
+            Assert.AreEqual(OrderStatus.Assigned, order.Status);
+            Assert.AreEqual(ship.Id, order.AssignedShipId);
         }
 
         [Test]
@@ -112,7 +114,7 @@ namespace AyeAye.Tests.EditMode
             string error = FleetActions.Assign(_state, _world.Routes, ship.Id, "O-01", 0);
             Assert.IsNotNull(error);
             Assert.IsTrue(error.Contains("không ở cảng đi"));
-            Assert.AreEqual(0, _state.StagedCommands.Count);
+            Assert.AreEqual(ShipStatus.Idle, ship.Status); // bị chặn → tàu đứng yên
         }
 
         [Test]
@@ -122,29 +124,28 @@ namespace AyeAye.Tests.EditMode
             Assert.IsNull(FleetActions.Assign(_state, _world.Routes, ship.Id, "O-01", 0));
             string error = FleetActions.Reposition(_state, _world.Routes, ship.Id, TestWorld.Suong, 0);
             Assert.IsNotNull(error);
-            Assert.IsTrue(error.Contains("đã có lệnh hôm nay"));
+            Assert.IsTrue(error.Contains("đang bận"));
         }
 
         [Test]
-        public void Reposition_HopLe_StageLenhPhongRong()
+        public void Reposition_HopLe_ApNgay_PhongRong()
         {
             var ship = _state.Ships.First(s => s.PortId == TestWorld.Goc && s.Captain == CrewId.Mira);
             string error = FleetActions.Reposition(_state, _world.Routes, ship.Id, TestWorld.Tram, 0);
             Assert.IsNull(error);
-            var cmd = _state.StagedCommands[0];
-            Assert.AreEqual(CommandKind.Reposition, cmd.Kind);
-            Assert.IsNull(cmd.OrderId);
+            Assert.AreEqual(ShipStatus.Moving, ship.Status);
+            Assert.IsEmpty(ship.OrderId);
+            Assert.IsNotNull(ship.Route);
         }
 
         [Test]
-        public void Cancel_XoaLenhStaged_RoiHetLenh_BiChan()
+        public void LenhApNgay_KhongTheHuy()
         {
+            // Bỏ StagedCommands + HỦY LỆNH (chỉnh 4): lệnh áp ngay, không có API hủy — tàu đang Moving là bận.
             var ship = _state.Ships.First(s => s.PortId == TestWorld.Goc);
             Assert.IsNull(FleetActions.Assign(_state, _world.Routes, ship.Id, "O-01", 0));
-            Assert.IsNull(FleetActions.Cancel(_state, ship.Id));
-            Assert.AreEqual(0, _state.StagedCommands.Count);
-            string error = FleetActions.Cancel(_state, ship.Id);
-            Assert.IsNotNull(error, "hủy lần nữa phải báo không có lệnh");
+            string error = FleetActions.Assign(_state, _world.Routes, ship.Id, "O-02", 0);
+            Assert.IsNotNull(error, "lệnh thứ hai trên cùng tàu phải bị chặn");
         }
     }
 }

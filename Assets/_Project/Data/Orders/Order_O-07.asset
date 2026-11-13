@@ -17,7 +17,7 @@ MonoBehaviour:
   tags: 5
   fromPortId: camap
   toPortId: goc
-  deadlineDay: 6
+  deadlineSeconds: 90
   revenue: 160
   clue: "C\xE1 heo kh\xF4ng \u0111\u1EE3i. H\xE0ng d\u1EC5 v\u1EE1 th\xEC c\xE0ng
     kh\xF4ng."

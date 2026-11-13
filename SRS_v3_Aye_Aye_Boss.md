@@ -322,10 +322,10 @@ Ví dụ hai Route Option Gốc → Trạm Lạnh: (a) Gốc–Sương Mù–Cá
 ### 5.3 Tàu (4)
 | Tàu | Thuyền trưởng | Speed | Tag hiển thị | Cảng đầu |
 |---|---|---|---|---|
-| Tia Chớp | Bob | Fast | Nhanh · Ẩu · Thích đường tắt | Gốc |
-| Rùa Vàng | Chen | Slow | Chậm · Thân vững · Bình tĩnh | Gốc |
-| Đúng Quy Trình | Mira | Normal | Chuẩn sách · Hơi cứng nhắc | Gốc |
-| Nghi Ngờ Số Một | Dex | Normal | Đa nghi · Kiểm tra kỹ | Vàng |
+| CARGO-9 | Bob | Fast | Nhanh · Ẩu · Thích đường tắt | Gốc |
+| HAULER-4 | Chen | Slow | Chậm · Thân vững · Bình tĩnh | Gốc |
+| FREIGHT-12 | Mira | Normal | Chuẩn sách · Hơi cứng nhắc | Gốc |
+| TRANSIT-3 | Dex | Normal | Đa nghi · Kiểm tra kỹ | Vàng |
 
 ### 5.4 Đơn hàng
 **Ngày 1 (cố định):**
@@ -345,12 +345,12 @@ Ví dụ hai Route Option Gốc → Trạm Lạnh: (a) Gốc–Sương Mù–Cá
 | O-08 | Bưu Kiện Không Ghi Tên | Thường | Mỏm Gió → Cá Mập | N8 | 130 | Dex: "Đừng mở." |
 
 ### 5.5 Sự cố (7 + finale)
-Ký hiệu: **[Bob]** = Tia Chớp, **[Chen]** = Rùa Vàng, **[Mira]** = Đúng Quy Trình, **[Dex]** = Nghi Ngờ Số Một. "any" = bất kỳ thuyền trưởng. Không khớp bảng = **Normal**.
+Ký hiệu: **[Bob]** = CARGO-9, **[Chen]** = HAULER-4, **[Mira]** = FREIGHT-12, **[Dex]** = TRANSIT-3. "any" = bất kỳ thuyền trưởng. Không khớp bảng = **Normal**.
 
 | ID | Điều kiện sinh | Phương án | Smart | Normal | Slip-up | Hệ quả đặc biệt |
 |---|---|---|---|---|---|---|
 | **I-01 Sương mù dày** (Ngày 1 cố định) | hazard = Sương mù | A. Giữ tốc độ · B. Giảm tốc dò đường · C. Theo tín hiệu cảng | Mira+C · Chen+B | any+B | Bob+A · Dex+C | Bob+A đặt `CargoShifted` (nếu có hàng). Manh mối: "Mira có sách tín hiệu cảng; Dex ngờ tín hiệu" |
-| **I-02 Bão** | hazard = Bão | A. Xuyên bão · B. Neo chờ · C. Vòng tránh | Chen+A · Mira+C | any+B | Bob+A · Dex+C | Slip-up: Condition → Hao mòn. Manh mối: "Rùa Vàng đã gia cố thân tàu" |
+| **I-02 Bão** | hazard = Bão | A. Xuyên bão · B. Neo chờ · C. Vòng tránh | Chen+A · Mira+C | any+B | Bob+A · Dex+C | Slip-up: Condition → Hao mòn. Manh mối: "HAULER-4 đã gia cố thân tàu" |
 | **I-03 Hải tặc** | hazard = Hải tặc | A. Trả phí qua đường · B. Phóng nhanh thoát · C. Mặc cả/đánh lừa | Dex+C · Bob+B | any+A | Chen+B · Mira+C | any+A: −20 Doanh thu. Manh mối: "Dex đã nghi từ lúc rời cảng" |
 | **I-04 Kẹt cảng** | cạnh vừa đi tới cảng đến/đích trung gian | A. Xếp hàng chờ · B. Nhờ quan hệ chen ngang · C. Chuyển bến phụ | Bob+B · Mira+C | any+A | Dex+B · Chen+C | Manh mối: "Bob quen nửa bến cảng" |
 | **I-05 Hàng rung lắc** | Hàng Dễ vỡ | A. Giảm tốc · B. Chằng lại hàng giữa biển · C. Mặc kệ | Mira+B | any+A · Chen+C | Bob+B · (any trừ Chen)+C | Slip-up: Cargo −1 mức |

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ShipDef
   shipId: tau-nghi-ngo
-  displayName: "Nghi Ng\u1EDD S\u1ED1 M\u1ED9t"
+  displayName: TRANSIT-3
   captain: 4
   captainName: Dex
   speedClass: 1

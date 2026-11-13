@@ -2,55 +2,31 @@ using NUnit.Framework;
 
 namespace AyeAye.Tests.EditMode
 {
-    // Bảng khóa FR-0203 — kiểm đủ 4 pha × 3 tab + nút dưới cùng.
+    // FR-0203 bản chạy liên tục: chỉ 2 trạng thái — không sự cố: cả 3 tab tương tác;
+    // sự cố đang chờ: tab SỰ CỐ (index 2) tương tác, hai tab kia chỉ xem.
     public class PhaseGateTests
     {
         [Test]
-        public void Planning_Tab12Interactive_Tab3ReadOnly()
-        {
-            Assert.AreEqual(TabAccess.Interactive, PhaseGate.TabAccess(GamePhase.Planning, 0));
-            Assert.AreEqual(TabAccess.Interactive, PhaseGate.TabAccess(GamePhase.Planning, 1));
-            Assert.AreEqual(TabAccess.ReadOnly, PhaseGate.TabAccess(GamePhase.Planning, 2));
-            Assert.AreEqual(BottomAction.MakeItSo, PhaseGate.BottomButton(GamePhase.Planning));
-        }
-
-        [Test]
-        public void Simulation_AllLocked()
-        {
-            Assert.AreEqual(TabAccess.Locked, PhaseGate.TabAccess(GamePhase.Simulation, 0));
-            Assert.AreEqual(TabAccess.Locked, PhaseGate.TabAccess(GamePhase.Simulation, 2));
-            Assert.AreEqual(BottomAction.Hidden, PhaseGate.BottomButton(GamePhase.Simulation));
-        }
-
-        [Test]
-        public void Simulation_FleetTab_StillViewable()
-        {
-            // tab 2 khóa thao tác nhưng phải hiện tàu đang chạy → ReadOnly (xem được, sửa không được).
-            Assert.AreEqual(TabAccess.ReadOnly, PhaseGate.TabAccess(GamePhase.Simulation, 1));
-        }
-
-        [Test]
-        public void Incident_Tab3Interactive_OthersReadOnly()
-        {
-            Assert.AreEqual(TabAccess.ReadOnly, PhaseGate.TabAccess(GamePhase.Incident, 0));
-            Assert.AreEqual(TabAccess.ReadOnly, PhaseGate.TabAccess(GamePhase.Incident, 1));
-            Assert.AreEqual(TabAccess.Interactive, PhaseGate.TabAccess(GamePhase.Incident, 2));
-            Assert.AreEqual(BottomAction.Continue, PhaseGate.BottomButton(GamePhase.Incident));
-        }
-
-        [Test]
-        public void Summary_OverlayCoversAll()
+        public void Normal_AllTabsInteractive()
         {
             for (int i = 0; i < 3; i++)
-                Assert.AreEqual(TabAccess.Locked, PhaseGate.TabAccess(GamePhase.Summary, i), "tab " + i);
-            Assert.AreEqual(BottomAction.NextDay, PhaseGate.BottomButton(GamePhase.Summary));
+                Assert.AreEqual(TabAccess.Interactive, PhaseGate.GetAccess(incidentPending: false, i), "tab " + i);
         }
 
         [Test]
-        public void UnknownPhase_Locked()
+        public void IncidentPending_OthersReadOnly_FleetTabInteractive()
         {
-            Assert.AreEqual(TabAccess.Locked, PhaseGate.TabAccess((GamePhase)999, 0));
-            Assert.AreEqual(BottomAction.Hidden, PhaseGate.BottomButton((GamePhase)999));
+            Assert.AreEqual(TabAccess.ReadOnly, PhaseGate.GetAccess(incidentPending: true, 0));
+            Assert.AreEqual(TabAccess.ReadOnly, PhaseGate.GetAccess(incidentPending: true, 1));
+            Assert.AreEqual(TabAccess.Interactive, PhaseGate.GetAccess(incidentPending: true, 2));
+        }
+
+        [Test]
+        public void NeverLocked_ReadOnlyTabsStillViewable()
+        {
+            // Chỉ xem được (không khóa tuyệt đối) → không bao giờ trả Locked.
+            for (int i = 0; i < 3; i++)
+                Assert.AreNotEqual(TabAccess.Locked, PhaseGate.GetAccess(incidentPending: true, i), "tab " + i);
         }
     }
 }

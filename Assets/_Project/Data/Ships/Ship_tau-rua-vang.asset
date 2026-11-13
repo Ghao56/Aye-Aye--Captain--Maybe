@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ShipDef
   shipId: tau-rua-vang
-  displayName: "R\xF9a V\xE0ng"
+  displayName: HAULER-4
   captain: 3
   captainName: Chen
   speedClass: 0

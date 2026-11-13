@@ -15,7 +15,7 @@ MonoBehaviour:
   incidentId: I-02
   title: "B\xE3o b\u1EA5t ng\u1EDD"
   situationText: "Kh\u1ED1i m\xE2y \u0111en nghi\xEAng v\u1EC1 ph\xEDa m\u0169i t\xE0u."
-  clueText: "R\xF9a V\xE0ng \u0111\xE3 gia c\u1ED1 th\xE2n t\xE0u."
+  clueText: "HAULER-4 \u0111\xE3 gia c\u1ED1 th\xE2n t\xE0u."
   weight: 1
   triggers:
   - requiredHazard: 3

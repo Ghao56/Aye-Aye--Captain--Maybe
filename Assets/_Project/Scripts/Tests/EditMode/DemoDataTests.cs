@@ -42,9 +42,8 @@ namespace AyeAye.Tests.EditMode
             var incidents = Track(DemoData.BuildIncidentPool());
             var endings = Track(DemoData.BuildEndings());
 
-            // §2.5 / §5
-            Assert.AreEqual(8, config.gameLengthDays);
-            Assert.AreEqual(50, config.startReputation);
+            // §2.5 / §5 (bản liên tục: ván không còn độ dài ngày — thắng theo winDeliveries; Reputation đã bỏ)
+            Assert.AreEqual(10, config.winDeliveries);
 
             // §5.1: 5 cảng (hình sao, xem ASSUMPTIONS.md), id duy nhất, HQ = goc
             Assert.AreEqual(5, ports.Count);
@@ -66,6 +65,12 @@ namespace AyeAye.Tests.EditMode
             Assert.AreEqual(DemoData.Goc, tiaChop.startPortId);
             var dex = ships.First(s => s.captain == CrewId.Dex);
             Assert.AreEqual(DemoData.Vang, dex.startPortId);
+
+            // Đổi tên tàu thành mã vận tải (ASSUMPTIONS 13/11): displayName duy nhất, khác rỗng, không trùng shipId.
+            Assert.IsTrue(ships.All(s => !string.IsNullOrEmpty(s.displayName)));
+            Assert.AreEqual(4, ships.Select(s => s.displayName).Distinct().Count());
+            var bob = ships.First(s => s.captain == CrewId.Bob);
+            Assert.AreEqual("CARGO-9", bob.displayName);
 
             // §5.4: ngày 1 cứng O-01/O-02, pool O-03..O-08
             Assert.AreEqual(2, orders.fixedFirstDay.Count);

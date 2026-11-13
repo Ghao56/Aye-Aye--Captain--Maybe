@@ -15,4 +15,4 @@ MonoBehaviour:
   fromPortId: camap
   toPortId: tram
   length: 1
-  hazard: 5
+  hazard: 3

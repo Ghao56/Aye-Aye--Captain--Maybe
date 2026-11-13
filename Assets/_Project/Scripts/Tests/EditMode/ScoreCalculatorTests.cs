@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace AyeAye.Tests.EditMode
 {
-    // FR-0602: điểm giao hàng theo đúng hạn/trễ, theo tình trạng hàng.
+    // FR-0602: điểm giao hàng — doanh thu theo hạn (IsLate) và tình trạng hàng.
+    // Reputation đã bỏ (chỉnh 4) — chấm điểm chỉ còn doanh thu.
     public class ScoreCalculatorTests
     {
         private GameConfig _config;
@@ -18,69 +19,49 @@ namespace AyeAye.Tests.EditMode
             {
                 Id = "O-01",
                 Revenue = 100,
-                DeadlineDay = 4,
+                DeadlineAtSeconds = 400f,
                 Cargo = CargoCondition.Intact,
             };
         }
 
         [Test]
-        public void OnTime_Intact_GainsPlus8AndFullRevenue()
+        public void OnTime_Intact_FullRevenue()
         {
-            _order.DeliveredDay = 4;
-            var (rep, rev) = ScoreCalculator.ScoreDelivery(_order, _config);
-            Assert.AreEqual(8, rep);
+            int rev = ScoreCalculator.ScoreDelivery(_order, _config);
             Assert.AreEqual(100, rev);
         }
 
         [Test]
-        public void OnTime_Scratched_GainsPlus6()
+        public void OnTime_Scratched_FullRevenue()
         {
-            _order.DeliveredDay = 3;
             _order.Cargo = CargoCondition.Scratched;
-            var (rep, rev) = ScoreCalculator.ScoreDelivery(_order, _config);
-            Assert.AreEqual(6, rep);
+            int rev = ScoreCalculator.ScoreDelivery(_order, _config);
             Assert.AreEqual(100, rev);
         }
 
         [Test]
-        public void OnTime_Ruined_GainsMinus2AndZeroRevenue()
+        public void OnTime_Ruined_ZeroRevenue()
         {
-            _order.DeliveredDay = 2;
             _order.Cargo = CargoCondition.Ruined;
-            var (rep, rev) = ScoreCalculator.ScoreDelivery(_order, _config);
-            Assert.AreEqual(-2, rep);
+            int rev = ScoreCalculator.ScoreDelivery(_order, _config);
             Assert.AreEqual(0, rev);
         }
 
         [Test]
-        public void Late_Intact_FlatMinus5AndHalfRevenue()
+        public void Late_Intact_HalfRevenue()
         {
-            _order.DeliveredDay = 5;
-            var (rep, rev) = ScoreCalculator.ScoreDelivery(_order, _config);
-            Assert.AreEqual(-5, rep);
+            _order.IsLate = true; // giao muộn: chạm hạn khi chưa giao — chốt một lần trong MarkLate
+            int rev = ScoreCalculator.ScoreDelivery(_order, _config);
             Assert.AreEqual(50, rev);
         }
 
         [Test]
-        public void Late_Ruined_FlatMinus5AndZeroRevenue()
+        public void Late_Ruined_ZeroRevenue()
         {
-            _order.DeliveredDay = 7;
+            _order.IsLate = true;
             _order.Cargo = CargoCondition.Ruined;
-            var (rep, rev) = ScoreCalculator.ScoreDelivery(_order, _config);
-            Assert.AreEqual(-5, rep);
+            int rev = ScoreCalculator.ScoreDelivery(_order, _config);
             Assert.AreEqual(0, rev);
-        }
-
-        [Test]
-        public void UndeliveredCount_AcceptsAcceptedAndAssignedOnly()
-        {
-            var state = new GameState(_config);
-            state.Orders.Add(new OrderState { Id = "A", Status = OrderStatus.Accepted });
-            state.Orders.Add(new OrderState { Id = "B", Status = OrderStatus.Assigned });
-            state.Orders.Add(new OrderState { Id = "C", Status = OrderStatus.Delivered });
-            state.Orders.Add(new OrderState { Id = "D", Status = OrderStatus.Declined });
-            state.Orders.Add(new OrderState { Id = "E", Status = OrderStatus.InInbox });
-            Assert.AreEqual(2, ScoreCalculator.UndeliveredCount(state));
         }
     }
 }

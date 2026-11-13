@@ -16,8 +16,8 @@ namespace AyeAye
         public string fromPortId;
         public string toPortId;
 
-        [Tooltip("Hạn giao (tuyệt đối theo ngày của ván, vd: 3 = trước hết Ngày 3).")]
-        public int deadlineDay = 3;
+        [Tooltip("Hạn tính từ LÚC ĐƠN XUẤT HIỆN (giây trên đồng hồ ván).")]
+        public float deadlineSeconds = 60f;
 
         [Tooltip("Doanh thu nếu giao đúng hạn và hàng nguyên vẹn.")]
         public int revenue = 100;

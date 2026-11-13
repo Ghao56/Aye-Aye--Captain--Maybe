@@ -132,10 +132,10 @@ namespace AyeAye
             // §5.3
             return new List<ShipDef>
             {
-                Ship("tau-tia-chop", "Tia Chớp", CrewId.Bob, "Bob", SpeedClass.Fast, "Nhanh · Ẩu · Thích đường tắt", Goc),
-                Ship("tau-rua-vang", "Rùa Vàng", CrewId.Chen, "Chen", SpeedClass.Slow, "Chậm · Thân vững · Bình tĩnh", Goc),
-                Ship("tau-dung-quy-trinh", "Đúng Quy Trình", CrewId.Mira, "Mira", SpeedClass.Normal, "Chuẩn sách · Hơi cứng nhắc", Goc),
-                Ship("tau-nghi-ngo", "Nghi Ngờ Số Một", CrewId.Dex, "Dex", SpeedClass.Normal, "Đa nghi · Kiểm tra kỹ", Vang),
+                Ship("tau-tia-chop", "CARGO-9", CrewId.Bob, "Bob", SpeedClass.Fast, "Nhanh · Ẩu · Thích đường tắt", Goc),
+                Ship("tau-rua-vang", "HAULER-4", CrewId.Chen, "Chen", SpeedClass.Slow, "Chậm · Thân vững · Bình tĩnh", Goc),
+                Ship("tau-dung-quy-trinh", "FREIGHT-12", CrewId.Mira, "Mira", SpeedClass.Normal, "Chuẩn sách · Hơi cứng nhắc", Goc),
+                Ship("tau-nghi-ngo", "TRANSIT-3", CrewId.Dex, "Dex", SpeedClass.Normal, "Đa nghi · Kiểm tra kỹ", Vang),
             };
         }
 
@@ -157,31 +157,31 @@ namespace AyeAye
             };
         }
 
-        static OrderDef Order(string id, string customer, OrderTag tags, string from, string to, int deadline, int revenue, string clue)
+        static OrderDef Order(string id, string customer, OrderTag tags, string from, string to, float deadline, int revenue, string clue)
         {
             var o = ScriptableObject.CreateInstance<OrderDef>();
             o.orderId = id; o.customerName = customer; o.tags = tags; o.fromPortId = from; o.toPortId = to;
-            o.deadlineDay = deadline; o.revenue = revenue; o.clue = clue; o.weight = 1;
+            o.deadlineSeconds = deadline; o.revenue = revenue; o.clue = clue; o.weight = 1;
             return o;
         }
 
         public static OrderPool BuildOrderPool()
         {
-            // §5.4
+            // §5.4 — deadlineSeconds đặt theo DemoValidator (ETA nhanh nhất + biên phản ứng 25s, tutorial +30s — xem ASSUMPTIONS.md G1)
             var pool = ScriptableObject.CreateInstance<OrderPool>();
             pool.fixedFirstDay = new List<OrderDef>
             {
-                Order("O-01", "Tiệm Bánh Hành Tinh Xa", OrderTag.Fragile, Goc, Vang, 3, 120, "Thùng ghi DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES"),
-                Order("O-02", "Cửa hàng Dép Lê Số 1", OrderTag.None, Goc, Camap, 4, 100, "Tuyến Sương Mù ngắn nhưng... mù như tâm trạng sếp"),
+                Order("O-01", "Tiệm Bánh Hành Tinh Xa", OrderTag.Fragile, Goc, Vang, 70f, 120, "Thùng ghi DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES"),
+                Order("O-02", "Cửa hàng Dép Lê Số 1", OrderTag.None, Goc, Camap, 85f, 100, "Tuyến Sương Mù ngắn nhưng... mù như tâm trạng sếp"),
             };
             pool.pool = new List<OrderDef>
             {
-                Order("O-03", "Kem Que Sa Mạc", OrderTag.Cold, Goc, Tram, 4, 90, "Kem mà đi đường bão... ẵm về nước"),
-                Order("O-04", "Tiệm Gương Vỡ Hạnh Phúc", OrderTag.Fragile, Suong, Camap, 5, 110, "Gương vỡ = 7 năm xui. Đừng cho Bob chở."),
-                Order("O-05", "Pizza Giao Chậm Là Miễn Phí", OrderTag.Urgent, Goc, Vang, 3, 70, "Tên cửa hàng đã nói tất cả."),
-                Order("O-06", "Hội Sưu Tập Đá Cuội", OrderTag.None, Vang, Tram, 7, 100, "Đá cuội không vội. Nhưng sếp thì có."),
-                Order("O-07", "Đám Cưới Cá Heo", OrderTag.Fragile | OrderTag.Urgent, Camap, Goc, 6, 160, "Cá heo không đợi. Hàng dễ vỡ thì càng không."),
-                Order("O-08", "Bưu Kiện Không Ghi Tên", OrderTag.None, Suong, Tram, 8, 130, "Không ai nhận trách nhiệm. Đặc biệt là nội dung."),
+                Order("O-03", "Kem Que Sa Mạc", OrderTag.Cold, Goc, Tram, 75f, 90, "Kem mà đi đường bão... ẵm về nước"),
+                Order("O-04", "Tiệm Gương Vỡ Hạnh Phúc", OrderTag.Fragile, Suong, Camap, 45f, 110, "Gương vỡ = 7 năm xui. Đừng cho Bob chở."),
+                Order("O-05", "Pizza Giao Chậm Là Miễn Phí", OrderTag.Urgent, Goc, Vang, 45f, 70, "Tên cửa hàng đã nói tất cả."),
+                Order("O-06", "Hội Sưu Tập Đá Cuội", OrderTag.None, Vang, Tram, 90f, 100, "Đá cuội không vội. Nhưng sếp thì có."),
+                Order("O-07", "Đám Cưới Cá Heo", OrderTag.Fragile | OrderTag.Urgent, Camap, Goc, 90f, 160, "Cá heo không đợi. Hàng dễ vỡ thì càng không."),
+                Order("O-08", "Bưu Kiện Không Ghi Tên", OrderTag.None, Suong, Tram, 75f, 130, "Không ai nhận trách nhiệm. Đặc biệt là nội dung."),
             };
             return pool;
         }
@@ -227,7 +227,7 @@ namespace AyeAye
                     E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex đọc nhầm đèn.", "Khoan... đèn đó là của bến phụ?"))
                 );
 
-            var i02 = Inc("I-02", "Bão bất ngờ", "Khối mây đen nghiêng về phía mũi tàu.", "Rùa Vàng đã gia cố thân tàu.",
+            var i02 = Inc("I-02", "Bão bất ngờ", "Khối mây đen nghiêng về phía mũi tàu.", "HAULER-4 đã gia cố thân tàu.",
                 new[] { Trig(hazard: HazardType.Storm) },
                 OptI("Xuyên bão", "Giữ hướng, đâm thẳng.", 0.3f,
                     E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Smart, "Thân tàu gia cố chịu được sóng.", "Sóng lớn thì tàu phải cứng."),
@@ -246,8 +246,8 @@ namespace AyeAye
                     E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Được qua, sạc hụt 20.", "Đây... coi như tiền xe ôm.", revenueDelta: -20),
                     E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob mặc cả cực mạnh, phí rẻ nhất.", "Mười chục thôi, ông nội!")),
                 OptI("Phóng nhanh thoát", "Tăng tốc toàn lực.", 0.3f,
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Không tàu nào nhanh hơn Tia Chớp.", "Tạm biệt, đàn cá!"),
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "Rùa Vàng mà đua? Kẹt.", "Ơ... chân vịt quay rồi!")),
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Không tàu nào nhanh hơn CARGO-9.", "Tạm biệt, đàn cá!"),
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "HAULER-4 mà đua? Kẹt.", "Ơ... chân vịt quay rồi!")),
                 OptI("Mặc cả / đánh lừa", "Chém gió cho bọn cướp quay đầu.", 0f,
                     E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.Smart, "Dex nói dối có mặt giàu kinh nghiệm.", "Đằng kia có cảnh sát biển."),
                     E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.SlipUp, "Mira không biết nói dối.", "Xin chào, chúng tôi chở hàng quý giá..."))
@@ -323,22 +323,22 @@ namespace AyeAye
 
         public static EndingDefinitions BuildEndings()
         {
-            // FR-0701: 5 đoạn kết theo Uy tín cuối
+            // FR-0701 bản liên tục (G1.6): thắng 0/1/2 trễ → E1/E2/E3; thua → E4; thua quá sớm → E5.
             var endings = ScriptableObject.CreateInstance<EndingDefinitions>();
             EndingDefinitions.EndingEntry En(EndingId id, string title, string body) =>
                 new EndingDefinitions.EndingEntry { id = id, title = title, body = body };
             endings.endings = new List<EndingDefinitions.EndingEntry>
             {
                 En(EndingId.E1_Empire, "Đế chế \"Sếp Vĩ Đại\"",
-                    "Uy tín 85+. Mọi tàu hát vang trên boong. Ít nhất một thuyền trưởng khóc vì cảm động — mọi nghi ngờ là Bob, nhưng Bob thề là dị ứng bụi biển."),
+                    "Không trễ một đơn nào. Mọi tàu hát vang trên boong. Ít nhất một thuyền trưởng khóc vì cảm động — mọi nghi ngờ là Bob, nhưng Bob thề là dị ứng bụi biển."),
                 En(EndingId.E2_Renowned, "Công ty có tiếng",
-                    "Uy tín 65–84. Khách quay lại đặt đơn tiếp, Dex vẫn nghi ngờ: \"Đơn tốt như vậy? Cẩn thận đó là bẫy.\""),
-                En(EndingId.E3_Survived, "Sống sót qua tuần",
-                    "Uy tín 40–64. Hòa vốn vừa đủ. Chen nhắn: \"Tôi đang tới. Đừng hỏi tới đâu.\""),
+                    "Chỉ trễ một đơn duy nhất. Khách quay lại đặt đơn tiếp, Dex vẫn nghi ngờ: \"Đơn tốt như vậy? Cẩn thận đó là bẫy.\""),
+                En(EndingId.E3_Survived, "Sống sót qua tháng",
+                    "Trễ hai đơn, vẫn về đích đủ đơn hàng. Hòa vốn vừa đủ. Chen nhắn: \"Tôi đang tới. Đừng hỏi tới đâu.\""),
                 En(EndingId.E4_Debt, "Nợ ngập đầu",
-                    "Uy tín 20–39. Bob đề xuất: \"Bán tàu cho khỏe, sếp. Tàu nào cũng được. Trừ tàu tôi.\""),
+                    "Trễ quá số đơn cho phép, công ty gánh nợ. Bob đề xuất: \"Bán tàu cho khỏe, sếp. Tàu nào cũng được. Trừ tàu tôi.\""),
                 En(EndingId.E5_Bankrupt, "Phá sản",
-                    "Uy tín dưới 20. Cả đội tàu đòi lương bằng... bánh. Bánh sinh nhật nhiều tầng ấy. Đã vỡ rồi."),
+                    "Trễ quá sớm, đội tàu gần như chưa kịp giao gì. Cả đội đòi lương bằng... bánh. Bánh sinh nhật nhiều tầng ấy. Đã vỡ rồi."),
             };
             return endings;
         }

@@ -15,3 +15,4 @@ MonoBehaviour:
   portId: suong
   displayName: "\u0110\u1EA3o S\u01B0\u01A1ng M\xF9"
   isHeadquarters: 0
+  mapPosition: {x: 0.2, y: 0.75}

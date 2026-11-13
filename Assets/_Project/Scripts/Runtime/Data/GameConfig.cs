@@ -2,32 +2,61 @@ using UnityEngine;
 
 namespace AyeAye
 {
-    // Mọi số cân bằng nằm đây (FR-0901, mục 2.5) — không hard-code số cân bằng trong logic/UI.
+    // Mọi số cân bằng nằm đây — bản CHẠY LIÊN TỤC (bỏ ngày, xem ASSUMPTIONS.md mục G1).
     [CreateAssetMenu(fileName = "GameConfig", menuName = "AyeAye/Game Config")]
     public class GameConfig : ScriptableObject
     {
         [Header("Ván chơi")]
-        [Tooltip("Số ngày của một ván.")]
-        public int gameLengthDays = 8;
-
-        [Tooltip("Uy tín khi bắt đầu (0-100).")]
-        public int startReputation = 50;
-
         [Tooltip("Số đơn đang hoạt động tối đa.")]
         public int maxActiveOrders = 4;
 
-        [Tooltip("Số đơn mới mỗi ngày (bốc ngẫu nhiên trong khoảng; Ngày 1 luôn dùng đơn cố định).")]
-        public int newOrdersPerDayMin = 2;
-        public int newOrdersPerDayMax = 3;
+        [Header("Đồng hồ")]
+        [Tooltip("Bước mô phỏng cố định (giây). UI cộng dồn dt thật rồi chạy Advance theo bước này — cùng seed cho cùng kết quả.")]
+        public float simTickSeconds = 0.1f;
+
+        [Tooltip("1 route-unit mất bao nhiêu giây ở tốc Thường.")]
+        public float secondsPerRouteUnit = 20f;
+
+        [Header("Đơn hàng")]
+        [Tooltip("Khoảng giây giữa hai lần bốc đơn mới.")]
+        public float orderIntervalSeconds = 40f;
+
+        [Tooltip("Khoảng rút ngắn theo số mũ sau mỗi đơn đã bốc.")]
+        public float orderIntervalDecayPerOrder = 0.92f;
+
+        [Tooltip("Khoảng tối thiểu giữa hai lần bốc.")]
+        public float orderIntervalMinSeconds = 15f;
+
+        [Tooltip("Hạn đếm ngược thấp hơn số giây này thì tô đỏ cảnh báo (UI).")]
+        public float deadlineWarnSeconds = 30f;
+
+        [Tooltip("Biên phản ứng người chơi: hạn đơn ≥ ETA tàu nhanh nhất + biên này (DemoValidator kiểm).")]
+        public float deadlineReactionMarginSeconds = 25f;
+
+        [Tooltip("Biên thêm cho 2 đơn tutorial (O-01/O-02) — người chơi mới cần thời gian đọc hướng dẫn.")]
+        public float tutorialDeadlineBonusSeconds = 30f;
+
+        [Header("Thắng / Thua")]
+        [Tooltip("Giao đủ số đơn này → thắng.")]
+        public int winDeliveries = 10;
+
+        [Tooltip("Số lần trễ tối đa — đủ số này là thua ngay.")]
+        public int maxLateDeliveries = 3;
+
+        [Tooltip("Thua quá sớm nếu lúc thua đã giao ít hơn số đơn này.")]
+        public int earlyLoseDeliveries = 2;
 
         [Header("Sự cố")]
-        [Range(0f, 1f), Tooltip("Xác suất mỗi tàu Moving gặp sự cố mỗi ngày.")]
-        public float incidentChancePerMovingShip = 0.6f;
+        [Range(0f, 1f), Tooltip("Xác suất mỗi lần một tàu vào cạnh mới.")]
+        public float incidentChancePerEdge = 0.15f;
 
-        [Tooltip("Tổng sự cố tối đa mỗi ngày (kể cả sự cố cố định).")]
-        public int maxIncidentsPerDay = 2;
+        [Tooltip("Số sự cố đang chờ tối đa cùng lúc (đủ cap → đồng hồ vẫn chạy nhưng không roll thêm).")]
+        public int maxPendingIncidents = 2;
 
-        [Header("Tốc độ (route-units/ngày)")]
+        [Tooltip("Cho phép roll sự cố khi tàu đi rảnh (roaming) — [S].")]
+        public bool incidentsWhileRoaming = false;
+
+        [Header("Tốc độ (hệ số nhân trên secondsPerRouteUnit)")]
         public float fastSpeed = 1.5f;
         public float normalSpeed = 1.0f;
         public float slowSpeed = 0.7f;
@@ -38,27 +67,8 @@ namespace AyeAye
         public float slipUpProgressDelta = -0.7f;
 
         [Header("Chấm điểm (FR-0602)")]
-        [Tooltip("Uy tín khi giao đúng hạn.")]
-        public int onTimeReputation = 6;
-
-        public int cargoIntactBonus = 2;
-        public int cargoScratchedBonus = 0;
-        public int cargoRuinedBonus = -8;
-
-        [Tooltip("Uy tín khi giao trễ (không cộng thưởng theo mức hàng).")]
-        public int lateReputationPenalty = -5;
-
-        [Range(0f, 1f), Tooltip("Hệ số doanh thu khi giao trễ.")]
+        [Tooltip("Hệ số doanh thu khi giao trễ.")]
         public float lateRevenueFactor = 0.5f;
-
-        [Tooltip("Uy tín bị trừ cho mỗi đơn đã nhận nhưng chưa giao khi hết ván.")]
-        public int undeliveredReputationPenalty = 8;
-
-        [Header("Ngưỡng kết thúc theo Uy tín (FR-0701)")]
-        public int endingE1Threshold = 85;
-        public int endingE2Threshold = 65;
-        public int endingE3Threshold = 40;
-        public int endingE4Threshold = 20;
 
         [Header("Hiệu ứng")]
         [Tooltip("Tốc độ gõ chữ của hiệu ứng terminal (ký tự/giây).")]
@@ -66,9 +76,6 @@ namespace AyeAye
 
         [Tooltip("Nếu bật: Restart chơi lại với đúng seed cũ (chuỗi sự cố/đơn lặp lại).")]
         public bool repeatSeedOnRestart = false;
-
-        [Tooltip("Thời lượng animation tàu chạy trên bản đồ sau MAKE IT SO (ms).")]
-        public int fleetAnimMs = 1200;
 
         public float SpeedValue(SpeedClass speed)
         {
@@ -80,6 +87,12 @@ namespace AyeAye
             }
         }
 
+        // Tốc chạy thật (route-units/giây) — dùng cho Advance và ETA trên UI.
+        public float SpeedUnitsPerSecond(SpeedClass speed)
+        {
+            return SpeedValue(speed) / Mathf.Max(0.0001f, secondsPerRouteUnit);
+        }
+
         public float OutcomeDelta(DecisionOutcome outcome)
         {
             switch (outcome)
@@ -87,16 +100,6 @@ namespace AyeAye
                 case DecisionOutcome.Smart: return smartProgressDelta;
                 case DecisionOutcome.SlipUp: return slipUpProgressDelta;
                 default: return normalProgressDelta;
-            }
-        }
-
-        public int CargoBonus(CargoCondition cargo)
-        {
-            switch (cargo)
-            {
-                case CargoCondition.Intact: return cargoIntactBonus;
-                case CargoCondition.Scratched: return cargoScratchedBonus;
-                default: return cargoRuinedBonus;
             }
         }
     }

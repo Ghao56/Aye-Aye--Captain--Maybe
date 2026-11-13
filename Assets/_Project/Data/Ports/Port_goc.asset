@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.PortDef
   portId: goc
-  displayName: "C\u1EA3ng G\u1ED1c"
+  displayName: "Tr\u1EA1m Trung Chuy\u1EC3n"
   isHeadquarters: 1
+  mapPosition: {x: 0.5, y: 0.5}

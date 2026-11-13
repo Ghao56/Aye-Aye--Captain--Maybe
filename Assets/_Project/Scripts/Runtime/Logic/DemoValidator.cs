@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace AyeAye
 {
     /// <summary>
     /// FR-0905 Validate (thuần C#, có test): tham chiếu đủ, bảng outcome đủ (FR-0505),
-    /// route nối được, không có đơn không thể giao. Menu Tools/AyeAye/Validate chỉ gọi lớp này trên assets.
+    /// route nối được, không có đơn không thể giao đúng hạn bởi tàu nhanh nhất. Menu Tools/AyeAye/Validate chỉ gọi lớp này trên assets.
     /// ports/edges tuỳ chọn: cung cấp thì kiểm tra thêm kết nối và id cảng.
     /// </summary>
     public static class DemoValidator
@@ -56,9 +57,14 @@ namespace AyeAye
 
             // Đơn: từ/đến hợp lệ và có ít nhất 1 Route Option nối được (không có đơn không thể giao).
             var orders = new List<OrderDef>();
+            var fixedIds = new HashSet<string>(); // đơn tutorial — được cộng thêm biên tutorialDeadlineBonusSeconds
             if (orderPool != null)
             {
-                if (orderPool.fixedFirstDay != null) orders.AddRange(orderPool.fixedFirstDay);
+                if (orderPool.fixedFirstDay != null)
+                {
+                    orders.AddRange(orderPool.fixedFirstDay);
+                    foreach (var o in orderPool.fixedFirstDay) if (o != null) fixedIds.Add(o.orderId);
+                }
                 if (orderPool.pool != null) orders.AddRange(orderPool.pool);
             }
             if (extraOrders != null) orders.AddRange(extraOrders);
@@ -66,9 +72,25 @@ namespace AyeAye
             {
                 if (o == null) { errors.Add("OrderDef null trong pool"); continue; }
                 if (string.IsNullOrEmpty(o.orderId)) errors.Add("OrderDef thiếu orderId");
-                if (o.deadlineDay < 1) errors.Add($"{o.orderId}: deadlineDay < 1");
+                if (o.deadlineSeconds <= 0f) errors.Add($"{o.orderId}: deadlineSeconds <= 0");
                 if (routes != null && routes.GetOptions(o.fromPortId, o.toPortId) == null)
                     errors.Add($"{o.orderId}: không có tuyến nào nối {o.fromPortId} → {o.toPortId} (đơn không thể giao)");
+                // Đơn phải giao nổi đúng hạn bởi tàu nhanh nhất + biên phản ứng người chơi (chỉnh 6, mục 2.5).
+                if (config != null && routes != null && o.deadlineSeconds > 0f)
+                {
+                    var opts = routes.GetOptions(o.fromPortId, o.toPortId);
+                    if (opts != null)
+                    {
+                        float minLen = float.MaxValue;
+                        foreach (var opt in opts)
+                            if (opt != null && opt.length < minLen) minLen = opt.length;
+                        float fastest = minLen / Mathf.Max(0.0001f, config.SpeedUnitsPerSecond(SpeedClass.Fast));
+                        float margin = Mathf.Max(0f, config.deadlineReactionMarginSeconds)
+                            + (fixedIds.Contains(o.orderId) ? Mathf.Max(0f, config.tutorialDeadlineBonusSeconds) : 0f);
+                        if (fastest + margin > o.deadlineSeconds)
+                            errors.Add($"{o.orderId}: hạn {o.deadlineSeconds:0.#}s < ETA nhanh nhất {fastest:0.#}s + biên phản ứng {margin:0.#}s (người chơi không kịp thao tác)");
+                    }
+                }
             }
 
             // Route option: các portPath phải nối được bằng cạnh có thật (khi có danh sách cạnh).

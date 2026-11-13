@@ -17,7 +17,7 @@ MonoBehaviour:
   tags: 1
   fromPortId: goc
   toPortId: vang
-  deadlineDay: 3
+  deadlineSeconds: 70
   revenue: 120
   clue: "Th\xF9ng ghi DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES"
   weight: 1

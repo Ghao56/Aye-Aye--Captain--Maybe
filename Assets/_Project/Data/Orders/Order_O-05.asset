@@ -17,7 +17,7 @@ MonoBehaviour:
   tags: 4
   fromPortId: goc
   toPortId: vang
-  deadlineDay: 3
+  deadlineSeconds: 45
   revenue: 70
   clue: "T\xEAn c\u1EEDa h\xE0ng \u0111\xE3 n\xF3i t\u1EA5t c\u1EA3."
   weight: 1

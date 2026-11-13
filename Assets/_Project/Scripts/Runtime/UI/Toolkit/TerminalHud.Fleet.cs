@@ -10,20 +10,25 @@ namespace AyeAye
     {
         Dictionary<string, VisualElement> shipDots;      // shipId → chấm tàu trên bản đồ (dựng lại mỗi Refresh)
         VisualElement fleetMap;
-        bool fleetAnimating;
-        float fleetElapsed;
-        Dictionary<string, (RouteOption route, float distance, string portId)> pendingSimSnapshot;
 
         string selectedShipId;
-        string pendingOrderId;      // đơn đang chọn tuyến trong panel lệnh
-        int pendingOptionIndex = -1;
-        RouteOption previewRoute;   // tuyến tô sáng trên bản đồ (chọn trước khi staged, hoặc lệnh đã staged)
         string fleetError;
+        string fleetMode = "assign"; // chế độ panel lệnh: "assign" | "reposition"
+
+        // Roaming hiển thị (chỉ UI): tàu Idle bay vòng nhỏ quanh cảng — không đụng state/Rng.
+        IVisualElementScheduledItem roamItem;
+        float roamElapsedMs;
+        Dictionary<string, float> roamStart = new Dictionary<string, float>(); // shipId → tick bắt đầu Idle (nối mượt)
+        const float RoamRadius = 0.045f;      // bán kính quỹ đạo (đơn vị tọa độ chuẩn hóa 0..1)
+        const float RoamRadiusSmall = 0.5f;   // hệ số thu nhỏ khi tàu đã có đơn hoặc đang được chọn
+        const float RoamPeriodMs = 6000f;     // chu kỳ 1 vòng
+        const float RoamWarmupMs = 1200f;     // thời gian tăng bán kính từ 0 (nối mượt sau khi giao/tới cảng)
+        const int RoamTickMs = 33;
 
         static readonly Vector2[] IdleOffsets =
         {
-            new Vector2(0f, 0f), new Vector2(0.025f, 0.025f),
-            new Vector2(-0.025f, 0.02f), new Vector2(0.02f, -0.025f),
+            new Vector2(0f, 0f), new Vector2(0.05f, 0.04f),
+            new Vector2(-0.05f, 0.04f), new Vector2(0.05f, -0.04f),
         };
 
         // ---- dữ liệu vị trí -------------------------------------------------
@@ -42,33 +47,49 @@ namespace AyeAye
 
         Vector2 ShipAnchor(int shipIndex, string portId) => PortPos(portId) + IdleOffsets[shipIndex % IdleOffsets.Length];
 
-        Dictionary<string, (RouteOption, float, string)> CaptureSimSnapshot()
+        // G1 shim: chấm tàu Moving bám state mỗi frame (panel dựng lại chỉ khi key đổi).
+        // Tàu Idle giao cho RoamTick (tránh chấm giật giữa anchor và quỹ đạo); xóa roamStart để khi về Idle roam nối mượt.
+        void UpdateFleetDots()
         {
-            var snap = new Dictionary<string, (RouteOption, float, string)>();
+            if (state == null || shipDots == null || panels[1] == null || !panels[1].ClassListContains("on")) return;
+            int index = 0;
             foreach (var s in state.Ships)
-                snap[s.Id] = (s.Route, s.DistanceAlongRoute, s.PortId);
-            return snap;
+            {
+                if (s.Status == ShipStatus.Moving && s.Route != null)
+                {
+                    if (shipDots.TryGetValue(s.Id, out var dot) && dot != null) PlaceDot(dot, s, index);
+                    roamStart.Remove(s.Id);
+                }
+                index++;
+            }
         }
 
         // ---- dựng panel ------------------------------------------------------
 
         void BuildFleetPanel()
         {
-            StopFleetAnim();
             var panel = panels[1];
             panel.Clear();
             shipDots = new Dictionary<string, VisualElement>();
 
             var row = new VisualElement();
             row.AddToClassList("fleet-row");
+            var left = new VisualElement();
+            left.AddToClassList("fleet-left");
             fleetMap = new VisualElement();
             fleetMap.AddToClassList("fleet-map");
             fleetMap.generateVisualContent += DrawFleetEdges;
-            fleetMap.RegisterCallback<MouseDownEvent>(_ => SkipFleetAnim()); // SKIP: bấm vào bản đồ
-            var side = new VisualElement();
+            var legend = new VisualElement();
+            legend.AddToClassList("fleet-legend");
+            var seen = new HashSet<HazardType>();
+            foreach (var e in mapRouteDefs)
+                if (seen.Add(e.hazard)) legend.Add(Chip("chip-h-" + e.hazard.ToString().ToLowerInvariant(), e.hazard.ToString()));
+            var side = CRTScroll(); // cột phải: MỘT ScrollView dọc duy nhất (thẻ tàu + panel lệnh)
             side.AddToClassList("fleet-side");
-            row.Add(fleetMap);
+            row.Add(left);
             row.Add(side);
+            left.Add(fleetMap);
+            left.Add(legend);
             panel.Add(row);
 
             // Nút hành tinh + chấm tàu (tọa độ %, tự co giãn theo kích thước phần tử)
@@ -88,21 +109,13 @@ namespace AyeAye
                 fleetMap.Add(node);
             }
 
-            // Chú giải màu nguy hiểm (từ RouteDef — nguồn duy nhất là dữ liệu mẫu).
-            var legend = new VisualElement();
-            legend.AddToClassList("map-legend");
-            var seen = new HashSet<HazardType>();
-            foreach (var e in mapRouteDefs)
-                if (seen.Add(e.hazard)) legend.Add(Chip("chip-h-" + e.hazard.ToString().ToLowerInvariant(), e.hazard.ToString()));
-            fleetMap.Add(legend);
-
             foreach (var s in state.Ships)
             {
                 var dot = new VisualElement();
                 dot.AddToClassList("map-dot");
                 dot.AddToClassList("dot-" + (index % IdleOffsets.Length));
                 dot.tooltip = $"{s.DisplayName} — thuyền trưởng {s.Captain}";
-                dot.RegisterCallback<MouseDownEvent>(_ => { selectedShipId = s.Id; Dirty(); });
+                dot.RegisterCallback<ClickEvent>(_ => { selectedShipId = s.Id; Dirty(); });
                 PlaceDot(dot, s, index);
                 fleetMap.Add(dot);
                 shipDots[s.Id] = dot;
@@ -111,6 +124,31 @@ namespace AyeAye
 
             BuildShipCards(side);
             BuildCommandPanel(side);
+
+            // Roaming hiển thị cho tàu Idle (tạm dừng khi tab không hiện hoặc đang animation).
+            roamItem?.Pause();
+            roamItem = fleetMap.schedule.Execute(RoamTick).Every(RoamTickMs);
+        }
+
+        void RoamTick()
+        {
+            if (state == null || shipDots == null) return;
+            if (panels[1] == null || !panels[1].ClassListContains("on")) return;
+            roamElapsedMs += RoamTickMs;
+            int index = 0;
+            foreach (var s in state.Ships)
+            {
+                if (s.Status == ShipStatus.Moving && s.Route != null) continue; // tàu Moving đi đúng tuyến, không roam
+                if (!shipDots.TryGetValue(s.Id, out var dot) || dot == null) { index++; continue; }
+                if (!roamStart.TryGetValue(s.Id, out float start)) { roamStart[s.Id] = roamElapsedMs; start = roamElapsedMs; }
+                bool small = !string.IsNullOrEmpty(s.OrderId) || s.Id == selectedShipId;
+                float warmup = Mathf.Clamp01((roamElapsedMs - start) / RoamWarmupMs); // nối mượt từ anchor
+                float jitter = (s.Id.GetHashCode() & 0xFFFF) / 65535f * 0.6f;         // pha lệch theo hash, KHÔNG dùng Rng
+                float angle = 2f * Mathf.PI * (roamElapsedMs / RoamPeriodMs) + index * (Mathf.PI / 2f) + jitter;
+                float radius = RoamRadius * warmup * (small ? RoamRadiusSmall : 1f);
+                SetDotPercent(dot, ShipAnchor(index, s.PortId) + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius);
+                index++;
+            }
         }
 
         void PlaceDot(VisualElement dot, ShipState ship, int shipIndex)
@@ -158,48 +196,29 @@ namespace AyeAye
                 painter.LineTo(new Vector2(b.x * rect.width, b.y * rect.height));
                 painter.ClosePath();
             }
-            // Tuyến đang xem trước (chọn lệnh hoặc lệnh đã staged): nét đứt màu hổ phách.
-            if (previewRoute != null && previewRoute.portPath != null && previewRoute.portPath.Count > 1)
-            {
-                painter.strokeColor = new Color(0.95f, 0.78f, 0.35f);
-                painter.lineWidth = 2.5f;
-                painter.dashPattern = new float[] { 5f, 4f };
-                painter.BeginPath();
-                painter.MoveTo(new Vector2(PortPos(previewRoute.portPath[0]).x * rect.width,
-                                           PortPos(previewRoute.portPath[0]).y * rect.height));
-                for (int i = 1; i < previewRoute.portPath.Count; i++)
-                {
-                    var p = PortPos(previewRoute.portPath[i]);
-                    painter.LineTo(new Vector2(p.x * rect.width, p.y * rect.height));
-                }
-                painter.ClosePath();
-            }
         }
 
         // ---- cột phải: thẻ tàu ----------------------------------------------
 
         void BuildShipCards(VisualElement side)
         {
-            var cards = new ScrollView();
-            cards.AddToClassList("fleet-cards");
-            cards.Add(Section("ĐỘI TÀU"));
+            side.Add(Section("ĐỘI TÀU"));
             int index = 0;
             foreach (var s in state.Ships)
             {
                 var card = new VisualElement();
                 card.AddToClassList("ship-card");
                 if (s.Id == selectedShipId) card.AddToClassList("selected");
-                card.RegisterCallback<MouseDownEvent>(_ => { selectedShipId = s.Id; pendingOrderId = null; previewRoute = null; Dirty(); });
+                card.RegisterCallback<ClickEvent>(_ => { selectedShipId = s.Id; Dirty(); });
                 card.Add(Title(s.DisplayName));
-                card.Add(Line($"Thuyền trưởng {CaptainName(s.Captain)} · Tốc độ {SpeedName(s.Speed)} · {ConditionName(s.Condition)}"));
+                card.Add(Line($"Thuyền trưởng: {CaptainName(s.Captain)} · {SpeedName(s.Speed)} · {ConditionName(s.Condition)}"));
+                var def = shipDefs != null ? shipDefs.Find(d => d.shipId == s.Id) : null;
+                if (def != null && !string.IsNullOrEmpty(def.traits)) card.Add(Line(def.traits));
                 card.Add(Line(LocationLine(s, index)));
                 card.Add(Line(CargoLine(s)));
-                var cmd = state.StagedCommands.Find(c => c.ShipId == s.Id);
-                if (cmd != null) card.Add(Line(StagedLine(cmd)));
-                cards.Add(card);
+                side.Add(card);
                 index++;
             }
-            side.Add(cards);
         }
 
         string LocationLine(ShipState s, int shipIndex)
@@ -219,19 +238,10 @@ namespace AyeAye
             return o != null ? $"Chở: {o.CustomerName} → {PortName(o.ToPortId)}" : "Không chở hàng";
         }
 
-        string StagedLine(StagedCommand cmd)
-        {
-            string desc = cmd.Kind == CommandKind.Assign && !string.IsNullOrEmpty(cmd.OrderId)
-                ? $"Giao đơn {cmd.OrderId}"
-                : $"Điều phóng rỗng → {PortName(cmd.Route.ToPort)}";
-            float eta = EtaDays(cmd.Route, state.Ships.Find(s => s.Id == cmd.ShipId));
-            return $"Lệnh (chờ MAKE IT SO): {desc} · {cmd.Route.label} · ETA {eta:0.#} ngày";
-        }
-
-        float EtaDays(RouteOption route, ShipState ship)
+        float EtaSeconds(RouteOption route, ShipState ship)
         {
             if (route == null || ship == null || route.length <= 0.0001f) return 0f;
-            return Mathf.Ceil(route.length / config.SpeedValue(ship.Speed) - 0.0001f);
+            return route.length / config.SpeedUnitsPerSecond(ship.Speed); // giây — đồng hồ chạy thật (G1)
         }
 
         static string CaptainName(CrewId c) => c switch
@@ -255,6 +265,19 @@ namespace AyeAye
             area.AddToClassList("fleet-commands");
             area.Add(Section("LỆNH"));
 
+            // Hai nút chuyển chế độ rõ ràng (mặc định GIAO ĐƠN).
+            var modes = new VisualElement();
+            modes.AddToClassList("btn-row");
+            var btnAssign = new Button(() => { fleetMode = "assign"; fleetError = null; Dirty(); }) { text = "GIAO ĐƠN" };
+            btnAssign.AddToClassList("btn-mode");
+            if (fleetMode == "assign") btnAssign.AddToClassList("selected");
+            var btnRepos = new Button(() => { fleetMode = "reposition"; fleetError = null; Dirty(); }) { text = "ĐIỀU TÀU RỖNG" };
+            btnRepos.AddToClassList("btn-mode");
+            if (fleetMode == "reposition") btnRepos.AddToClassList("selected");
+            modes.Add(btnAssign);
+            modes.Add(btnRepos);
+            area.Add(modes);
+
             if (fleetError != null)
             {
                 var err = new Label(fleetError);
@@ -271,47 +294,29 @@ namespace AyeAye
                 return;
             }
 
-            var staged = state.StagedCommands.Find(c => c.ShipId == ship.Id);
-            if (staged != null)
+            // Tàu đang chạy thì chỉ xem trên bản đồ (áp ngay nên không có pha "chờ MAKE IT SO").
+            if (ship.Status != ShipStatus.Idle)
             {
-                previewRoute = staged.Route;
-                area.Add(Line(StagedLine(staged)));
-                var cancel = new Button(() =>
-                {
-                    fleetError = FleetActions.Cancel(state, ship.Id);
-                    pendingOrderId = null;
-                    if (fleetError == null) previewRoute = null;
-                    Dirty();
-                }) { text = "HỦY LỆNH" };
-                cancel.AddToClassList("btn-decline");
-                area.Add(cancel);
+                area.Add(Line("Tàu đang chạy — xem trên bản đồ."));
                 side.Add(area);
                 return;
             }
 
-            // Chỉ ra lệnh được trong pha Lập kế hoạch (PhaseGate.Interactive).
-            if (PhaseGate.TabAccess(state.Phase, 1) != TabAccess.Interactive || ship.Status != ShipStatus.Idle)
-            {
-                area.Add(Line(state.Phase == GamePhase.Simulation
-                    ? "Tàu đang chạy — xem trên bản đồ."
-                    : "Không ra lệnh được ở pha này."));
-                side.Add(area);
-                return;
-            }
-
-            BuildAssignArea(area, ship);
-            BuildRepositionArea(area, ship);
+            if (fleetMode == "assign") BuildAssignArea(area, ship);
+            else BuildRepositionArea(area, ship);
             side.Add(area);
         }
 
         void BuildAssignArea(VisualElement area, ShipState ship)
         {
-            area.Add(Section("GIAO ĐƠN"));
             var orders = state.Orders.FindAll(o => o.Status == OrderStatus.Accepted
                 && string.IsNullOrEmpty(o.AssignedShipId) && o.FromPortId == ship.PortId);
             if (orders.Count == 0)
             {
-                area.Add(Line("Không có đơn đã nhận nào phù hợp cảng đi của tàu."));
+                var none = new Label("Không có đơn đã nhận nào phù hợp cảng đi của tàu.");
+                none.AddToClassList("order-line");
+                none.AddToClassList("order-muted");
+                area.Add(none);
                 return;
             }
             foreach (var o in orders)
@@ -319,7 +324,7 @@ namespace AyeAye
                 var card = new VisualElement();
                 card.AddToClassList("order-card");
                 card.Add(Title(o.CustomerName));
-                card.Add(Line($"{PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Doanh thu {o.Revenue} · Hạn: Ngày {o.DeadlineDay}"));
+                card.Add(Line($"{PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Doanh thu {o.Revenue} · Hạn: {(o.IsLate ? "TRỄ" : $"còn {Mathf.Max(0f, o.DeadlineAtSeconds - state.ElapsedSeconds):0}s")}"));
 
                 var options = routeTable.GetOptions(o.FromPortId, o.ToPortId);
                 if (options == null || options.Count == 0) { card.Add(Line("Không có tuyến đường.")); area.Add(card); continue; }
@@ -330,40 +335,22 @@ namespace AyeAye
                 {
                     int idx = i;
                     var opt = options[i];
+                    // MAKE IT SO riêng từng thẻ lệnh (G2.3): bấm tuyến = tàu khởi hành ngay.
                     var btn = new Button(() =>
                     {
-                        pendingOrderId = o.Id;
-                        pendingOptionIndex = idx;
-                        previewRoute = opt;
-                        fleetError = null;
+                        fleetError = FleetActions.Assign(state, routeTable, ship.Id, o.Id, idx);
                         Dirty();
-                    }) { text = $"{opt.label} · {opt.length:0.#} ({EtaDays(opt, ship):0.#} ngày)" };
+                    }) { text = $"{opt.label} · {opt.length:0.#} · {EtaSeconds(opt, ship):0}s" };
                     btn.AddToClassList("btn-route");
-                    if (pendingOrderId == o.Id && pendingOptionIndex == idx) btn.AddToClassList("selected");
                     optRow.Add(btn);
                 }
                 card.Add(optRow);
-
-                if (pendingOrderId == o.Id && pendingOptionIndex >= 0)
-                {
-                    var confirm = new Button(() =>
-                    {
-                        fleetError = FleetActions.Assign(state, routeTable, ship.Id, o.Id, pendingOptionIndex);
-                        pendingOrderId = null;
-                        pendingOptionIndex = -1;
-                        if (fleetError == null) previewRoute = null; // lệnh đã staged → preview giữ qua staged.Route
-                        Dirty();
-                    }) { text = "XÁC NHẬN LỆNH" };
-                    confirm.AddToClassList("btn-accept");
-                    card.Add(confirm);
-                }
                 area.Add(card);
             }
         }
 
         void BuildRepositionArea(VisualElement area, ShipState ship)
         {
-            area.Add(Section("ĐIỀU TÀU RỖNG"));
             var row = new VisualElement();
             row.AddToClassList("btn-row");
             bool any = false;
@@ -379,9 +366,8 @@ namespace AyeAye
                     var btn = new Button(() =>
                     {
                         fleetError = FleetActions.Reposition(state, routeTable, ship.Id, kv.Key, idx);
-                        if (fleetError == null) previewRoute = null;
                         Dirty();
-                    }) { text = $"→ {kv.Value.displayName} · {opt.label} ({EtaDays(opt, ship):0.#} ngày)" };
+                    }) { text = $"→ {kv.Value.displayName} · {opt.label} · {EtaSeconds(opt, ship):0}s" };
                     btn.AddToClassList("btn-route");
                     row.Add(btn);
                     any = true;
@@ -389,71 +375,6 @@ namespace AyeAye
             }
             if (!any) row.Add(Line("Không có tuyến đi rỗng từ cảng này."));
             area.Add(row);
-        }
-
-        // ---- animation pha Simulation (chỉ ở UI; không đổi state/Rng) --------
-
-        // shortcut: pha Incident hiện sự cố sau animation phải dây ở Bước 5 (hiện chưa có UI sự cố tương tác).
-        void StartFleetAnimationIfPending()
-        {
-            if (pendingSimSnapshot == null || fleetAnimating) return;
-            if (state.Phase != GamePhase.Simulation) { pendingSimSnapshot = null; return; }
-            var simSnapshot = pendingSimSnapshot;
-
-            var moves = new List<(string shipId, Vector2 from, Vector2 to)>();
-            int index = 0;
-            foreach (var s in state.Ships)
-            {
-                Vector2 end = s.Status == ShipStatus.Moving && s.Route != null
-                    ? AlongRoute(s.Route, s.DistanceAlongRoute)
-                    : ShipAnchor(index, s.PortId);
-                Vector2 start = end;
-                if (simSnapshot.TryGetValue(s.Id, out var snap))
-                    start = snap.Item1 != null ? AlongRoute(snap.Item1, snap.Item2) : ShipAnchor(index, snap.Item3);
-                if ((end - start).sqrMagnitude > 0.000001f)
-                    moves.Add((s.Id, start, end));
-                index++;
-            }
-            pendingSimSnapshot = null;
-            if (moves.Count == 0) return;
-
-            int duration = Mathf.Max(200, config.fleetAnimMs);
-            fleetAnimating = true;
-            foreach (var t in tabs) t.SetEnabled(false);
-            bottomButton.SetEnabled(false);
-
-            fleetMap.schedule.Execute(() =>
-            {
-                if (!fleetAnimating) return;
-                fleetElapsed += 16f;
-                float k = Mathf.Clamp01(fleetElapsed / duration);
-                float eased = k * k * (3f - 2f * k); // smoothstep
-                foreach (var (shipId, from, to) in moves)
-                {
-                    if (!shipDots.TryGetValue(shipId, out var dot) || dot == null) continue;
-                    if (k >= 1f) SetDotPercent(dot, to);
-                    else SetDotPercent(dot, from + (to - from) * eased);
-                }
-                if (k >= 1f) FinishFleetAnim();
-            }).Every(16);
-        }
-
-        void FinishFleetAnim()
-        {
-            fleetAnimating = false;
-            foreach (var t in tabs) t.SetEnabled(true);
-            bottomButton.SetEnabled(true);
-        }
-
-        void SkipFleetAnim()
-        {
-            if (!fleetAnimating) return;
-            fleetElapsed = float.MaxValue / 2f; // tick kế → k=1 → kết thúc
-        }
-
-        void StopFleetAnim()
-        {
-            if (fleetAnimating) FinishFleetAnim();
         }
     }
 }

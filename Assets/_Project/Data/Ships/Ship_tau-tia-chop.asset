@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ShipDef
   shipId: tau-tia-chop
-  displayName: "Tia Ch\u1EDBp"
+  displayName: CARGO-9
   captain: 1
   captainName: Bob
   speedClass: 2

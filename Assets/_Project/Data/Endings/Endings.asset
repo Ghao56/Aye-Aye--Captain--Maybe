@@ -15,26 +15,29 @@ MonoBehaviour:
   endings:
   - id: 1
     title: "\u0110\u1EBF ch\u1EBF \"S\u1EBFp V\u0129 \u0110\u1EA1i\""
-    body: "Uy t\xEDn 85+. M\u1ECDi t\xE0u h\xE1t vang tr\xEAn boong. \xCDt nh\u1EA5t
-      m\u1ED9t thuy\u1EC1n tr\u01B0\u1EDFng kh\xF3c v\xEC c\u1EA3m \u0111\u1ED9ng
-      \u2014 m\u1ECDi nghi ng\u1EDD l\xE0 Bob, nh\u01B0ng Bob th\u1EC1 l\xE0 d\u1ECB
-      \u1EE9ng b\u1EE5i bi\u1EC3n."
+    body: "Kh\xF4ng tr\u1EC5 m\u1ED9t \u0111\u01A1n n\xE0o. M\u1ECDi t\xE0u h\xE1t
+      vang tr\xEAn boong. \xCDt nh\u1EA5t m\u1ED9t thuy\u1EC1n tr\u01B0\u1EDFng kh\xF3c
+      v\xEC c\u1EA3m \u0111\u1ED9ng \u2014 m\u1ECDi nghi ng\u1EDD l\xE0 Bob, nh\u01B0ng
+      Bob th\u1EC1 l\xE0 d\u1ECB \u1EE9ng b\u1EE5i bi\u1EC3n."
   - id: 2
     title: "C\xF4ng ty c\xF3 ti\u1EBFng"
-    body: "Uy t\xEDn 65\u201384. Kh\xE1ch quay l\u1EA1i \u0111\u1EB7t \u0111\u01A1n
-      ti\u1EBFp, Dex v\u1EABn nghi ng\u1EDD: \"\u0110\u01A1n t\u1ED1t nh\u01B0 v\u1EADy?
-      C\u1EA9n th\u1EADn \u0111\xF3 l\xE0 b\u1EABy.\""
+    body: "Ch\u1EC9 tr\u1EC5 m\u1ED9t \u0111\u01A1n duy nh\u1EA5t. Kh\xE1ch quay
+      l\u1EA1i \u0111\u1EB7t \u0111\u01A1n ti\u1EBFp, Dex v\u1EABn nghi ng\u1EDD:
+      \"\u0110\u01A1n t\u1ED1t nh\u01B0 v\u1EADy? C\u1EA9n th\u1EADn \u0111\xF3 l\xE0
+      b\u1EABy.\""
   - id: 3
-    title: "S\u1ED1ng s\xF3t qua tu\u1EA7n"
-    body: "Uy t\xEDn 40\u201364. H\xF2a v\u1ED1n v\u1EEBa \u0111\u1EE7. Chen nh\u1EAFn:
+    title: "S\u1ED1ng s\xF3t qua th\xE1ng"
+    body: "Tr\u1EC5 hai \u0111\u01A1n, v\u1EABn v\u1EC1 \u0111\xEDch \u0111\u1EE7
+      \u0111\u01A1n h\xE0ng. H\xF2a v\u1ED1n v\u1EEBa \u0111\u1EE7. Chen nh\u1EAFn:
       \"T\xF4i \u0111ang t\u1EDBi. \u0110\u1EEBng h\u1ECFi t\u1EDBi \u0111\xE2u.\""
   - id: 4
     title: "N\u1EE3 ng\u1EADp \u0111\u1EA7u"
-    body: "Uy t\xEDn 20\u201339. Bob \u0111\u1EC1 xu\u1EA5t: \"B\xE1n t\xE0u cho
-      kh\u1ECFe, s\u1EBFp. T\xE0u n\xE0o c\u0169ng \u0111\u01B0\u1EE3c. Tr\u1EEB
-      t\xE0u t\xF4i.\""
+    body: "Tr\u1EC5 qu\xE1 s\u1ED1 \u0111\u01A1n cho ph\xE9p, c\xF4ng ty g\xE1nh
+      n\u1EE3. Bob \u0111\u1EC1 xu\u1EA5t: \"B\xE1n t\xE0u cho kh\u1ECFe, s\u1EBFp.
+      T\xE0u n\xE0o c\u0169ng \u0111\u01B0\u1EE3c. Tr\u1EEB t\xE0u t\xF4i.\""
   - id: 5
     title: "Ph\xE1 s\u1EA3n"
-    body: "Uy t\xEDn d\u01B0\u1EDBi 20. C\u1EA3 \u0111\u1ED9i t\xE0u \u0111\xF2i
-      l\u01B0\u01A1ng b\u1EB1ng... b\xE1nh. B\xE1nh sinh nh\u1EADt nhi\u1EC1u t\u1EA7ng
-      \u1EA5y. \u0110\xE3 v\u1EE1 r\u1ED3i."
+    body: "Tr\u1EC5 qu\xE1 s\u1EDBm, \u0111\u1ED9i t\xE0u g\u1EA7n nh\u01B0 ch\u01B0a
+      k\u1ECBp giao g\xEC. C\u1EA3 \u0111\u1ED9i \u0111\xF2i l\u01B0\u01A1ng b\u1EB1ng...
+      b\xE1nh. B\xE1nh sinh nh\u1EADt nhi\u1EC1u t\u1EA7ng \u1EA5y. \u0110\xE3 v\u1EE1
+      r\u1ED3i."

@@ -1,41 +1,51 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace AyeAye
 {
-    // Bốc đơn mới cho pha Planning (FR-0301/0306). Thuần C#: mọi random qua state.Rng.
+    // Bốc đơn theo ĐỒNG HỒ (G1.3, bỏ ngày): 2 đơn tutorial lúc 0 giây, các đơn sau mỗi orderIntervalSeconds
+    // rút ngắn dần theo decay, tối thiểu orderIntervalMinSeconds. Bốc theo trọng số + spawnCondition + không lặp.
     public static class OrderScheduler
     {
-        public static void ScheduleNewOrders(OrderPool pool, GameState state)
+        // Đơn đầu ván (tutorial): O-01/O-02 ngay lúc 0 giây; đồng hồ bốc đơn bắt đầu đếm.
+        public static void SpawnInitial(OrderPool pool, GameState state)
         {
             if (pool == null || state == null) return;
-
-            if (state.CurrentDay <= 1)
-            {
-                AddFixedOrders(pool.fixedFirstDay, state);
-                return;
-            }
-
-            GameConfig config = state.Config;
-            int count = PickOrderCount(config, state.Rng);
-            List<OrderDef> picked = PickWeighted(pool.pool, state, count, allowRepeats: false);
-            if (picked.Count < count)
-            {
-                // Pool cạn (hoặc không đơn nào thỏa cờ) → fallback: cho phép lặp, không bao giờ kẹt game.
-                List<OrderDef> fallback = PickWeighted(pool.pool, state, count - picked.Count, allowRepeats: true);
-                picked.AddRange(fallback);
-            }
-
-            foreach (OrderDef def in picked) AddOrder(def, state);
+            AddFixedOrders(pool.fixedFirstDay, state, 0f);
+            state.NextOrderSpawnAtSeconds = state.Config.orderIntervalSeconds;
+            state.OrderSpawnCount = 0;
         }
 
-        static void AddFixedOrders(List<OrderDef> fixedOrders, GameState state)
+        // Gọi mỗi Advance: while cho an toàn (dt lớn không bỏ sót mốc).
+        public static void SpawnOrders(OrderPool pool, GameState state)
+        {
+            if (pool == null || state == null) return;
+            while (!state.IsFinished && state.ElapsedSeconds >= state.NextOrderSpawnAtSeconds)
+            {
+                List<OrderDef> picked = PickWeighted(pool.pool, state, 1, allowRepeats: false);
+                if (picked.Count == 0)
+                {
+                    // Pool cạn (hoặc không đơn nào thỏa cờ) → fallback: cho phép lặp, không bao giờ kẹt game.
+                    picked = PickWeighted(pool.pool, state, 1, allowRepeats: true);
+                }
+                if (picked.Count > 0)
+                    AddOrder(picked[0], state, state.NextOrderSpawnAtSeconds);
+
+                float interval = state.Config.orderIntervalSeconds
+                    * Mathf.Pow(Mathf.Max(0f, state.Config.orderIntervalDecayPerOrder), state.OrderSpawnCount);
+                state.NextOrderSpawnAtSeconds += Mathf.Max(state.Config.orderIntervalMinSeconds, interval);
+                state.OrderSpawnCount++;
+            }
+        }
+
+        static void AddFixedOrders(List<OrderDef> fixedOrders, GameState state, float now)
         {
             if (fixedOrders == null) return;
-            foreach (OrderDef def in fixedOrders) AddOrder(def, state);
+            foreach (OrderDef def in fixedOrders) AddOrder(def, state, now);
         }
 
-        static void AddOrder(OrderDef def, GameState state)
+        static void AddOrder(OrderDef def, GameState state, float now)
         {
             if (def == null) return;
             if (state.UsedOrderIds.Contains(def.orderId))
@@ -44,15 +54,7 @@ namespace AyeAye
                 state.Orders.RemoveAll(o => o.Id == def.orderId);
             }
             state.UsedOrderIds.Add(def.orderId);
-            state.Orders.Add(OrderState.From(def));
-        }
-
-        // newOrdersPerDay bốc ngẫu nhiên trong khoảng [min, max] — qua Rng để tái lập được.
-        static int PickOrderCount(GameConfig config, Random rng)
-        {
-            int min = Math.Max(0, config.newOrdersPerDayMin);
-            int max = Math.Max(min, config.newOrdersPerDayMax);
-            return rng.Next(min, max + 1);
+            state.Orders.Add(OrderState.From(def, now));
         }
 
         // Thuật toán bốc theo trọng số (khuôn EventScheduler bản 2): chọn N đơn đủ điều kiện, không trùng lượt.

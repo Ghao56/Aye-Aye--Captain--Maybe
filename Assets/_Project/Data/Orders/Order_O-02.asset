@@ -17,7 +17,7 @@ MonoBehaviour:
   tags: 0
   fromPortId: goc
   toPortId: camap
-  deadlineDay: 4
+  deadlineSeconds: 85
   revenue: 100
   clue: "Tuy\u1EBFn S\u01B0\u01A1ng M\xF9 ng\u1EAFn nh\u01B0ng... m\xF9 nh\u01B0
     t\xE2m tr\u1EA1ng s\u1EBFp"

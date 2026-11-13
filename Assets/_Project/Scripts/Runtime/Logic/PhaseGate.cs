@@ -1,41 +1,14 @@
-using UnityEngine;
-
 namespace AyeAye
 {
-    // FR-0203: bảng khóa tab theo pha — hàm thuần (không phụ thuộc UI); UI chỉ đọc kết quả.
+    // FR-0203 bản chạy liên tục: chỉ 2 trạng thái — bình thường cả 3 tab dùng được;
+    // khi có sự cố đang chờ → tab SỰ CỐ (index 2) tương tác, hai tab kia chỉ xem. UI chỉ đọc kết quả.
     public enum TabAccess { Interactive, ReadOnly, Locked }
-    public enum BottomAction { MakeItSo, Hidden, Continue, NextDay }
 
     public static class PhaseGate
     {
-        public static TabAccess TabAccess(GamePhase phase, int tabIndex)
+        public static TabAccess GetAccess(bool incidentPending, int tabIndex)
         {
-            switch (phase)
-            {
-                case GamePhase.Planning:
-                    return tabIndex == 2 ? AyeAye.TabAccess.ReadOnly : AyeAye.TabAccess.Interactive;
-                case GamePhase.Simulation:
-                    // tab 2 (ĐỘI TÀU) khóa nhưng vẫn hiện tàu đang chạy → ReadOnly, còn lại Locked.
-                    return tabIndex == 1 ? AyeAye.TabAccess.ReadOnly : AyeAye.TabAccess.Locked;
-                case GamePhase.Incident:
-                    return tabIndex == 2 ? AyeAye.TabAccess.Interactive : AyeAye.TabAccess.ReadOnly;
-                case GamePhase.Summary:
-                    return AyeAye.TabAccess.Locked; // overlay tổng kết che toàn màn
-                default:
-                    return AyeAye.TabAccess.Locked;
-            }
-        }
-
-        public static BottomAction BottomButton(GamePhase phase)
-        {
-            switch (phase)
-            {
-                case GamePhase.Planning: return BottomAction.MakeItSo;
-                case GamePhase.Simulation: return BottomAction.Hidden;
-                case GamePhase.Incident: return BottomAction.Continue;
-                case GamePhase.Summary: return BottomAction.NextDay;
-                default: return BottomAction.Hidden;
-            }
+            return incidentPending && tabIndex != 2 ? TabAccess.ReadOnly : TabAccess.Interactive;
         }
     }
 }

@@ -16,8 +16,8 @@ MonoBehaviour:
   customerName: "Kem Que Sa M\u1EA1c"
   tags: 2
   fromPortId: goc
-  toPortId: mogio
-  deadlineDay: 4
+  toPortId: tram
+  deadlineSeconds: 75
   revenue: 90
   clue: "Kem m\xE0 \u0111i \u0111\u01B0\u1EDDng b\xE3o... \u1EB5m v\u1EC1 n\u01B0\u1EDBc"
   weight: 1

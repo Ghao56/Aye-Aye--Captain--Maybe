@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.ShipDef
   shipId: tau-dung-quy-trinh
-  displayName: "\u0110\xFAng Quy Tr\xECnh"
+  displayName: FREIGHT-12
   captain: 2
   captainName: Mira
   speedClass: 1

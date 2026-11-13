@@ -2,72 +2,50 @@ using System.Collections.Generic;
 
 namespace AyeAye
 {
-    /// FR-04xx — rà soát tàu đang di chuyển, roll xác suất và chốt danh sách sự cố của ngày.
+    /// Sự cố CHẠY LIÊN TỤC (G1.7): roll khi một tàu vào cạnh mới / node giữa (do Simulation gọi),
+    /// tối đa maxPendingIncidents cùng lúc (Simulation giới hạn trước khi gọi).
     public static class IncidentScheduler
     {
-        public static List<PendingIncident> Schedule(IReadOnlyList<IncidentDef> pool, IncidentDef fixedFirstDay, IncidentDef fixedFinale, GameState state, IReadOnlyList<IncidentContext> contexts)
+        /// Trả về PendingIncident khi xảy ra (đã đánh dấu UsedIncidentIds); null khi không có.
+        public static PendingIncident TryTrigger(SimWorld world, GameState state, IncidentContext ctx)
         {
-            var picks = new List<PendingIncident>();
-            if (contexts == null || contexts.Count == 0) return picks;
+            if (world == null || state == null || ctx == null) return null;
 
-            // Ngày 1: chỉ sự cố tutorial cố định, cho thuyền đầu tiên khớp trigger, không dùng rng.
-            if (state.CurrentDay <= 1)
+            // I-01 tutorial: bắt buộc xảy ra LẦN ĐẦU TIÊN một tàu vào cạnh khớp trigger (Sương mù).
+            if (world.FixedFirstDay != null && !state.UsedIncidentIds.Contains(world.FixedFirstDay.incidentId)
+                && Matches(world.FixedFirstDay, ctx, state))
             {
-                if (fixedFirstDay != null)
-                {
-                    foreach (var ctx in contexts)
-                    {
-                        if (Matches(fixedFirstDay, ctx, state))
-                        {
-                            picks.Add(new PendingIncident { Incident = fixedFirstDay, Context = ctx });
-                            break;
-                        }
-                    }
-                }
-                return picks;
+                state.UsedIncidentIds.Add(world.FixedFirstDay.incidentId);
+                return new PendingIncident { Incident = world.FixedFirstDay, Context = ctx };
             }
 
-            // Ngày cuối: chỉ finale cố định nếu còn tàu đang chở hàng.
-            if (state.CurrentDay >= state.Config.gameLengthDays)
+            // I-F finale: khi DeliveredCount == winDeliveries - 1 và còn tàu đang chở hàng → xảy ra MỘT LẦN.
+            if (world.FixedFinale != null && !state.UsedIncidentIds.Contains(world.FixedFinale.incidentId)
+                && ctx.CarriedOrder != null
+                && state.DeliveredCount == state.Config.winDeliveries - 1)
             {
-                if (fixedFinale != null)
-                {
-                    foreach (var ctx in contexts)
-                    {
-                        if (ctx.CarriedOrder != null)
-                        {
-                            picks.Add(new PendingIncident { Incident = fixedFinale, Context = ctx });
-                            break;
-                        }
-                    }
-                }
-                return picks;
+                state.UsedIncidentIds.Add(world.FixedFinale.incidentId);
+                return new PendingIncident { Incident = world.FixedFinale, Context = ctx };
             }
 
-            // Ngày thường: mỗi tàu (thứ tự cố định) roll một lần; ngân sách tổng theo config.
-            int budget = state.Config.maxIncidentsPerDay;
-            foreach (var ctx in contexts)
-            {
-                if (picks.Count >= budget) break;
-                if (state.Rng.NextDouble() >= state.Config.incidentChancePerMovingShip) continue;
-                if (pool == null || pool.Count == 0) continue;
+            // Thường: roll theo incidentChancePerEdge qua Rng (mỗi lần vào cạnh mới roll đúng một lần).
+            if (world.Incidents == null || world.Incidents.Count == 0) return null;
+            if (state.Rng.NextDouble() >= state.Config.incidentChancePerEdge) return null;
 
-                // Ưu tiên sự cố chưa dùng và khớp trigger; pool cạn mới cho phép lặp.
-                var candidates = new List<IncidentDef>();
-                foreach (var def in pool)
-                    if (def != null && Matches(def, ctx, state) && !state.UsedIncidentIds.Contains(def.incidentId))
+            // Ưu tiên sự cố chưa dùng và khớp trigger; pool cạn mới cho phép lặp.
+            var candidates = new List<IncidentDef>();
+            foreach (var def in world.Incidents)
+                if (def != null && Matches(def, ctx, state) && !state.UsedIncidentIds.Contains(def.incidentId))
+                    candidates.Add(def);
+            if (candidates.Count == 0)
+                foreach (var def in world.Incidents)
+                    if (def != null && Matches(def, ctx, state))
                         candidates.Add(def);
-                if (candidates.Count == 0)
-                    foreach (var def in pool)
-                        if (def != null && Matches(def, ctx, state))
-                            candidates.Add(def);
-                if (candidates.Count == 0) continue;
+            if (candidates.Count == 0) return null;
 
-                var pick = PickWeighted(candidates, ctx, state);
-                state.UsedIncidentIds.Add(pick.incidentId);
-                picks.Add(new PendingIncident { Incident = pick, Context = ctx });
-            }
-            return picks;
+            var pick = PickWeighted(candidates, ctx, state);
+            state.UsedIncidentIds.Add(pick.incidentId);
+            return new PendingIncident { Incident = pick, Context = ctx };
         }
 
         /// Sự cố đủ điều kiện khi BẤT KỲ trigger nào khớp.

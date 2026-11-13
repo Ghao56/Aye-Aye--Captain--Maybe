@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace AyeAye
 {
-    // Dựng trạng thái khởi đầu của một ván (FR-0101): ngày 1, Uy tín startReputation, Doanh thu 0,
+    // Dựng trạng thái khởi đầu của một ván (FR-0101): doanh thu 0,
     // tàu ở cảng khởi đầu theo ShipDef, Condition Tốt, không cờ nào.
     public static class GameStateBuilder
     {

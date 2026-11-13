@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using TMPro;
@@ -63,26 +64,40 @@ namespace AyeAye
                 CreateAssetAt(DemoData.CreateConfig(), configPath, "GameConfig");
 
             // Cảng + cạnh + bảng tuyến
-            foreach (var p in DemoData.BuildPorts())
+            var ports = DemoData.BuildPorts();
+            var portIds = new HashSet<string>(ports.Select(p => p.portId));
+            foreach (var p in ports)
                 RebuildAsset("Ports/Port_" + p.portId + ".asset", p);
-            foreach (var e in DemoData.BuildRouteDefs())
+            var edges = DemoData.BuildRouteDefs();
+            var edgeKeys = new HashSet<string>(edges.Select(e => e.fromPortId + "-" + e.toPortId));
+            foreach (var e in edges)
                 RebuildAsset("Routes/Route_" + e.fromPortId + "-" + e.toPortId + ".asset", e);
             RebuildAsset("Routes/RouteTable.asset", DemoData.BuildRouteTable());
-            DeleteOrphanAssets<PortDef>("Ports", name => name.StartsWith("Port_"));
-            DeleteOrphanAssets<RouteDef>("Routes", name => name.StartsWith("Route_") && name != "RouteTable");
+            // Giữ asset có id thuộc nguồn DemoData; xóa mồ côi (vd Port_mogio) — không đụng RouteTable (t:RouteTable).
+            DeleteOrphanAssets<PortDef>("Ports", name => name.StartsWith("Port_") && portIds.Contains(name.Substring(5)));
+            DeleteOrphanAssets<RouteDef>("Routes", name => name.StartsWith("Route_") && edgeKeys.Contains(name.Substring(6)));
 
             // Tàu + thuyền trưởng (tham chiếu qua từng asset riêng)
-            foreach (var s in DemoData.BuildShips())
+            var ships = DemoData.BuildShips();
+            var shipIds = new HashSet<string>(ships.Select(s => s.shipId));
+            foreach (var s in ships)
                 RebuildAsset("Ships/Ship_" + s.shipId + ".asset", s);
-            foreach (var c in DemoData.BuildCrews())
+            DeleteOrphanAssets<ShipDef>("Ships", name => name.StartsWith("Ship_") && shipIds.Contains(name.Substring(5)));
+            var crews = DemoData.BuildCrews();
+            var crewIds = new HashSet<string>(crews.Select(c => c.id.ToString()));
+            foreach (var c in crews)
                 RebuildAsset("Crews/Crew_" + c.id + ".asset", c);
+            DeleteOrphanAssets<CrewDefinition>("Crews", name => name.StartsWith("Crew_") && crewIds.Contains(name.Substring(5)));
 
             // Đơn + pool (pool trỏ tới asset riêng, không copy nội tuyến)
             var orders = DemoData.BuildOrderPool();
+            var orderIds = new HashSet<string>();
             var fixedOrders = new List<OrderDef>();
             foreach (var o in orders.fixedFirstDay) fixedOrders.Add(RebuildAsset("Orders/Order_" + o.orderId + ".asset", o));
             var poolOrders = new List<OrderDef>();
             foreach (var o in orders.pool) poolOrders.Add(RebuildAsset("Orders/Order_" + o.orderId + ".asset", o));
+            foreach (var o in orders.fixedFirstDay.Concat(orders.pool)) orderIds.Add(o.orderId);
+            DeleteOrphanAssets<OrderDef>("Orders", name => name.StartsWith("Order_") && orderIds.Contains(name.Substring(6)));
             var orderPool = AssetDatabase.LoadAssetAtPath<OrderPool>(DataRoot + "/Orders/OrderPool.asset");
             if (orderPool == null)
                 orderPool = CreateAssetAt(ScriptableObject.CreateInstance<OrderPool>(), DataRoot + "/Orders/OrderPool.asset", "OrderPool");
@@ -92,10 +107,15 @@ namespace AyeAye
 
             // Sự cố + pool
             var incidents = DemoData.BuildIncidentPool();
+            var incidentIds = new HashSet<string>();
             var fixedFirst = RebuildAsset("Incidents/Incident_" + incidents.fixedFirstDay.incidentId + ".asset", incidents.fixedFirstDay);
             var fixedFinale = RebuildAsset("Incidents/Incident_" + incidents.fixedFinale.incidentId + ".asset", incidents.fixedFinale);
             var poolIncidents = new List<IncidentDef>();
             foreach (var d in incidents.incidents) poolIncidents.Add(RebuildAsset("Incidents/Incident_" + d.incidentId + ".asset", d));
+            foreach (var d in incidents.incidents) incidentIds.Add(d.incidentId);
+            incidentIds.Add(incidents.fixedFirstDay.incidentId);
+            incidentIds.Add(incidents.fixedFinale.incidentId);
+            DeleteOrphanAssets<IncidentDef>("Incidents", name => name.StartsWith("Incident_") && incidentIds.Contains(name.Substring(9)));
             var incidentPool = AssetDatabase.LoadAssetAtPath<IncidentPool>(DataRoot + "/Incidents/IncidentPool.asset");
             if (incidentPool == null)
                 incidentPool = CreateAssetAt(ScriptableObject.CreateInstance<IncidentPool>(), DataRoot + "/Incidents/IncidentPool.asset", "IncidentPool");
@@ -171,6 +191,29 @@ namespace AyeAye
             else
                 foreach (string e in errors)
                     Debug.LogError("[Validate] " + e);
+        }
+
+        [MenuItem("Tools/AyeAye/Balance")]
+        public static void Balance()
+        {
+            var config = LoadOne<GameConfig>(DataRoot + "/Config");
+            var routes = LoadOne<RouteTable>(DataRoot + "/Routes");
+            var orderPool = LoadOne<OrderPool>(DataRoot + "/Orders");
+            var incidentPool = LoadOne<IncidentPool>(DataRoot + "/Incidents");
+            var ships = LoadAll<ShipDef>(DataRoot + "/Ships");
+            var crews = LoadAll<CrewDefinition>(DataRoot + "/Crews");
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            foreach (bool clue in new[] { false, true })
+            {
+                var s = BalanceProbe.SimulateRunsStats(config, orderPool, routes,
+                    incidentPool.incidents, incidentPool.fixedFirstDay, incidentPool.fixedFinale,
+                    crews, ships, runs: 400, seedBase: 1000, cluePolicy: clue);
+                Debug.Log($"[Balance] chính sách {(clue ? "ĐỌC MANH MỐI" : "NGẪU NHIÊN")}: " +
+                          $"thắng {s.winRate:P0} ({s.e1 + s.e2 + s.e3}/400) [E1 {s.e1} · E2 {s.e2} · E3 {s.e3} · E4 {s.e4} · E5 {s.e5}], " +
+                          $"thời lượng TB {s.avgSeconds:F0}s, p10/p50/p90 {s.p10Seconds:F0}/{s.p50Seconds:F0}/{s.p90Seconds:F0}s, " +
+                          $"trễ TB {s.avgLateCount:F2} đơn, kẹt {s.stuckRuns}/400, {sw.Elapsed.TotalSeconds:F1}s thực");
+            }
         }
 
         static T LoadOne<T>(string folder) where T : ScriptableObject

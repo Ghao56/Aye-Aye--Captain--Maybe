@@ -55,7 +55,7 @@ MonoBehaviour:
     - crew: 1
       condition: 0
       outcome: 1
-      explanation: "Kh\xF4ng t\xE0u n\xE0o nhanh h\u01A1n Tia Ch\u1EDBp."
+      explanation: "Kh\xF4ng t\xE0u n\xE0o nhanh h\u01A1n CARGO-9."
       quote: "T\u1EA1m bi\u1EC7t, \u0111\xE0n c\xE1!"
       setFlag: 0
       cargoDelta: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
     - crew: 3
       condition: 0
       outcome: 2
-      explanation: "R\xF9a V\xE0ng m\xE0 \u0111ua? K\u1EB9t."
+      explanation: "HAULER-4 m\xE0 \u0111ua? K\u1EB9t."
       quote: "\u01A0... ch\xE2n v\u1ECBt quay r\u1ED3i!"
       setFlag: 0
       cargoDelta: 0

@@ -10,8 +10,6 @@ namespace AyeAye.Tests
         static GameConfig Config()
         {
             GameConfig config = ScriptableObject.CreateInstance<GameConfig>();
-            config.gameLengthDays = 8;
-            config.startReputation = 50;
             return config;
         }
 
@@ -42,10 +40,10 @@ namespace AyeAye.Tests
         {
             GameState state = GameStateBuilder.CreateRun(Config(), ShipDefs(), seed: 42);
 
-            Assert.AreEqual(1, state.CurrentDay);
-            Assert.AreEqual(GamePhase.Planning, state.Phase);
-            Assert.AreEqual(50, state.Reputation);
+            Assert.AreEqual(0f, state.ElapsedSeconds);
             Assert.AreEqual(0, state.Revenue);
+            Assert.AreEqual(0, state.LateCount);
+            Assert.AreEqual(0, state.DeliveredCount);
             Assert.AreEqual(4, state.Ships.Count);
             Assert.AreEqual("VANG", state.Ships[3].PortId);
             Assert.AreEqual(ShipCondition.Good, state.Ships[0].Condition);
@@ -56,7 +54,7 @@ namespace AyeAye.Tests
             Assert.IsFalse(state.IsFinished);
             Assert.AreEqual(EndingId.None, state.FinalEnding);
             Assert.AreEqual(0, state.Orders.Count);
-            Assert.AreEqual(0, state.StagedCommands.Count);
+            Assert.IsTrue(state.CanAdvance);
             Assert.IsEmpty(state.CargoShiftedOrderIds);
             Assert.IsEmpty(state.TemporaryRepairShipIds);
         }
@@ -65,12 +63,11 @@ namespace AyeAye.Tests
         public void NewRun_ResetsEverythingAndSeed()
         {
             GameState state = GameStateBuilder.CreateRun(Config(), ShipDefs(), seed: 42);
-            state.CurrentDay = 5;
-            state.Phase = GamePhase.Summary;
-            state.Reputation = 0;
+            state.ElapsedSeconds = 1234.5f;
             state.Revenue = 999;
+            state.LateCount = 2;
+            state.DeliveredCount = 3;
             state.Orders.Add(new OrderState { Id = "O-01" });
-            state.StagedCommands.Add(new StagedCommand { ShipId = "S-TIA" });
             state.CargoShiftedOrderIds.Add("O-01");
             state.TemporaryRepairShipIds.Add("S-TIA");
             state.UsedOrderIds.Add("O-01");
@@ -81,12 +78,11 @@ namespace AyeAye.Tests
             state.NewRun(seed: 7);
 
             Assert.AreEqual(7, state.Seed);
-            Assert.AreEqual(1, state.CurrentDay);
-            Assert.AreEqual(GamePhase.Planning, state.Phase);
-            Assert.AreEqual(50, state.Reputation);
+            Assert.AreEqual(0f, state.ElapsedSeconds);
             Assert.AreEqual(0, state.Revenue);
+            Assert.AreEqual(0, state.LateCount);
+            Assert.AreEqual(0, state.DeliveredCount);
             Assert.AreEqual(0, state.Orders.Count);
-            Assert.AreEqual(0, state.StagedCommands.Count);
             Assert.AreEqual(0, state.Ships.Count); // builder phải nạp lại tàu sau NewRun
             Assert.IsEmpty(state.CargoShiftedOrderIds);
             Assert.IsEmpty(state.TemporaryRepairShipIds);
@@ -94,6 +90,7 @@ namespace AyeAye.Tests
             Assert.IsEmpty(state.UsedIncidentIds);
             Assert.IsFalse(state.IsFinished);
             Assert.AreEqual(EndingId.None, state.FinalEnding);
+            Assert.IsTrue(state.CanAdvance);
         }
 
         [Test]

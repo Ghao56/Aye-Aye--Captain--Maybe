@@ -10,14 +10,13 @@ namespace AyeAye
     [RequireComponent(typeof(UIDocument))]
     public partial class TerminalHud : MonoBehaviour
     {
-        static readonly string[] PhaseNames = { "Lập kế hoạch", "Diễn tập", "Sự cố", "Tổng kết" };
         static readonly string[] TabNames = { "ĐƠN HÀNG", "ĐỘI TÀU", "SỰ CỐ" };
 
         UIDocument document;
         TerminalView machine;
 
         VisualElement game, startScreen;
-        Label topDay, topReputation, topRevenue, topPhase, startTitle;
+        Label topDay, topLate, topRevenue, topPhase, startTitle;
         Button[] tabs = new Button[3];
         VisualElement[] panels = new VisualElement[3];
         Button bottomButton, startButton, restartButton;
@@ -25,6 +24,8 @@ namespace AyeAye
 
         bool bound;
         GameState state;
+        SimWorld world;                 // dữ liệu tĩnh của ván cho Simulation.Advance
+        float clockAcc;                 // dồn dt thật → chạy Advance theo bước cố định (chỉnh 3)
         int lastRefreshKey = int.MinValue;
 
         // Dữ liệu mẫu §5 (nguồn duy nhất DemoData, khớp TestWorld + Build Demo).
@@ -55,9 +56,30 @@ namespace AyeAye
                 StartNewRun();
             if (state != null)
             {
-                int key = state.CurrentDay * 100 + (int)state.Phase * 10 + (state.IsFinished ? 1 : 0);
+                RunClock();
+                int inboxCount = 0;
+                foreach (var o in state.Orders) if (o.Status == OrderStatus.InInbox) inboxCount++;
+                int key = state.LateCount * 1000 + state.DeliveredCount * 100
+                    + (state.PendingIncidents.Count > 0 ? 10 : 0) + (state.IsFinished ? 1 : 0)
+                    + inboxCount; // đơn mới vào hộp thư / hết hạn cũng cần vẽ lại
                 if (key != lastRefreshKey) { lastRefreshKey = key; Refresh(); }
+                UpdateFleetDots(); // chấm tàu theo state mỗi frame (G2.5 shim; panel dựng lại chỉ khi key đổi)
             }
+        }
+
+        // G1 shim: dồn dt thật rồi chạy Simulation.Advance theo bước simTickSeconds (giới hạn tick mỗi frame).
+        // Tạm dừng tự nhiên khi máy tắt (không gọi), sự cố chờ hoặc kết thúc (CanAdvance == false).
+        void RunClock()
+        {
+            float dt = Mathf.Min(Time.deltaTime, 0.5f); // clamp: quay lại từ tab ẩn không nhảy đồng hồ
+            clockAcc += dt;
+            int guard = 0;
+            while (clockAcc >= config.simTickSeconds && state.CanAdvance && guard++ < 60)
+            {
+                Simulation.Advance(world, state, config.simTickSeconds);
+                clockAcc -= config.simTickSeconds;
+            }
+            if (!state.CanAdvance) clockAcc = 0f;
         }
 
         void TryBind()
@@ -69,7 +91,7 @@ namespace AyeAye
             game = root.Q("game");
             startScreen = root.Q("start-screen");
             topDay = root.Q<Label>("top-day");
-            topReputation = root.Q<Label>("top-reputation");
+            topLate = root.Q<Label>("top-late");
             topRevenue = root.Q<Label>("top-revenue");
             topPhase = root.Q<Label>("top-phase");
             startTitle = root.Q<Label>("start-title");
@@ -79,10 +101,11 @@ namespace AyeAye
                 tabs[i] = root.Q<Button>("tab-" + i);
                 tabs[i].clicked += () => SelectTab(idx);
                 panels[i] = root.Q("panel-" + i);
+                panels[i].AddToClassList(i == 1 ? "panel-fleet" : "panel-orders"); // hướng cột riêng từng panel (G3)
                 panelHints[i] = root.Q<Label>("panel-" + i + "-hint");
             }
-            bottomButton = root.Q<Button>("bottom-button");
-            bottomButton.clicked += OnBottomButton;
+            bottomButton = root.Q<Button>("bottom-button"); // bỏ MAKE IT SO chung (G2.3) — ẩn luôn
+            bottomButton.style.display = DisplayStyle.None;
             startButton = root.Q<Button>("start-button");
             startButton.clicked += StartNewRun;
             restartButton = root.Q<Button>("restart-button");
@@ -95,7 +118,6 @@ namespace AyeAye
 
         void SelectTab(int index)
         {
-            if (state != null && PhaseGate.TabAccess(state.Phase, index) == TabAccess.Locked) return;
             for (int i = 0; i < 3; i++)
             {
                 tabs[i].EnableInClassList("selected", i == index);
@@ -122,6 +144,11 @@ namespace AyeAye
             }
             routeTable = DemoData.BuildRouteTable();
             mapRouteDefs = DemoData.BuildRouteDefs();
+            world = new SimWorld
+            {
+                Pool = pool, Routes = routeTable, Incidents = incidents.incidents,
+                FixedFirstDay = incidents.fixedFirstDay, FixedFinale = incidents.fixedFinale,
+            };
         }
 
         void StartNewRun()
@@ -129,7 +156,8 @@ namespace AyeAye
             LoadWorld();
             int seed = (state != null && config.repeatSeedOnRestart) ? state.Seed : System.Environment.TickCount;
             state = GameStateBuilder.CreateRun(config, shipDefs, seed);
-            OrderScheduler.ScheduleNewOrders(pool, state); // Ngày 1: 2 đơn cố định (FR-0301)
+            OrderScheduler.SpawnInitial(pool, state); // 2 đơn đầu + bắt đầu nhịp spawn (FR-0301)
+            clockAcc = 0f;
             startScreen.style.display = DisplayStyle.None;
             lastRefreshKey = int.MinValue;
             Refresh();
@@ -140,33 +168,14 @@ namespace AyeAye
             lastRefreshKey = int.MinValue; // hành động của người chơi đổi state → Refresh ở Update kế
         }
 
-        void OnBottomButton()
-        {
-            if (state == null || state.IsFinished) return;
-            switch (PhaseGate.BottomButton(state.Phase))
-            {
-                case BottomAction.MakeItSo:
-                    pendingSimSnapshot = CaptureSimSnapshot(); // G3: dùng cho animation tàu, không đổi state
-                    DayRunner.CommitPlanning(state);
-                    DayRunner.Simulate(state, incidents.incidents, incidents.fixedFirstDay,
-                        incidents.fixedFinale, crews);
-                    Dirty();
-                    break;
-                // Continue: dây ở Bước 5 (tab SỰ CỐ tương tác).
-                case BottomAction.NextDay:
-                    DayRunner.CompleteSummary(state, pool);
-                    Dirty();
-                    break;
-            }
-        }
-
         void Refresh()
         {
             if (state == null) return;
-            topDay.text = $"Ngày {state.CurrentDay}/{config.gameLengthDays}";
-            topReputation.text = $"Uy tín {state.Reputation}";
+            float t = state.ElapsedSeconds;
+            topDay.text = $"Thời gian {Mathf.FloorToInt(t / 60f):0}:{Mathf.FloorToInt(t) % 60:00}";
+            topLate.text = $"Trễ {state.LateCount}/{config.maxLateDeliveries}";
             topRevenue.text = $"Doanh thu {state.Revenue}";
-            topPhase.text = PhaseNames[(int)state.Phase];
+            topPhase.text = state.CanAdvance ? "ĐANG CHẠY" : "TẠM DỪNG";
 
             // FR-0202: huy hiệu tab — số chưa xử lý từng tab; 0 → ẩn.
             int inbox = 0, unassigned = 0;
@@ -175,31 +184,22 @@ namespace AyeAye
                 if (o.Status == OrderStatus.InInbox) inbox++;
                 else if (o.Status == OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId)) unassigned++;
             }
-            // Bước 2: sự cố tự xử trong loop → badge 3 = 0 (Bước 5 đếm sự cố chưa xử).
-            int[] counts = { inbox, unassigned, 0 };
+            int pending = state.PendingIncidents.Count;
+            int[] counts = { inbox, unassigned, pending };
+            bool incidentPending = pending > 0;
             for (int i = 0; i < 3; i++)
             {
-                bool locked = PhaseGate.TabAccess(state.Phase, i) == TabAccess.Locked;
+                bool locked = PhaseGate.GetAccess(incidentPending, i) != TabAccess.Interactive;
                 tabs[i].EnableInClassList("locked", locked);
                 tabs[i].text = TabNames[i] + (counts[i] > 0 ? $" ({counts[i]})" : "");
             }
 
-            // panel 3 (SỰ CỐ) trống ở pha Planning → thông điệp FR-0203.
-            panelHints[2].text = state.Phase == GamePhase.Planning
-                ? "Chưa có sự cố. Mừng quá sớm?"
-                : "Sự cố đang xử lý...";
+            panelHints[2].text = incidentPending
+                ? "Sự cố đang chờ — xử lý ở tab SỰ CỐ."
+                : "Chưa có sự cố. Mừng quá sớm?";
 
             BuildOrdersPanel();
             BuildFleetPanel();
-            StartFleetAnimationIfPending();
-
-            // Nút dưới theo pha (FR-0203): ẩn riêng nút pha, footer luôn hiện để nút Rời máy truy cập được.
-            var action = PhaseGate.BottomButton(state.Phase);
-            bool hidden = action == BottomAction.Hidden;
-            bottomButton.style.display = hidden ? DisplayStyle.None : DisplayStyle.Flex;
-            if (!hidden)
-                bottomButton.text = action == BottomAction.MakeItSo ? "MAKE IT SO"
-                    : action == BottomAction.Continue ? "TIẾP TỤC" : "NGÀY KẺ";
 
             // Hết ván → màn kết (FR-0701): overlay che toàn kính với nút Restart.
             if (state.IsFinished && state.FinalEnding != EndingId.None)
@@ -223,7 +223,7 @@ namespace AyeAye
             float savedOffset = oldScroll != null ? oldScroll.scrollOffset.y : 0f; // giữ vị trí cuộn qua lần dựng lại
             panel.Clear();
 
-            var scroll = new ScrollView();
+            var scroll = CRTScroll();
             scroll.AddToClassList("orders-scroll");
             panel.Add(scroll);
 
@@ -240,7 +240,7 @@ namespace AyeAye
             foreach (var o in active) scroll.Add(ActiveRow(o));
 
             scroll.Add(Section("HỘP THƯ"));
-            var note = new Label($"Trễ: Uy tín -{config.lateReputationPenalty}, doanh thu ×{config.lateRevenueFactor:0.##} (áp cho mọi đơn)");
+            var note = new Label($"Đơn trễ chỉ nhận doanh thu ×{config.lateRevenueFactor:0.##} (áp cho mọi đơn)");
             note.AddToClassList("order-line");
             note.AddToClassList("order-clue");
             scroll.Add(note);
@@ -249,6 +249,15 @@ namespace AyeAye
             foreach (var o in inbox) scroll.Add(InboxCard(o));
 
             scroll.schedule.Execute(() => scroll.scrollOffset = new Vector2(0, savedOffset)).ExecuteLater(1);
+        }
+
+        // ScrollView đồng bộ kiểu CRT: ẩn thanh ngang + bước cuộn lăn chuột (hằng UX, không phải số cân bằng).
+        static ScrollView CRTScroll()
+        {
+            var s = new ScrollView();
+            s.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            s.mouseWheelScrollSize = 60f;
+            return s;
         }
 
         VisualElement InboxCard(OrderState o)
@@ -264,8 +273,9 @@ namespace AyeAye
             foreach (var (tag, name) in CargoTags(o.Tags)) chips.Add(Chip(CargoChipClass(tag), name));
             main.Add(chips);
             card.Add(main);
-            int daysLeft = o.DeadlineDay - state.CurrentDay;
-            card.Add(Line($"Hạn: Ngày {o.DeadlineDay} (còn {daysLeft} ngày) · Doanh thu {o.Revenue}"));
+            float left = Mathf.Max(0f, o.DeadlineAtSeconds - state.ElapsedSeconds);
+            string limit = o.IsLate ? "TRỄ" : $"còn {left:0}s";
+            card.Add(Line($"Hạn: {limit} · Doanh thu {o.Revenue}"));
             if (!string.IsNullOrEmpty(o.Clue)) card.Add(Clue(o.Clue));
 
             var row = new VisualElement();
@@ -301,7 +311,8 @@ namespace AyeAye
                 if (s != null) ship = $" · tàu {s.DisplayName}";
             }
             string status = o.Status == OrderStatus.Assigned ? "Đang chở" : "Chưa có tàu";
-            row.Add(Line($"{o.CustomerName} — {status}{ship} · {PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Hạn: Ngày {o.DeadlineDay}"));
+            string limit = o.IsLate ? "TRỄ" : $"còn {Mathf.Max(0f, o.DeadlineAtSeconds - state.ElapsedSeconds):0}s";
+            row.Add(Line($"{o.CustomerName} — {status}{ship} · {PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Hạn: {limit}"));
             return row;
         }
 

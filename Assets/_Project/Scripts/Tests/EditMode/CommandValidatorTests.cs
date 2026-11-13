@@ -4,7 +4,7 @@ using AyeAye;
 
 namespace AyeAye.Tests.EditMode
 {
-    // FR-0303, FR-0404, FR-0405, FR-0406: kiểm tra lệnh trước khi staged.
+    // FR-0303, FR-0404, FR-0405, FR-0406: kiểm tra lệnh trước khi áp NGAY (MAKE IT SO — không staged).
     public class CommandValidatorTests
     {
         private GameConfig _config;
@@ -16,7 +16,6 @@ namespace AyeAye.Tests.EditMode
         {
             _config = ScriptableObject.CreateInstance<GameConfig>();
             _state = new GameState(_config);
-            _state.Reputation = _config.startReputation;
 
             var s1 = ScriptableObject.CreateInstance<ShipDef>();
             s1.shipId = "S1"; s1.captain = CrewId.Bob; s1.startPortId = "A";
@@ -44,7 +43,7 @@ namespace AyeAye.Tests.EditMode
 
         private OrderState Active(string id, string from = "A", string to = "B")
         {
-            var o = new OrderState { Id = id, FromPortId = from, ToPortId = to, Status = OrderStatus.Accepted, DeadlineDay = 3, Revenue = 10 };
+            var o = new OrderState { Id = id, FromPortId = from, ToPortId = to, Status = OrderStatus.Accepted, DeadlineAtSeconds = 100f, Revenue = 10 };
             _state.Orders.Add(o);
             return o;
         }
@@ -101,9 +100,7 @@ namespace AyeAye.Tests.EditMode
         public void Assign_Chan_Don_Da_Cho_Tau_Khac()
         {
             var o = Active("O1");
-            _state.Ships[1].Status = ShipStatus.Idle;
-            _state.Ships[1].PortId = "A";
-            _state.StagedCommands.Add(new StagedCommand { Kind = CommandKind.Assign, ShipId = "S2", OrderId = "O1", RouteOptionIndex = 0 });
+            o.AssignedShipId = "S2"; // lệnh áp ngay → đơn đã gán tàu khác là từ chối
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
 
@@ -112,7 +109,8 @@ namespace AyeAye.Tests.EditMode
         {
             Active("O1");
             Active("O2");
-            _state.StagedCommands.Add(new StagedCommand { Kind = CommandKind.Reposition, ShipId = "S1", RouteOptionIndex = 0 });
+            _state.Ships[0].Status = ShipStatus.Moving; // MAKE IT SO áp ngay → tàu Moving là bận
+            _state.Ships[0].OrderId = "O2";
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
 

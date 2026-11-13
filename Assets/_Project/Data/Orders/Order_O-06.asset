@@ -17,7 +17,7 @@ MonoBehaviour:
   tags: 0
   fromPortId: vang
   toPortId: tram
-  deadlineDay: 7
+  deadlineSeconds: 90
   revenue: 100
   clue: "\u0110\xE1 cu\u1ED9i kh\xF4ng v\u1ED9i. Nh\u01B0ng s\u1EBFp th\xEC c\xF3."
   weight: 1

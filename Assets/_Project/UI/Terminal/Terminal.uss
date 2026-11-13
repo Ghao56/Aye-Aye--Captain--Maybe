@@ -126,7 +126,9 @@
     margin-left: 6px;
 }
 
-/* Nội dung tab: co được + min-height 0 để không đẩy footer ra ngoài kính */
+/* Nội dung tab: co được + min-height 0 để không đẩy footer ra ngoài kính.
+   Hướng cột đặt theo từng panel (.panel-orders / .panel-fleet) — KHÔNG để quy tắc chung
+   của tab ĐƠN HÀNG áp lên tab khác (G3: panel-1 cần hướng hàng). */
 .content {
     flex-grow: 1;
     flex-shrink: 1;
@@ -134,7 +136,9 @@
     overflow: hidden;
 }
 .panel { display: none; flex-grow: 1; min-height: 0; padding: 8px 10px; }
-.panel.on { display: flex; flex-direction: column; }
+.panel.on { display: flex; }
+.panel-orders { flex-direction: column; }
+.panel-fleet { flex-direction: row; }
 .panel-hint { color: var(--c-text); font-size: 24px; }
 
 /* Footer: nút Rời máy (trái) + nút pha (phải). Thanh LUÔN hiện — ẩn riêng nút pha. */
@@ -218,17 +222,21 @@
     color: rgb(2, 12, 6);
     border-width: 0;
 }
-.btn-accept { background-color: var(--c-text); }
-.btn-accept:hover { background-color: rgb(200, 255, 210); }
-.btn-accept:disabled { opacity: 0.4; background-color: var(--c-text); }
+/* Đè .btn-row Button (class+type thắng 1 class) — nút decline/route trong hàng phải giữ màu riêng. */
+.btn-row .btn-accept { background-color: var(--c-text); }
+.btn-row .btn-accept:hover { background-color: rgb(200, 255, 210); }
+.btn-row .btn-accept:disabled { opacity: 0.4; background-color: var(--c-text); }
 .btn-decline {
     color: var(--c-text);
     background-color: transparent;
     border-width: 2px;
     border-color: var(--c-alert);
 }
+.btn-row .btn-decline { color: var(--c-text); background-color: transparent; border-width: 2px; border-color: var(--c-alert); }
 .btn-decline:hover { background-color: rgba(255, 90, 77, 0.25); }
+.btn-row .btn-decline:hover { background-color: rgba(255, 90, 77, 0.25); }
 .btn-decline:disabled { opacity: 0.4; }
+.btn-row .btn-decline:disabled { opacity: 0.4; }
 
 /* Tóm tắt đầu tab + hàng chip hàng hóa */
 .order-summary { color: var(--c-text); font-size: 25px; margin-bottom: 4px; }
@@ -255,34 +263,59 @@
     flex-direction: row;
 }
 
-/* Bản đồ ~60% bên trái; cạnh vẽ bằng Painter2D (generateVisualContent). */
-.fleet-map {
-    flex-grow: 3;
+/* Cột trái: bản đồ (co giãn) + hàng chú giải dưới cùng (không đè nút). */
+.fleet-left {
+    flex-grow: 1;
     flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
     min-height: 0;
-    margin-right: 12px;
+    flex-direction: column;
+}
+
+/* Bản đồ: chiếm phần còn lại, luôn có chiều cao tối thiểu để % vị trí nút/chấm đúng. */
+.fleet-map {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 300px;
     border-width: 2px;
     border-color: var(--c-frame);
     background-color: rgba(4, 16, 10, 0.35);
 }
 
-.fleet-side {
-    flex-grow: 2;
-    flex-shrink: 1;
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
+/* Chú giải: hàng riêng dưới bản đồ. */
+.fleet-legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    margin-top: 6px;
+    align-items: center;
+    -unity-picking-mode: ignore;
 }
 
-.fleet-cards { flex-grow: 1; flex-shrink: 1; min-height: 0; }
+/* Cột phải: ~38% của cha, co được khi không đủ chỗ; là MỘT ScrollView dọc duy nhất
+   (thẻ tàu + panel lệnh trong đó, không lồng ScrollView). */
+.fleet-side {
+    flex-basis: 38%;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 0;
+    max-width: 42%;
+    overflow: hidden;
+}
+.fleet-side Button { white-space: normal; }
+.fleet-cards { flex-shrink: 0; }
 
 .ship-card {
     border-width: 2px;
     border-color: var(--c-frame);
     padding: 8px 12px;
     margin-bottom: 8px;
+    max-width: 100%;
 }
 .ship-card.selected { border-color: var(--c-amber); }
+.ship-card:hover { border-color: var(--c-amber); }
 
 .fleet-commands {
     flex-shrink: 0;
@@ -290,9 +323,27 @@
     border-color: var(--c-frame);
     padding: 8px 12px;
     margin-top: 8px;
+    max-width: 100%;
 }
 
-/* Nút chọn tuyến RouteOption — viền, khi được chọn thành nền hổ phách */
+/* 2 nút chuyển chế độ panel lệnh (GIAO ĐƠN / ĐIỀU TÀU RỖNG) — viền, chọn thành nền xanh */
+.btn-mode {
+    color: var(--c-text);
+    background-color: transparent;
+    border-width: 2px;
+    border-color: var(--c-frame);
+    padding: 2px 12px;
+    margin-right: 10px;
+    margin-bottom: 6px;
+    font-size: 22px;
+}
+.btn-mode:hover { border-color: var(--c-amber); }
+.btn-mode.selected { color: rgb(2, 12, 6); background-color: var(--c-text); border-color: var(--c-text); }
+
+.order-muted { color: var(--c-plain); }
+
+/* Nút chọn tuyến RouteOption — viền, khi được chọn thành nền hổ phách.
+   (Cần đè .btn-row Button vì specificity class+type cao hơn 1 class.) */
 .btn-route {
     color: var(--c-text);
     background-color: transparent;
@@ -303,10 +354,14 @@
     margin-bottom: 6px;
     font-size: 22px;
 }
+.btn-row .btn-route { color: var(--c-text); background-color: transparent; border-width: 2px; border-color: var(--c-frame); padding: 2px 12px; }
 .btn-route:hover { border-color: var(--c-amber); }
+.btn-row .btn-route:hover { border-color: var(--c-amber); }
 .btn-route.selected { color: rgb(2, 12, 6); background-color: var(--c-amber); border-color: var(--c-amber); }
+.btn-row .btn-route.selected { color: rgb(2, 12, 6); background-color: var(--c-amber); border-color: var(--c-amber); }
 
-/* Nút hành tinh / trạm: tọa độ do C# đặt (PortDef.mapPosition), kích thước nằm ở đây. */
+/* Nút hành tinh / trạm: tọa độ do C# đặt (PortDef.mapPosition), kích thước nằm ở đây.
+   Nhãn đặt DƯỚI nút, nền bán trong suốt — không đè nút hay nhãn khác. */
 .map-node {
     position: absolute;
     translate: -50% -50%;
@@ -328,10 +383,16 @@
     border-color: var(--c-frame);
 }
 .map-node-label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    translate: -50% 2px;
     color: var(--c-text);
-    font-size: 22px;
-    margin-top: 4px;
+    font-size: 20px;
+    background-color: rgba(2, 12, 6, 0.7);
+    padding: 0 6px;
     white-space: nowrap;
+    -unity-picking-mode: ignore;
 }
 
 /* Chấm tàu: nhỏ, tròn, màu theo thuyền trưởng (dot-0..3), chọn → viền sáng */
@@ -351,13 +412,6 @@
 .map-dot.selected { width: 28px; height: 28px; border-color: rgb(255, 255, 255); }
 
 /* Chú giải hazard — màu phải khớp HazardColor trong TerminalHud.Fleet.cs */
-.map-legend {
-    position: absolute;
-    left: 8px;
-    top: 8px;
-    flex-direction: row;
-    flex-wrap: wrap;
-}
 :root {
     --c-h-clear: rgb(107, 122, 89);
     --c-h-fog: rgb(158, 181, 201);
@@ -370,3 +424,21 @@
 .chip-h-storm { color: var(--c-h-storm); border-color: var(--c-h-storm); }
 .chip-h-pirates { color: var(--c-h-pirates); border-color: var(--c-h-pirates); }
 .chip-h-ice { color: var(--c-h-ice); border-color: var(--c-h-ice); }
+
+/* === Scrollbar kiểu CRT (áp mọi ScrollView của game) === */
+
+.unity-scroller {
+    width: 10px;
+    background-color: rgba(46, 107, 71, 0.25);
+    border-width: 0;
+}
+/* Ẩn nút mũi tên hai đầu track */
+.unity-scroller .unity-repeat-button { display: none; width: 0; height: 0; }
+.unity-base-slider__tracker { border-width: 0; background-color: rgba(46, 107, 71, 0.25); }
+.unity-base-slider__dragger {
+    background-color: var(--c-text);
+    border-width: 0;
+    border-radius: 4px;
+}
+.unity-base-slider__dragger:hover { background-color: rgb(200, 255, 210); }
+.unity-base-slider__dragger:active { background-color: var(--c-amber); }

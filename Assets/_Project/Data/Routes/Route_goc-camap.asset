@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bc3125767a9f154aa717949f145ab48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AyeAye.Runtime::AyeAye.RouteDef
-  fromPortId: vang
-  toPortId: mogio
-  length: 1
-  hazard: 3
+  fromPortId: goc
+  toPortId: camap
+  length: 2
+  hazard: 4

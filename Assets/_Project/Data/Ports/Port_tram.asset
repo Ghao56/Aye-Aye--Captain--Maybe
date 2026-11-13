@@ -15,3 +15,4 @@ MonoBehaviour:
   portId: tram
   displayName: "Tr\u1EA1m L\u1EA1nh B\u1EAFc"
   isHeadquarters: 0
+  mapPosition: {x: 0.8, y: 0.25}

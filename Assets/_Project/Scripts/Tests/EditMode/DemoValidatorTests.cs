@@ -63,11 +63,44 @@ namespace AyeAye.Tests.EditMode
             bad.orderId = "O-BAD";
             bad.fromPortId = TestWorld.Goc;
             bad.toPortId = "no-port";
-            bad.deadlineDay = 3;
+            bad.deadlineSeconds = 60f;
             var errors = DemoValidator.Validate(_world.Config, _world.Routes,
                 _world.OrderPool, _world.Incidents, _world.FixedFirstDay, _world.FixedFinale,
                 _world.ShipDefs, _world.Crews, extraOrders: new[] { bad });
             Assert.IsTrue(errors.Any(e => e.Contains("O-BAD")), "phải báo đơn không thể giao");
+        }
+
+        [Test]
+        public void DeadlineBelowReactionMargin_Reported()
+        {
+            var bad = ScriptableObject.CreateInstance<OrderDef>();
+            _sos.Add(bad);
+            bad.orderId = "O-MARGIN";
+            bad.fromPortId = TestWorld.Goc;
+            bad.toPortId = TestWorld.Vang; // cạnh 1 đơn vị → ETA nhanh nhất ≈ 13.3s
+            bad.deadlineSeconds = 30f;     // < 13.3 + 25 (biên phản ứng)
+            var errors = DemoValidator.Validate(_world.Config, _world.Routes,
+                _world.OrderPool, _world.Incidents, _world.FixedFirstDay, _world.FixedFinale,
+                _world.ShipDefs, _world.Crews, extraOrders: new[] { bad });
+            Assert.IsTrue(errors.Any(e => e.Contains("O-MARGIN") && e.Contains("biên")),
+                "phải báo hạn dưới ETA + biên phản ứng: " + string.Join("; ", errors));
+        }
+
+        [Test]
+        public void TutorialOrder_UsesDeadlineBonus()
+        {
+            var bad = ScriptableObject.CreateInstance<OrderDef>();
+            _sos.Add(bad);
+            bad.orderId = "O-TUT";
+            bad.fromPortId = TestWorld.Goc;
+            bad.toPortId = TestWorld.Vang; // 13.3 + 25 = 38.3 ≤ 60 → chỉ vi phạm khi cộng bonus hướng dẫn (+30)
+            bad.deadlineSeconds = 60f;
+            _world.OrderPool.fixedFirstDay.Add(bad);
+            var errors = DemoValidator.Validate(_world.Config, _world.Routes,
+                _world.OrderPool, _world.Incidents, _world.FixedFirstDay, _world.FixedFinale,
+                _world.ShipDefs, _world.Crews);
+            Assert.IsTrue(errors.Any(e => e.Contains("O-TUT") && e.Contains("biên")),
+                "đơn ngày 1 phải áp biên phản ứng + bonus hướng dẫn: " + string.Join("; ", errors));
         }
     }
 }

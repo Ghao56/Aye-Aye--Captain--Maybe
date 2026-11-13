@@ -15,3 +15,4 @@ MonoBehaviour:
   portId: camap
   displayName: "B\u1EBFn C\xE1 M\u1EADp"
   isHeadquarters: 0
+  mapPosition: {x: 0.8, y: 0.75}

@@ -2,7 +2,8 @@ using System.Collections.Generic;
 
 namespace AyeAye
 {
-    // Lệnh đội tàu từ UI (G3): lớp thuần giống OrderActions — UI chỉ render + intent, không chứa luật.
+    // Lệnh đội tàu từ UI: lớp thuần giống OrderActions — UI chỉ render + intent, không chứa luật.
+    // MAKE IT SO trên thẻ lệnh áp NGAY (không staged, không hủy được — chỉnh 4 của chủ dự án).
     // Trả về null khi thành công; khác null là lý do từ chối (chuỗi tiếng Việt từ CommandValidator).
     public static class FleetActions
     {
@@ -11,15 +12,9 @@ namespace AyeAye
             string error = CommandValidator.ValidateAssign(state, routes, shipId, orderId, routeOptionIndex);
             if (error != null) return error;
             var order = state.Orders.Find(o => o.Id == orderId);
+            var ship = state.Ships.Find(s => s.Id == shipId);
             var options = routes.GetOptions(order.FromPortId, order.ToPortId);
-            state.StagedCommands.Add(new StagedCommand
-            {
-                Kind = CommandKind.Assign,
-                ShipId = shipId,
-                OrderId = orderId,
-                RouteOptionIndex = routeOptionIndex,
-                Route = options[routeOptionIndex],
-            });
+            LaunchShip(state, ship, order, options[routeOptionIndex]);
             return null;
         }
 
@@ -29,24 +24,23 @@ namespace AyeAye
             if (error != null) return error;
             var ship = state.Ships.Find(s => s.Id == shipId);
             var options = routes.GetOptions(ship.PortId, toPortId);
-            state.StagedCommands.Add(new StagedCommand
-            {
-                Kind = CommandKind.Reposition,
-                ShipId = shipId,
-                OrderId = null,
-                RouteOptionIndex = routeOptionIndex,
-                Route = options[routeOptionIndex],
-            });
+            LaunchShip(state, ship, null, options[routeOptionIndex]);
             return null;
         }
 
-        // FR-0104: hủy lệnh staged của tàu (chỉ trong pha Lập kế hoạch, trước MAKE IT SO).
-        public static string Cancel(GameState state, string shipId)
+        // Áp lệnh NGAY: tàu xuất phát tức thì (không dịch chuyển tức thời, không quay đầu giữa cạnh).
+        static void LaunchShip(GameState state, ShipState ship, OrderState order, RouteOption route)
         {
-            var staged = state.StagedCommands.Find(c => c.ShipId == shipId);
-            if (staged == null) return "Tàu không có lệnh nào để hủy.";
-            state.StagedCommands.Remove(staged);
-            return null;
+            ship.Route = route;
+            ship.Status = ShipStatus.Moving;
+            ship.DistanceAlongRoute = 0f;
+            ship.ArrivedPortId = "";
+            if (order != null)
+            {
+                ship.OrderId = order.Id;
+                order.Status = OrderStatus.Assigned;
+                order.AssignedShipId = ship.Id;
+            }
         }
     }
 }
