@@ -46,14 +46,18 @@ namespace AyeAye.Tests.EditMode
             Assert.AreEqual(8, config.gameLengthDays);
             Assert.AreEqual(50, config.startReputation);
 
-            // §5.1: 6 cảng, id duy nhất, HQ = goc
-            Assert.AreEqual(6, ports.Count);
-            Assert.AreEqual(6, ports.Select(p => p.portId).Distinct().Count());
+            // §5.1: 5 cảng (hình sao, xem ASSUMPTIONS.md), id duy nhất, HQ = goc
+            Assert.AreEqual(5, ports.Count);
+            Assert.AreEqual(5, ports.Select(p => p.portId).Distinct().Count());
             var hq = ports.First(p => p.isHeadquarters);
             Assert.AreEqual(DemoData.Goc, hq.portId);
 
-            // §5.2: 7 cạnh
-            Assert.AreEqual(7, edges.Count);
+            // §5.2: 6 cạnh (4 nan hoa từ goc + 2 cạnh phụ)
+            Assert.AreEqual(6, edges.Count);
+            Assert.AreEqual(1, edges.Count(r =>
+                (r.fromPortId == DemoData.Goc && r.toPortId == DemoData.Camap) ||
+                (r.fromPortId == DemoData.Camap && r.toPortId == DemoData.Goc)));
+            Assert.IsTrue(edges.Any(r => r.hazard == HazardType.Storm), "I-02 cần ít nhất một cạnh Storm");
 
             // §5.3: 4 tàu, thuyền trưởng + speed đúng bảng
             Assert.AreEqual(4, ships.Count);
@@ -88,10 +92,27 @@ namespace AyeAye.Tests.EditMode
             var options = routes.GetOptions(DemoData.Goc, DemoData.Tram);
             Assert.IsNotNull(options);
             Assert.AreEqual(2, options.Count);
-            // §5.2: ven Sương Mù = 3 route-units (Sương mù + Băng); qua Mỏm Gió = 4 (Bão + Thông thoáng)
-            var ven = options.First(o => o.hazards.Contains(HazardType.Fog));
-            Assert.AreEqual(3f, ven.length, 0.001f);
-            Assert.IsTrue(ven.hazards.Contains(HazardType.Ice));
+            // Bản đồ hình sao: Qua Băng trực tiếp = 2 route-units (Ice); qua Cá Mập = 3 (Pirates + Storm)
+            var direct = options.First(o => o.hazards.Contains(HazardType.Ice));
+            Assert.AreEqual(2f, direct.length, 0.001f);
+            var viaCamap = options.First(o => o.hazards.Contains(HazardType.Storm));
+            Assert.AreEqual(3f, viaCamap.length, 0.001f);
+            Assert.IsTrue(viaCamap.hazards.Contains(HazardType.Pirates));
+        }
+
+        [Test]
+        public void RouteTable_AllPairsCovered_MaxTwoOptions()
+        {
+            var routes = Track(DemoData.BuildRouteTable());
+            var ids = new[] { DemoData.Goc, DemoData.Vang, DemoData.Suong, DemoData.Camap, DemoData.Tram };
+            foreach (var a in ids)
+                foreach (var b in ids)
+                {
+                    if (a == b) continue;
+                    var opts = routes.GetOptions(a, b);
+                    Assert.IsNotNull(opts, $"thiếu tuyến {a}→{b}");
+                    Assert.LessOrEqual(opts.Count, 2, $"tối đa 2 lựa chọn cho {a}→{b}");
+                }
         }
 
         [Test]

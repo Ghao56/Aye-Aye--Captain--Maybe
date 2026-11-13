@@ -10,9 +10,9 @@ namespace AyeAye.Tests.EditMode
     /// </summary>
     public class TestWorld
     {
-        // §5.1 port ids (alias cho DemoData)
+        // §5.1 port ids (alias cho DemoData) — bản đồ hình sao 5 nút, mogio đã bỏ
         public const string Goc = DemoData.Goc, Vang = DemoData.Vang, Suong = DemoData.Suong,
-            Camap = DemoData.Camap, Mogio = DemoData.Mogio, Tram = DemoData.Tram;
+            Camap = DemoData.Camap, Tram = DemoData.Tram;
 
         public GameConfig Config;
         public RouteTable Routes;

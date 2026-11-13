@@ -12,19 +12,18 @@ namespace AyeAye
     /// </summary>
     public static class DemoData
     {
-        // §5.1 port ids
-        public const string Goc = "goc", Vang = "vang", Suong = "suong", Camap = "camap", Mogio = "mogio", Tram = "tram";
+        // §5.1 port ids — bản đồ hình sao 5 nút (goc là trạm trung chuyển ở giữa; mogio đã bỏ, xem ASSUMPTIONS.md)
+        public const string Goc = "goc", Vang = "vang", Suong = "suong", Camap = "camap", Tram = "tram";
 
-        // §5.2 cạnh (không hướng): "a|b|độ dài|nguy hiểm"
+        // §5.2 cạnh (không hướng): "a|b|độ dài|nguy hiểm" — 4 nan hoa từ goc + 2 cạnh phụ giữa hành tinh
         static readonly string[] Edges =
         {
             Goc + "|" + Vang + "|1|Clear",
             Goc + "|" + Suong + "|1|Fog",
-            Vang + "|" + Camap + "|2|Pirates",
+            Goc + "|" + Camap + "|2|Pirates",
+            Goc + "|" + Tram + "|2|Ice",
             Suong + "|" + Camap + "|1|Fog",
-            Vang + "|" + Mogio + "|1|Storm",
-            Camap + "|" + Tram + "|1|Ice",
-            Mogio + "|" + Tram + "|2|Clear",
+            Camap + "|" + Tram + "|1|Storm",
         };
 
         public static GameConfig CreateConfig()
@@ -43,11 +42,10 @@ namespace AyeAye
             }
             return new List<PortDef>
             {
-                P(Goc, "Cảng Gốc", hq: true),
+                P(Goc, "Trạm Trung Chuyển", hq: true),
                 P(Vang, "Phố Cảng Vàng"),
                 P(Suong, "Đảo Sương Mù"),
                 P(Camap, "Bến Cá Mập"),
-                P(Mogio, "Mỏm Gió"),
                 P(Tram, "Trạm Lạnh Bắc"),
             };
         }
@@ -106,21 +104,17 @@ namespace AyeAye
                     }).ToList() });
             }
 
-            // Đường đi xấp xỉ (multi-hop) cho mọi cặp cảng — đều 2 chiều qua Add
+            // Bản đồ hình sao: 10 cặp cảng, mỗi cặp tối đa 2 RouteOption — đều 2 chiều qua Add
             Add(Goc, Vang, new[] { Opt("Qua thẳng", Goc, Vang) });
             Add(Goc, Suong, new[] { Opt("Đường mù", Goc, Suong) });
-            Add(Goc, Camap, new[] { Opt("Qua Sương Mù", Goc, Suong, Camap), Opt("Qua Vàng", Goc, Vang, Camap) });
-            Add(Goc, Mogio, new[] { Opt("Qua Vàng", Goc, Vang, Mogio) });
-            Add(Goc, Tram, new[] { Opt("Ven Sương Mù", Goc, Suong, Camap, Tram), Opt("Qua Mỏm Gió", Goc, Vang, Mogio, Tram) });
-            Add(Vang, Suong, new[] { Opt("Qua Gốc", Vang, Goc, Suong), Opt("Vòng Cá Mập", Vang, Camap, Suong) });
-            Add(Vang, Camap, new[] { Opt("Biển cướp", Vang, Camap) });
-            Add(Vang, Tram, new[] { Opt("Qua Mỏm Gió", Vang, Mogio, Tram), Opt("Qua Cá Mập", Vang, Camap, Tram) });
-            Add(Suong, Camap, new[] { Opt("Đường mù", Suong, Camap) });
-            Add(Suong, Mogio, new[] { Opt("Qua Gốc", Suong, Goc, Vang, Mogio), Opt("Vòng Trạm Lạnh", Suong, Camap, Tram, Mogio) });
+            Add(Goc, Camap, new[] { Opt("Qua Sương Mù", Goc, Suong, Camap), Opt("Biển cướp", Goc, Camap) });
+            Add(Goc, Tram, new[] { Opt("Qua Băng", Goc, Tram), Opt("Qua Cá Mập", Goc, Camap, Tram) });
+            Add(Vang, Suong, new[] { Opt("Qua Gốc", Vang, Goc, Suong) });
+            Add(Vang, Camap, new[] { Opt("Qua Gốc", Vang, Goc, Camap), Opt("Qua Sương Mù", Vang, Goc, Suong, Camap) });
+            Add(Vang, Tram, new[] { Opt("Qua Gốc", Vang, Goc, Tram) });
+            Add(Suong, Camap, new[] { Opt("Đường mù", Suong, Camap), Opt("Qua Gốc", Suong, Goc, Camap) });
             Add(Suong, Tram, new[] { Opt("Qua Cá Mập", Suong, Camap, Tram) });
-            Add(Camap, Mogio, new[] { Opt("Qua Vàng", Camap, Vang, Mogio), Opt("Qua Trạm Lạnh", Camap, Tram, Mogio) });
-            Add(Camap, Tram, new[] { Opt("Biển băng", Camap, Tram) });
-            Add(Mogio, Tram, new[] { Opt("Đường thẳng", Mogio, Tram) });
+            Add(Camap, Tram, new[] { Opt("Biển bão", Camap, Tram), Opt("Qua Gốc", Camap, Goc, Tram) });
             return rt;
         }
 
@@ -180,12 +174,12 @@ namespace AyeAye
             };
             pool.pool = new List<OrderDef>
             {
-                Order("O-03", "Kem Que Sa Mạc", OrderTag.Cold, Goc, Mogio, 4, 90, "Kem mà đi đường bão... ẵm về nước"),
+                Order("O-03", "Kem Que Sa Mạc", OrderTag.Cold, Goc, Tram, 4, 90, "Kem mà đi đường bão... ẵm về nước"),
                 Order("O-04", "Tiệm Gương Vỡ Hạnh Phúc", OrderTag.Fragile, Suong, Camap, 5, 110, "Gương vỡ = 7 năm xui. Đừng cho Bob chở."),
                 Order("O-05", "Pizza Giao Chậm Là Miễn Phí", OrderTag.Urgent, Goc, Vang, 3, 70, "Tên cửa hàng đã nói tất cả."),
                 Order("O-06", "Hội Sưu Tập Đá Cuội", OrderTag.None, Vang, Tram, 7, 100, "Đá cuội không vội. Nhưng sếp thì có."),
                 Order("O-07", "Đám Cưới Cá Heo", OrderTag.Fragile | OrderTag.Urgent, Camap, Goc, 6, 160, "Cá heo không đợi. Hàng dễ vỡ thì càng không."),
-                Order("O-08", "Bưu Kiện Không Ghi Tên", OrderTag.None, Mogio, Camap, 8, 130, "Không ai nhận trách nhiệm. Đặc biệt là nội dung."),
+                Order("O-08", "Bưu Kiện Không Ghi Tên", OrderTag.None, Suong, Tram, 8, 130, "Không ai nhận trách nhiệm. Đặc biệt là nội dung."),
             };
             return pool;
         }

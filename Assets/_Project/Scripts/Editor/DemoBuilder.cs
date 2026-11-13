@@ -68,6 +68,8 @@ namespace AyeAye
             foreach (var e in DemoData.BuildRouteDefs())
                 RebuildAsset("Routes/Route_" + e.fromPortId + "-" + e.toPortId + ".asset", e);
             RebuildAsset("Routes/RouteTable.asset", DemoData.BuildRouteTable());
+            DeleteOrphanAssets<PortDef>("Ports", name => name.StartsWith("Port_"));
+            DeleteOrphanAssets<RouteDef>("Routes", name => name.StartsWith("Route_") && name != "RouteTable");
 
             // Tàu + thuyền trưởng (tham chiếu qua từng asset riêng)
             foreach (var s in DemoData.BuildShips())
@@ -125,6 +127,21 @@ namespace AyeAye
             asset.name = assetName;
             AssetDatabase.CreateAsset(asset, path);
             return asset;
+        }
+
+        // Xóa asset mồ côi (vd Port_mogio khi cảng bị bỏ khỏi DemoData) — idempotent, chạy lại không lỗi.
+        static void DeleteOrphanAssets<T>(string relFolder, Func<string, bool> keepName) where T : ScriptableObject
+        {
+            string folder = DataRoot + "/" + relFolder;
+            if (!AssetDatabase.IsValidFolder(folder)) return;
+            foreach (string guid in AssetDatabase.FindAssets("t:" + typeof(T).Name, new[] { folder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string name = Path.GetFileNameWithoutExtension(path);
+                if (keepName(name)) continue;
+                AssetDatabase.DeleteAsset(path);
+                Debug.Log("[DemoBuilder] Đã xóa asset mồ côi: " + path);
+            }
         }
 
         // ---------------------------------------------------------------- Tools/AyeAye/Validate
