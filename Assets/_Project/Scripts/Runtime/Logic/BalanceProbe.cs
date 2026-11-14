@@ -19,10 +19,10 @@ namespace AyeAye
             GameConfig config, OrderPool pool, RouteTable routes,
             IReadOnlyList<IncidentDef> incidents, IncidentDef fixedFirstDay, IncidentDef fixedFinale,
             IReadOnlyList<CrewDefinition> crews, IReadOnlyList<ShipDef> shipDefs,
-            int runs, int seedBase, bool cluePolicy = false)
+            int runs, int seedBase, bool cluePolicy = false, string hqPortId = null)
         {
             return SimulateRunsStats(config, pool, routes, incidents, fixedFirstDay, fixedFinale,
-                crews, shipDefs, runs, seedBase, cluePolicy).winRate;
+                crews, shipDefs, runs, seedBase, cluePolicy, hqPortId).winRate;
         }
 
         // Đo cả thời lượng ván trung bình (giây mô phỏng) — menu Tools/AyeAye/Balance và G3 dùng.
@@ -30,10 +30,10 @@ namespace AyeAye
             GameConfig config, OrderPool pool, RouteTable routes,
             IReadOnlyList<IncidentDef> incidents, IncidentDef fixedFirstDay, IncidentDef fixedFinale,
             IReadOnlyList<CrewDefinition> crews, IReadOnlyList<ShipDef> shipDefs,
-            int runs, int seedBase, bool cluePolicy = false)
+            int runs, int seedBase, bool cluePolicy = false, string hqPortId = null)
         {
             var s = SimulateRunsStats(config, pool, routes, incidents, fixedFirstDay, fixedFinale,
-                crews, shipDefs, runs, seedBase, cluePolicy);
+                crews, shipDefs, runs, seedBase, cluePolicy, hqPortId);
             return (s.winRate, s.avgSeconds);
         }
 
@@ -51,7 +51,7 @@ namespace AyeAye
             GameConfig config, OrderPool pool, RouteTable routes,
             IReadOnlyList<IncidentDef> incidents, IncidentDef fixedFirstDay, IncidentDef fixedFinale,
             IReadOnlyList<CrewDefinition> crews, IReadOnlyList<ShipDef> shipDefs,
-            int runs, int seedBase, bool cluePolicy = false)
+            int runs, int seedBase, bool cluePolicy = false, string hqPortId = null)
         {
             var stats = new RunStats();
             if (runs <= 0) return stats;
@@ -59,6 +59,7 @@ namespace AyeAye
             {
                 Pool = pool, Routes = routes, Incidents = incidents,
                 FixedFirstDay = fixedFirstDay, FixedFinale = fixedFinale,
+                HQPortId = hqPortId ?? "", // G5: hubAffinity của roaming
             };
             var durations = new List<double>(runs);
             var lateCounts = new List<int>(runs);
@@ -134,8 +135,16 @@ namespace AyeAye
                     float haul = FastestSeconds(world.Routes, order.FromPortId, order.ToPortId, state.Config);
                     foreach (var ship in state.Ships)
                     {
-                        if (ship.Status != ShipStatus.Idle || !string.IsNullOrEmpty(ship.OrderId)) continue;
-                        float toPickup = FastestSeconds(world.Routes, ship.PortId, order.FromPortId, state.Config);
+                        if (!string.IsNullOrEmpty(ship.OrderId)) continue;
+                        // G5: tàu Idle ước tính từ cảng hiện tại; tàu Roaming ước tính từ ĐÍCH cạnh
+                        // (edge còn lại + tới cảng lấy hàng) — gán vẫn chỉ khi cập cảng.
+                        float toPickup;
+                        if (ship.Status == ShipStatus.Idle)
+                            toPickup = FastestSeconds(world.Routes, ship.PortId, order.FromPortId, state.Config);
+                        else if (ship.Status == ShipStatus.Roaming && ship.Route != null)
+                            toPickup = CommandValidator.RoamRemainSeconds(ship, state.Config)
+                                + FastestSeconds(world.Routes, ship.Route.ToPort, order.FromPortId, state.Config);
+                        else continue;
                         if (toPickup + haul <= remaining) { accept = true; break; }
                     }
                 }

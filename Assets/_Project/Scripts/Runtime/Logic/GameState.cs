@@ -35,6 +35,10 @@ namespace AyeAye
         public int Seed;
         public Random Rng;
 
+        // G5: nguồn ngẫu nhiên RIÊNG cho roaming — seed XOR hằng số. Cấm dùng state.Rng trong
+        // code roaming vì sẽ đổi chuỗi đơn/sự cố của mọi ván (test RoamKhongDungRngChung chốt).
+        public Random RoamRng;
+
         public bool IsFinished;
         public EndingId FinalEnding = EndingId.None;
 
@@ -53,6 +57,7 @@ namespace AyeAye
         {
             Seed = seed;
             Rng = new Random(seed);
+            RoamRng = new Random(seed ^ 0x5F5F5F5F);
             Revenue = 0;
             ElapsedSeconds = 0f;
             LateCount = 0;

@@ -102,5 +102,28 @@ namespace AyeAye.Tests.EditMode
             Assert.IsTrue(errors.Any(e => e.Contains("O-TUT") && e.Contains("biên")),
                 "đơn ngày 1 phải áp biên phản ứng + bonus hướng dẫn: " + string.Join("; ", errors));
         }
+
+        // G5: hồ sơ roaming phải hợp lệ — dwell > 0, mọi hệ số hữu hạn.
+        [Test]
+        public void RoamProfileInvalid_Reported()
+        {
+            var badDwell = ScriptableObject.CreateInstance<ShipDef>();
+            _sos.Add(badDwell);
+            badDwell.shipId = "S-BAD-DWELL";
+            badDwell.roam = new RoamProfile { dwellSeconds = 0f };
+
+            var badNan = ScriptableObject.CreateInstance<ShipDef>();
+            _sos.Add(badNan);
+            badNan.shipId = "S-BAD-NAN";
+            badNan.roam = new RoamProfile { dwellSeconds = 5f, wanderWeight = float.NaN };
+
+            var errors = DemoValidator.Validate(_world.Config, _world.Routes,
+                _world.OrderPool, _world.Incidents, _world.FixedFirstDay, _world.FixedFinale,
+                _world.ShipDefs.Concat(new[] { badDwell, badNan }).ToList(), _world.Crews);
+            Assert.IsTrue(errors.Any(e => e.Contains("S-BAD-DWELL") && e.Contains("dwellSeconds")),
+                "dwellSeconds <= 0 phải bị báo: " + string.Join("; ", errors));
+            Assert.IsTrue(errors.Any(e => e.Contains("S-BAD-NAN") && e.Contains("hữu hạn")),
+                "hệ số không hữu hạn phải bị báo: " + string.Join("; ", errors));
+        }
     }
 }

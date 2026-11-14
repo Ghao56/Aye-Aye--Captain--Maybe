@@ -56,6 +56,16 @@ namespace AyeAye
         [Tooltip("Cho phép roll sự cố khi tàu đi rảnh (roaming) — [S].")]
         public bool incidentsWhileRoaming = false;
 
+        [Header("Roaming ([S] — tàu rảnh tự đi, G5)")]
+        [Tooltip("Bật roaming trong Simulation. Tắt để cô lập test hoặc đo cân bằng.")]
+        public bool roamEnabled = true;
+
+        [Tooltip("Hệ số tốc độ roaming (nhân với tốc thường của tàu).")]
+        public float roamSpeedFactor = 0.7f;
+
+        [Tooltip("Ân hạn đầu ván: trước mốc giây này không tàu nào rời cảng (người chơi mới đọc hướng dẫn).")]
+        public float roamStartSeconds = 30f;
+
         [Header("Tốc độ (hệ số nhân trên secondsPerRouteUnit)")]
         public float fastSpeed = 1.5f;
         public float normalSpeed = 1.0f;

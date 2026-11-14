@@ -22,7 +22,8 @@ namespace AyeAye
         public string ArrivedPortId = "";       // node giữa vừa đi qua trong tick gần nhất (FR-0502)
 
         public bool TemporaryRepair;
-        // Roaming [S] — chừa chỗ trước, RoamStep sẽ dùng (không ảnh hưởng ván hiện tại).
+        // Roaming [S]/G5 — hồ sơ tính cách; null = tàu không roaming (an toàn cho test dựng tay).
+        public RoamProfile Roam;
         public float RoamTimerSeconds;
         public string LastPortId = "";
         public int PatrolIndex;

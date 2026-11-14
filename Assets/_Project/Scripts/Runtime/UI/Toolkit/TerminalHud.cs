@@ -33,6 +33,10 @@ namespace AyeAye
         readonly List<(OrderState order, Label label, string prefix, string suffix)> countLabels
             = new List<(OrderState, Label, string, string)>();
 
+        // G5: nhãn "tới sau Ns" của tàu Roaming — cập 10 Hz tại chỗ cùng nhịp UpdateCountdowns.
+        readonly List<(ShipState ship, Label label, string prefix, string suffix)> shipEtaLabels
+            = new List<(ShipState, Label, string, string)>();
+
         // Dữ liệu mẫu §5 (nguồn duy nhất DemoData, khớp TestWorld + Build Demo).
         GameConfig config;
         OrderPool pool;
@@ -80,6 +84,13 @@ namespace AyeAye
                 int key = state.LateCount * 1000 + state.DeliveredCount * 100
                     + (state.PendingIncidents.Count > 0 ? 10 : 0) + (state.IsFinished ? 1 : 0)
                     + inboxCount; // đơn mới vào hộp thư / hết hạn cũng cần vẽ lại
+                // G5: trạng thái bất kỳ tàu đổi (rời cảng / cập cảng) → dựng lại thẻ + panel lệnh.
+                foreach (var s in state.Ships)
+                {
+                    key = key * 31 + (int)s.Status;
+                    key = key * 31 + (s.PortId != null ? s.PortId.GetHashCode() : 0);
+                    key = key * 31 + (s.Route != null && s.Route.ToPort != null ? s.Route.ToPort.GetHashCode() : 0);
+                }
                 if (key != lastRefreshKey) { lastRefreshKey = key; Refresh(); }
                 UpdateCountdowns(); // hạn đơn ~10 Hz — sửa text tại chỗ, không dựng lại panel
             }
@@ -167,7 +178,16 @@ namespace AyeAye
             {
                 Pool = pool, Routes = routeTable, Incidents = incidents.incidents,
                 FixedFirstDay = incidents.fixedFirstDay, FixedFinale = incidents.fixedFinale,
+                HQPortId = HQPortId(), // G5: hubAffinity của roaming
             };
+        }
+
+        // G5: cảng trụ (isHeadquarters) — dùng cho hubAffinity của RoamPlanner.
+        string HQPortId()
+        {
+            foreach (var kv in portDefs)
+                if (kv.Value.isHeadquarters) return kv.Key;
+            return "";
         }
 
         void StartNewRun()
@@ -251,6 +271,13 @@ namespace AyeAye
                 label.text = (warn ? "! " : "") + prefix + DeadlineText(o, state) + suffix;
                 label.EnableInClassList("blink-off", warn && blinkOff);
                 label.EnableInClassList("late", o.IsLate);
+            }
+            // G5: ETA tàu Roaming — thời gian còn lại của cạnh (tốc × roamSpeedFactor), sửa text tại chỗ.
+            foreach (var (ship, label, prefix, suffix) in shipEtaLabels)
+            {
+                if (label == null || ship == null) continue;
+                if (ship.Status != ShipStatus.Roaming || ship.Route == null) { label.text = prefix + "?" + suffix; continue; }
+                label.text = prefix + Mathf.CeilToInt(CommandValidator.RoamRemainSeconds(ship, state.Config)) + suffix;
             }
         }
 

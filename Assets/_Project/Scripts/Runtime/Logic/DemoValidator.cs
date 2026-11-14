@@ -134,6 +134,16 @@ namespace AyeAye
                         errors.Add($"ShipDef id trống hoặc trùng: {s.shipId}");
                     if (portIds != null && !portIds.Contains(s.startPortId))
                         errors.Add($"{s.shipId}: cảng khởi đầu {s.startPortId} không tồn tại");
+                    // G5: hồ sơ roaming — dwell > 0, mọi hệ số hữu hạn.
+                    if (s.roam != null)
+                    {
+                        if (s.roam.dwellSeconds <= 0f)
+                            errors.Add($"{s.shipId}: roam dwellSeconds <= 0");
+                        if (!IsFinite(s.roam.demandWeight) || !IsFinite(s.roam.farBias)
+                            || !IsFinite(s.roam.hubAffinity) || !IsFinite(s.roam.wanderWeight)
+                            || !IsFinite(s.roam.backtrackPenalty))
+                            errors.Add($"{s.shipId}: hệ số roam không hữu hạn (NaN/∞)");
+                    }
                 }
             }
 
@@ -151,5 +161,7 @@ namespace AyeAye
         }
 
         static string Key(string a, string b) => a + ">" + b;
+
+        static bool IsFinite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
     }
 }

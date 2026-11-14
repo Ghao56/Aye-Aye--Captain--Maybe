@@ -179,7 +179,7 @@
     justify-content: center;
 }
 .start-title { color: var(--c-text); font-size: 52px; margin-bottom: 24px; }
-.start-hint { color: var(--c-dim); font-size: 22px; margin-bottom: 24px; white-space: normal; text-align: center; }
+.start-hint { color: var(--c-dim); font-size: 22px; margin-bottom: 24px; white-space: normal; -unity-text-align: middle-center; }
 .start-button {
     margin: 6px 0;
     padding: 8px 32px;
@@ -303,7 +303,6 @@
     flex-shrink: 0;
     margin-top: 6px;
     align-items: center;
-    -unity-picking-mode: ignore;
 }
 
 /* Cột phải: ~38% của cha, co được khi không đủ chỗ; là MỘT ScrollView dọc duy nhất
@@ -407,7 +406,6 @@
     background-color: rgba(2, 12, 6, 0.7);
     padding: 0 6px;
     white-space: nowrap;
-    -unity-picking-mode: ignore;
 }
 
 /* Chấm tàu (G4): cả 4 chấm cùng phosphor sáng — phân biệt bằng CHỮ CÁI ĐẦU thuyền trưởng
@@ -425,6 +423,8 @@
     justify-content: center;
 }
 .map-dot-letter { font-size: 15px; color: var(--c-ink); }
+/* G5: tàu Roaming mờ hơn tàu đậu — phân biệt trạng thái bằng độ sáng, không màu mới (G4). */
+.map-dot.roaming { opacity: 0.6; }
 .map-dot.selected {
     width: 30px;
     height: 30px;

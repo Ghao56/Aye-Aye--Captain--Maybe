@@ -202,13 +202,17 @@ namespace AyeAye
             var incidentPool = LoadOne<IncidentPool>(DataRoot + "/Incidents");
             var ships = LoadAll<ShipDef>(DataRoot + "/Ships");
             var crews = LoadAll<CrewDefinition>(DataRoot + "/Crews");
+            // G5: cảng trụ cho hubAffinity của roaming (isHeadquarters).
+            string hqPortId = "";
+            foreach (var p in LoadAll<PortDef>(DataRoot + "/Ports"))
+                if (p != null && p.isHeadquarters) { hqPortId = p.portId; break; }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
             foreach (bool clue in new[] { false, true })
             {
                 var s = BalanceProbe.SimulateRunsStats(config, orderPool, routes,
                     incidentPool.incidents, incidentPool.fixedFirstDay, incidentPool.fixedFinale,
-                    crews, ships, runs: 400, seedBase: 1000, cluePolicy: clue);
+                    crews, ships, runs: 400, seedBase: 1000, cluePolicy: clue, hqPortId: hqPortId);
                 Debug.Log($"[Balance] chính sách {(clue ? "ĐỌC MANH MỐI" : "NGẪU NHIÊN")}: " +
                           $"thắng {s.winRate:P0} ({s.e1 + s.e2 + s.e3}/400) [E1 {s.e1} · E2 {s.e2} · E3 {s.e3} · E4 {s.e4} · E5 {s.e5}], " +
                           $"thời lượng TB {s.avgSeconds:F0}s, p10/p50/p90 {s.p10Seconds:F0}/{s.p50Seconds:F0}/{s.p90Seconds:F0}s, " +

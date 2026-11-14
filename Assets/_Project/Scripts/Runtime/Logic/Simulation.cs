@@ -11,6 +11,8 @@ namespace AyeAye
         public IReadOnlyList<IncidentDef> Incidents;
         public IncidentDef FixedFirstDay;
         public IncidentDef FixedFinale;
+
+        public string HQPortId = ""; // G5: cảng trụ (isHeadquarters) — RoamPlanner dùng cho hubAffinity
     }
 
     // Vòng CHẠY LIÊN TỤC (bỏ ngày — xem ASSUMPTIONS.md G1): Advance(dt) thuần, xác định theo seed,
@@ -66,7 +68,16 @@ namespace AyeAye
         // Chạm đích → giao ngay (FR-0409): chấm điểm, DeliveredCount++, đủ winDeliveries → thắng.
         static void AdvanceShip(SimWorld world, GameState state, ShipState ship, float dt)
         {
-            if (ship.Status != ShipStatus.Moving || ship.Route == null) return;
+            if (ship.Status == ShipStatus.Roaming)
+            {
+                AdvanceRoaming(state, ship, dt);
+                return;
+            }
+            if (ship.Status != ShipStatus.Moving || ship.Route == null)
+            {
+                TryStartRoam(world, state, ship, dt);
+                return;
+            }
             var route = ship.Route;
             ship.ArrivedPortId = "";
 
@@ -100,6 +111,39 @@ namespace AyeAye
                 RollIncident(world, state, ship, EdgeHazard(route, newSeg), justArrived: !justLaunched);
         }
 
+        // G5 — roaming thật: tàu rảnh đi 1 cạnh trực tiếp tới cảng kề, tốc × roamSpeedFactor.
+        // KHÔNG roll sự cố (incidentsWhileRoaming = false), KHÔNG chở hàng (OrderId luôn rỗng).
+        static void AdvanceRoaming(GameState state, ShipState ship, float dt)
+        {
+            var route = ship.Route;
+            if (route == null) { ship.Status = ShipStatus.Idle; return; }
+            ship.DistanceAlongRoute += state.Config.SpeedUnitsPerSecond(ship.Speed)
+                * Mathf.Max(0f, state.Config.roamSpeedFactor) * dt;
+            if (ship.DistanceAlongRoute < route.length - 0.0001f) return;
+
+            ship.PortId = route.ToPort;
+            ship.Status = ShipStatus.Idle;
+            ship.DistanceAlongRoute = 0f;
+            ship.ArrivedPortId = "";
+            ship.Route = null;
+            if (ship.Roam != null) ship.RoamTimerSeconds = ship.Roam.dwellSeconds;
+        }
+
+        // Idle: giảm timer nghỉ; hết nghỉ + hết ân hạn + DƯ THỪA tại cảng → rời theo planner.
+        static void TryStartRoam(SimWorld world, GameState state, ShipState ship, float dt)
+        {
+            if (ship.Roam == null || !state.Config.roamEnabled) return;
+            ship.RoamTimerSeconds -= dt;
+            var neighbors = RoamPlanner.Neighbors(world.Routes, ship.PortId);
+            if (!RoamPlanner.ShouldLeave(state, ship, neighbors)) return;
+            var next = RoamPlanner.ChooseNext(state, ship, neighbors, world.HQPortId);
+            ship.LastPortId = ship.PortId;
+            ship.Route = next.Route;
+            ship.Status = ShipStatus.Roaming;
+            ship.DistanceAlongRoute = 0f;
+            ship.ArrivedPortId = "";
+        }
+
         static HazardType EdgeHazard(RouteOption route, int edgeIndex)
         {
             if (route.hazards == null || route.hazards.Count == 0) return HazardType.Any;
@@ -127,10 +171,12 @@ namespace AyeAye
         // FR-0409: tới cảng đến của đơn → Delivered + chấm điểm NGAY; đủ winDeliveries → thắng (G1.5).
         static void FinalizeArrival(GameState state, ShipState ship)
         {
+            ship.LastPortId = ship.Route.FromPort; // G5: để backtrack khi roaming kế tiếp
             ship.PortId = ship.Route.ToPort;
             ship.Status = ShipStatus.Idle;
             ship.DistanceAlongRoute = 0f;
             ship.ArrivedPortId = "";
+            if (ship.Roam != null) ship.RoamTimerSeconds = ship.Roam.dwellSeconds;
             if (!string.IsNullOrEmpty(ship.OrderId))
             {
                 var order = state.Orders.Find(o => o.Id == ship.OrderId);

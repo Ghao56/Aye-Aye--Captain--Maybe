@@ -32,6 +32,8 @@ namespace AyeAye
                     Condition = def.startCondition,
                     Status = ShipStatus.Idle,
                     PortId = def.startPortId,
+                    Roam = def.roam, // G5: hồ sơ roaming (null = không roaming)
+                    RoamTimerSeconds = def.roam != null ? def.roam.dwellSeconds : 0f,
                 });
             }
         }

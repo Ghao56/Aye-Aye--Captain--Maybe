@@ -122,20 +122,29 @@ namespace AyeAye
 
         public static List<ShipDef> BuildShips()
         {
-            ShipDef Ship(string id, string name, CrewId captain, string capName, SpeedClass speed, string traits, string port)
+            ShipDef Ship(string id, string name, CrewId captain, string capName, SpeedClass speed, string traits, string port, RoamProfile roam)
             {
                 var s = ScriptableObject.CreateInstance<ShipDef>();
                 s.shipId = id; s.displayName = name; s.captain = captain; s.captainName = capName;
                 s.speedClass = speed; s.traits = traits; s.startPortId = port; s.startCondition = ShipCondition.Good;
+                s.roam = roam; // G5
                 return s;
             }
-            // §5.3
+            // §5.3 — hồ sơ roaming G5: giá trị khởi đầu theo tính cách (đo lại qua Balance, không tự chỉnh)
             return new List<ShipDef>
             {
-                Ship("tau-tia-chop", "CARGO-9", CrewId.Bob, "Bob", SpeedClass.Fast, "Nhanh · Ẩu · Thích đường tắt", Goc),
-                Ship("tau-rua-vang", "HAULER-4", CrewId.Chen, "Chen", SpeedClass.Slow, "Chậm · Thân vững · Bình tĩnh", Goc),
-                Ship("tau-dung-quy-trinh", "FREIGHT-12", CrewId.Mira, "Mira", SpeedClass.Normal, "Chuẩn sách · Hơi cứng nhắc", Goc),
-                Ship("tau-nghi-ngo", "TRANSIT-3", CrewId.Dex, "Dex", SpeedClass.Normal, "Đa nghi · Kiểm tra kỹ", Vang),
+                // Bob: nghỉ ngắn, thích cảng xa, hơi hay đổi ý
+                Ship("tau-tia-chop", "CARGO-9", CrewId.Bob, "Bob", SpeedClass.Fast, "Nhanh · Ẩu · Thích đường tắt", Goc,
+                    new RoamProfile { dwellSeconds = 8f, demandWeight = 2f, farBias = 0.6f, wanderWeight = 2f }),
+                // Chen: nghỉ lâu, thích cảng gần, gắn HQ
+                Ship("tau-rua-vang", "HAULER-4", CrewId.Chen, "Chen", SpeedClass.Slow, "Chậm · Thân vững · Bình tĩnh", Goc,
+                    new RoamProfile { dwellSeconds = 30f, demandWeight = 2f, farBias = -0.5f, hubAffinity = 3f, wanderWeight = 1f, backtrackPenalty = 3f }),
+                // Mira: nghỉ vừa, gắn HQ, không nhiễu — đi đều như theo quy trình
+                Ship("tau-dung-quy-trinh", "FREIGHT-12", CrewId.Mira, "Mira", SpeedClass.Normal, "Chuẩn sách · Hơi cứng nhắc", Goc,
+                    new RoamProfile { dwellSeconds = 15f, demandWeight = 2f, hubAffinity = 3f, wanderWeight = 0f }),
+                // Dex: nghỉ vừa, hay đổi ý (nhiễu cao)
+                Ship("tau-nghi-ngo", "TRANSIT-3", CrewId.Dex, "Dex", SpeedClass.Normal, "Đa nghi · Kiểm tra kỹ", Vang,
+                    new RoamProfile { dwellSeconds = 15f, demandWeight = 2f, wanderWeight = 6f }),
             };
         }
 

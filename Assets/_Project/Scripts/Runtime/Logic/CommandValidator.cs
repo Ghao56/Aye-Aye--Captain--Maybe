@@ -22,10 +22,19 @@ namespace AyeAye
             return ActiveCount(state) < state.Config.maxActiveOrders;
         }
 
+        // G5: thời gian còn lại của tàu Roaming tới đích cạnh (giây, làm tròn lên).
+        public static float RoamRemainSeconds(ShipState ship, GameConfig config)
+        {
+            float edgeSpeed = config.SpeedUnitsPerSecond(ship.Speed) * Mathf.Max(0.0001f, config.roamSpeedFactor);
+            return (ship.Route.length - ship.DistanceAlongRoute) / edgeSpeed;
+        }
+
         public static string ValidateAssign(GameState state, RouteTable routes, string shipId, string orderId, int routeOptionIndex)
         {
             var ship = state.Ships.Find(s => s.Id == shipId);
             if (ship == null) return "Không tìm thấy tàu.";
+            if (ship.Status == ShipStatus.Roaming)
+                return $"{ship.DisplayName} đang đi tới {ship.Route.ToPort} (còn {Mathf.CeilToInt(RoamRemainSeconds(ship, state.Config))}s) — chỉ ra lệnh khi cập cảng.";
             if (ship.Status != ShipStatus.Idle) return $"{ship.DisplayName} đang bận, không nhận lệnh mới.";
             var order = state.Orders.Find(o => o.Id == orderId);
             if (order == null) return "Không tìm thấy đơn.";
@@ -41,6 +50,8 @@ namespace AyeAye
         {
             var ship = state.Ships.Find(s => s.Id == shipId);
             if (ship == null) return "Không tìm thấy tàu.";
+            if (ship.Status == ShipStatus.Roaming)
+                return $"{ship.DisplayName} đang đi tới {ship.Route.ToPort} (còn {Mathf.CeilToInt(RoamRemainSeconds(ship, state.Config))}s) — chỉ ra lệnh khi cập cảng.";
             if (ship.Status != ShipStatus.Idle) return $"{ship.DisplayName} đang bận, không nhận lệnh mới.";
             if (!string.IsNullOrEmpty(ship.OrderId)) return $"{ship.DisplayName} đang chở hàng, không điều phóng rỗng được.";
             var options = routes.GetOptions(ship.PortId, toPortId);

@@ -22,5 +22,8 @@ namespace AyeAye
         public string startPortId;
 
         public ShipCondition startCondition = ShipCondition.Good;
+
+        [Tooltip("Hồ sơ roaming của thuyền trưởng (G5). Null = tàu không roaming.")]
+        public RoamProfile roam;
     }
 }

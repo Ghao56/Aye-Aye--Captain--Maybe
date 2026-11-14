@@ -24,7 +24,7 @@ public static class PlayCapture
         Debug.Log("[PlayCapture] Capture: đặt cờ + vào Play");
         SessionState.SetBool("aa-play-capture", true);
         frame = 0;
-        machineOn = false; started = false; endingQueued = false; warnShotTaken = false; incidentShotTaken = false;
+        machineOn = false; started = false; endingQueued = false; warnShotTaken = false; incidentShotTaken = false; roamShotTaken = false;
         state = null; world = null; crews = null;
         UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Scenes/Main.unity");
         EditorApplication.isPlaying = true;
@@ -99,18 +99,18 @@ public static class PlayCapture
             return;
         }
         int f = frame - startFrame;
-        if (f == 30) { InvokeSelectTab(0); Shot("g4-tab-orders"); } // chụp lưu ~4 tick sau — tab vẫn 0
+        if (f == 30) { InvokeSelectTab(0); Shot("g5-tab-orders"); } // chụp lưu ~4 tick sau — tab vẫn 0
         if (f == 40) InvokeSelectTab(1);
-        if (f == 60) SelectFirstShip(); // G4: thẻ + chấm tàu đang chọn vào ảnh ĐỘI TÀU
-        if (f == 80) Shot("g4-tab-fleet"); // lưu khi vẫn ở tab ĐỘI TÀU
+        if (f == 60) SelectFirstShip(); // G5: thẻ + chấm tàu đang chọn vào ảnh ĐỘI TÀU
+        if (f == 80) Shot("g5-tab-fleet"); // lưu khi vẫn ở tab ĐỘI TÀU
         if (f == 90) InvokeSelectTab(2);
-        if (f == 110) Shot("g4-tab-incidents"); // lưu khi đã ở tab SỰ CỐ
+        if (f == 110) Shot("g5-tab-incidents"); // lưu khi đã ở tab SỰ CỐ
         if (f >= 110)
         {
             Drive(); // thay người chơi: nhận đơn / điều tàu / xử lý sự cố
             if (state != null && state.IsFinished)
             {
-                if (!endingQueued) { endingQueued = true; Shot("g4-ending"); } // chụp xong mới Stop (xem pendingShot)
+                if (!endingQueued) { endingQueued = true; Shot("g5-ending"); } // chụp xong mới Stop (xem pendingShot)
             }
             else if (state != null && state.ElapsedSeconds > 1500) { Debug.LogError($"[PlayCapture] {state.ElapsedSeconds:0}s game chưa tới Ending"); Stop(1); }
             else if (frame > 2000000) { Debug.LogError("[PlayCapture] quá 2000000 frame chưa tới Ending"); Stop(1); }
@@ -126,6 +126,7 @@ public static class PlayCapture
     static bool endingQueued;
     static bool incidentShotTaken;
     static bool warnShotTaken;
+    static bool roamShotTaken; // G5: ảnh ĐỘI TÀU có tàu Roaming giữa cạnh
     static AyeAye.TerminalHud hudRef;
     static FieldInfo focusPaused;
 
@@ -183,11 +184,25 @@ public static class PlayCapture
                 Pool = pool, Routes = AyeAye.DemoData.BuildRouteTable(),
                 Incidents = incidents.incidents,
                 FixedFirstDay = incidents.fixedFirstDay, FixedFinale = incidents.fixedFinale,
+                HQPortId = AyeAye.DemoData.Goc, // goc là trụ (G5)
             };
             crews = AyeAye.DemoData.BuildCrews();
         }
 
-        // 0. G4: đơn gần hạn (còn < deadlineWarnSeconds) → về tab ĐƠN HÀNG chụp nhãn nhấp nháy "! ".
+        // 0. G5: có tàu Roaming giữa cạnh → chụp tab ĐỘI TÀU một lần (thẻ có "tới sau Ns", chấm mờ 0.6).
+        if (!roamShotTaken && pendingShot == null)
+        {
+            bool anyRoam = state.Ships.Exists(s => s.Status == AyeAye.ShipStatus.Roaming && s.Route != null);
+            if (anyRoam)
+            {
+                roamShotTaken = true;
+                InvokeSelectTab(1);
+                Shot("g5-fleet-roaming");
+                return;
+            }
+        }
+
+        // 0b. G4: đơn gần hạn (còn < deadlineWarnSeconds) → về tab ĐƠN HÀNG chụp nhãn nhấp nháy "! ".
         if (!warnShotTaken && pendingShot == null)
         {
             float warn = state.Config.deadlineWarnSeconds;
@@ -199,7 +214,7 @@ public static class PlayCapture
             {
                 warnShotTaken = true;
                 InvokeSelectTab(0);
-                Shot("g4-orders-warn"); // 0.5s blink nên có thể chụp đúng lúc opacity 0.25 — vẫn thấy chữ mờ
+                Shot("g5-orders-warn"); // 0.5s blink nên có thể chụp đúng lúc opacity 0.25 — vẫn thấy chữ mờ
                 return;
             }
         }
@@ -211,7 +226,7 @@ public static class PlayCapture
             {
                 incidentShotTaken = true;
                 InvokeSelectTab(2);
-                Shot("g4-incident-active"); // hold ~5 tick — đồng hồ dừng đúng khi có sự cố chờ
+                Shot("g5-incident-active"); // hold ~5 tick — đồng hồ dừng đúng khi có sự cố chờ
                 return;
             }
             if (pendingShot != null) return;
@@ -224,16 +239,25 @@ public static class PlayCapture
         }
 
         // 2. Nhận đơn còn về kịp hạn (tàu rảnh: tới cảng lấy hàng + đi tuyến nhanh nhất ≤ thời gian còn lại).
+        // G5: tàu Roaming ước tính từ đích cạnh (edge còn lại + tới cảng lấy hàng) — cùng quy tắc BalanceProbe;
+        // gán vẫn chỉ cho tàu Idle đã cập cảng.
         foreach (var o in state.Orders.FindAll(x => x.Status == AyeAye.OrderStatus.InInbox))
         {
             float haul = FastestSeconds(o.FromPortId, o.ToPortId);
             if (haul == float.MaxValue) continue;
+            float remaining = o.DeadlineAtSeconds - state.ElapsedSeconds;
             bool reachable = false;
             foreach (var ship in state.Ships)
             {
-                if (ship.Status != AyeAye.ShipStatus.Idle || !string.IsNullOrEmpty(ship.OrderId)) continue;
-                if (FastestSeconds(ship.PortId, o.FromPortId) + haul <= o.DeadlineAtSeconds - state.ElapsedSeconds)
-                { reachable = true; break; }
+                if (!string.IsNullOrEmpty(ship.OrderId)) continue;
+                float toPickup;
+                if (ship.Status == AyeAye.ShipStatus.Idle)
+                    toPickup = FastestSeconds(ship.PortId, o.FromPortId);
+                else if (ship.Status == AyeAye.ShipStatus.Roaming && ship.Route != null)
+                    toPickup = AyeAye.CommandValidator.RoamRemainSeconds(ship, state.Config)
+                        + FastestSeconds(ship.Route.ToPort, o.FromPortId);
+                else continue;
+                if (toPickup + haul <= remaining) { reachable = true; break; }
             }
             if (reachable && AyeAye.CommandValidator.CanAccept(state, o.Id))
                 AyeAye.OrderActions.Accept(state, o.Id);

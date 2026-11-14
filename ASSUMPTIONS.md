@@ -62,3 +62,14 @@ Thay SRS v3 mục liên quan "ngày/ván 8 ngày/Uy tín 85+". Tag trước thay
 4. **AdvanceWithFixedTimestep** chuyển thành vòng lặp gọi `Advance` (không còn 2 bản logic trùng).
 5. **Đối chiếu số test 114 → 96 (chính xác)**: b176241 xóa 3 file = −20 attr (DayRunner 6, GameStateFlow 4, SimulationStep 10); file còn lại: EndingEvaluator −4, PhaseGate −3, ScoreCalculator −1, DemoValidator +2, OrderScheduler +1 (net −5) → 89; SimulationTests mới +7 → **96** (khớp XML). Bảng cũ ghi "xóa 20, thêm 7 → 101" thiếu net −5 của các file còn lại.
 
+
+## 14/11/2026 — G5: tàu roaming có mục đích
+
+1. **Roaming là thật trong `Simulation`** (không còn là hiệu ứng UI): tàu `Idle` có `Roam != null`, qua ân hạn `roamStartSeconds` (30s — người chơi mới đọc hướng dẫn), hết nghỉ (`dwellSeconds`) và là tàu DƯ THỪA tại cảng thì rời đi 1 cạnh TRỰC TIẾP tới cảng kề (RoamPlanner.ChooseNext). Đi theo tốc × `roamSpeedFactor` (0.7), tới đích về `Idle`, đặt lại timer = dwell. Không roll sự cố khi roaming (`incidentsWhileRoaming = false`), không chở hàng.
+2. **Quy tắc "tàu dư thừa mới rời cảng"**: số tàu `Idle` tại cảng > số đơn InInbox + Accepted-chưa-gán có FromPortId = cảng đó. Đơn tutorial sinh tự động lúc 0s trong Advance nên tàu thừa đầu ván vẫn đi được (sau ân hạn 30s).
+3. **Chỉ giao việc khi cập cảng**: tàu `Roaming` bị từ chối Assign/Reposition với lý do nêu đích đến + số giây còn lại. Giữ tên enum `Idle` (= đậu ở cảng), không thêm `Docked`.
+4. **`RoamRng` riêng** (`seed ^ 0x5F5F5F5F`): cấm dùng `state.Rng` trong code roaming — test `RoamKhongDungRngChung_ChoiDonGiongHet` chứng minh bằng thực nghiệm (chuỗi đơn sinh ra giống hệt khi roam bật/tắt). Người chơi không điều khiển tàu roaming; tàu roaming không mang đơn.
+5. **Hồ sơ tính cách** (`RoamProfile` trên ShipDef): Bob nghỉ ngắn, thích cảng xa; Chen nghỉ lâu, thích cảng gần + gắn HQ; Mira gắn HQ, không nhiễu (đi đều); Dex nhiễu cao (hay đổi ý). Giá trị KHỞI ĐIỂM — đo lại qua Balance, chưa chốt.
+6. **UI**: chấm tàu Roaming bám `AlongRoute` theo state, opacity 0.6 (đơn sắc, không màu mới); thẻ tàu hiện "Đang đi A → B, tới sau Ns" cập nhật 10 Hz tại chỗ (shipEtaLabels); khóa làm mới panel đổi khi trạng thái bất kỳ tàu đổi (rời/cập cảng). RoamTick hiệu ứng UI đã XÓA.
+7. **Balance cũ (96%) KHÔNG còn hiệu lực**: tàu rời cảng tự do thay đổi kết quả. Số liệu mới đo bằng `DemoBuilder.Balance` 400 ván/chính sách — xem báo cáo G5. Núm đề xuất: `dwellSeconds`, `roamSpeedFactor`, `wanderWeight`, `backtrackPenalty`.
+8. **BalanceProbe/PlayCapture chính sách đọc-manh-mối** ước tính cả tàu Roaming sắp cập cảng: (edge còn lại + FastestSeconds(đích → cảng lấy hàng) + haul) ≤ hạn đơn; gán vẫn chỉ cho tàu Idle.

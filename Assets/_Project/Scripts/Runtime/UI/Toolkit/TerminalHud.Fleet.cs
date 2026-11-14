@@ -15,16 +15,6 @@ namespace AyeAye
         string fleetError;
         string fleetMode = "assign"; // chế độ panel lệnh: "assign" | "reposition"
 
-        // Roaming hiển thị (chỉ UI): tàu Idle bay vòng nhỏ quanh cảng — không đụng state/Rng.
-        IVisualElementScheduledItem roamItem;
-        float roamElapsedMs;
-        Dictionary<string, float> roamStart = new Dictionary<string, float>(); // shipId → tick bắt đầu Idle (nối mượt)
-        const float RoamRadius = 0.045f;      // bán kính quỹ đạo (đơn vị tọa độ chuẩn hóa 0..1)
-        const float RoamRadiusSmall = 0.5f;   // hệ số thu nhỏ khi tàu đã có đơn hoặc đang được chọn
-        const float RoamPeriodMs = 6000f;     // chu kỳ 1 vòng
-        const float RoamWarmupMs = 1200f;     // thời gian tăng bán kính từ 0 (nối mượt sau khi giao/tới cảng)
-        const int RoamTickMs = 33;
-
         static readonly Vector2[] IdleOffsets =
         {
             new Vector2(0f, 0f), new Vector2(0.05f, 0.04f),
@@ -47,18 +37,16 @@ namespace AyeAye
 
         Vector2 ShipAnchor(int shipIndex, string portId) => PortPos(portId) + IdleOffsets[shipIndex % IdleOffsets.Length];
 
-        // G1 shim: chấm tàu Moving bám state mỗi frame (panel dựng lại chỉ khi key đổi).
-        // Tàu Idle giao cho RoamTick (tránh chấm giật giữa anchor và quỹ đạo); xóa roamStart để khi về Idle roam nối mượt.
+        // G5: chấm tàu Moving lẫn Roaming bám state mỗi frame; Idle đứng anchor cảng.
         void UpdateFleetDots()
         {
             if (state == null || shipDots == null || panels[1] == null || !panels[1].ClassListContains("on")) return;
             int index = 0;
             foreach (var s in state.Ships)
             {
-                if (s.Status == ShipStatus.Moving && s.Route != null)
+                if (s.Status != ShipStatus.Idle && s.Route != null)
                 {
                     if (shipDots.TryGetValue(s.Id, out var dot) && dot != null) PlaceDot(dot, s, index);
-                    roamStart.Remove(s.Id);
                 }
                 index++;
             }
@@ -71,6 +59,7 @@ namespace AyeAye
             var panel = panels[1];
             panel.Clear();
             shipDots = new Dictionary<string, VisualElement>();
+            shipEtaLabels.Clear(); // G5: đăng ký nhãn ETA tàu dựng lại từ đầu mỗi lần Refresh
 
             var row = new VisualElement();
             row.AddToClassList("fleet-row");
@@ -81,6 +70,7 @@ namespace AyeAye
             fleetMap.generateVisualContent += DrawFleetEdges;
             var legend = new VisualElement();
             legend.AddToClassList("fleet-legend");
+            legend.pickingMode = PickingMode.Ignore; // R-01: click xuyên qua chú giải (USS không đặt được)
             var seen = new HashSet<HazardType>();
             foreach (var e in mapRouteDefs)
                 if (seen.Add(e.hazard)) legend.Add(Chip("chip-h-" + e.hazard.ToString().ToLowerInvariant(), HazardLegend(e.hazard)));
@@ -104,6 +94,7 @@ namespace AyeAye
                 node.style.top = new Length(p.mapPosition.y * 100f, LengthUnit.Percent);
                 var label = new Label(p.displayName);
                 label.AddToClassList("map-node-label");
+                label.pickingMode = PickingMode.Ignore; // R-01: không chặn click nút hành tinh dưới label
                 node.Add(label);
                 node.tooltip = p.displayName;
                 fleetMap.Add(node);
@@ -128,10 +119,6 @@ namespace AyeAye
 
             BuildShipCards(side);
             BuildCommandPanel(side);
-
-            // Roaming hiển thị cho tàu Idle (tạm dừng khi tab không hiện hoặc đang animation).
-            roamItem?.Pause();
-            roamItem = fleetMap.schedule.Execute(RoamTick).Every(RoamTickMs);
         }
 
         // Chú giải hazard: tên + ký tự mẫu nét khớp DrawStyledLine (không phân biệt bằng màu).
@@ -145,33 +132,14 @@ namespace AyeAye
             _ => h.ToString(),
         };
 
-        void RoamTick()
-        {
-            if (state == null || shipDots == null) return;
-            if (panels[1] == null || !panels[1].ClassListContains("on")) return;
-            roamElapsedMs += RoamTickMs;
-            int index = 0;
-            foreach (var s in state.Ships)
-            {
-                if (s.Status == ShipStatus.Moving && s.Route != null) continue; // tàu Moving đi đúng tuyến, không roam
-                if (!shipDots.TryGetValue(s.Id, out var dot) || dot == null) { index++; continue; }
-                if (!roamStart.TryGetValue(s.Id, out float start)) { roamStart[s.Id] = roamElapsedMs; start = roamElapsedMs; }
-                bool small = !string.IsNullOrEmpty(s.OrderId) || s.Id == selectedShipId;
-                float warmup = Mathf.Clamp01((roamElapsedMs - start) / RoamWarmupMs); // nối mượt từ anchor
-                float jitter = (s.Id.GetHashCode() & 0xFFFF) / 65535f * 0.6f;         // pha lệch theo hash, KHÔNG dùng Rng
-                float angle = 2f * Mathf.PI * (roamElapsedMs / RoamPeriodMs) + index * (Mathf.PI / 2f) + jitter;
-                float radius = RoamRadius * warmup * (small ? RoamRadiusSmall : 1f);
-                SetDotPercent(dot, ShipAnchor(index, s.PortId) + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius);
-                index++;
-            }
-        }
-
         void PlaceDot(VisualElement dot, ShipState ship, int shipIndex)
         {
-            Vector2 pos = ship.Status == ShipStatus.Moving && ship.Route != null
+            Vector2 pos = ship.Status != ShipStatus.Idle && ship.Route != null
                 ? AlongRoute(ship.Route, ship.DistanceAlongRoute)
                 : ShipAnchor(shipIndex, ship.PortId);
             SetDotPercent(dot, pos);
+            // G4/G5: đơn sắc — Roaming mờ hơn Idle, không dùng màu mới.
+            dot.EnableInClassList("roaming", ship.Status == ShipStatus.Roaming);
             if (ship.Id == selectedShipId) dot.AddToClassList("selected");
         }
 
@@ -274,21 +242,34 @@ namespace AyeAye
                 card.Add(Line($"Thuyền trưởng: {CaptainName(s.Captain)} · {SpeedName(s.Speed)} · {ConditionName(s.Condition)}"));
                 var def = shipDefs != null ? shipDefs.Find(d => d.shipId == s.Id) : null;
                 if (def != null && !string.IsNullOrEmpty(def.traits)) card.Add(Line(def.traits));
-                card.Add(Line(LocationLine(s, index)));
+                if (s.Status == ShipStatus.Roaming && s.Route != null)
+                {
+                    // G5: số giây tới cảng cập tại chỗ ở nhịp 10 Hz (shipEtaLabels) — không dựng lại panel mỗi frame.
+                    var loc = new Label("");
+                    loc.AddToClassList("order-line");
+                    card.Add(loc);
+                    shipEtaLabels.Add((s, loc, LocationPrefix(s), "s"));
+                }
+                else card.Add(Line(LocationLine(s, index)));
                 card.Add(Line(CargoLine(s)));
                 side.Add(card);
                 index++;
             }
         }
 
+        string LocationPrefix(ShipState s)
+            => $"Đang đi {PortName(s.Route.portPath[0])} → {PortName(s.Route.portPath[s.Route.portPath.Count - 1])}, tới sau ";
+
+        const string RoamWaitPrefix = "Tàu đang đi, chỉ ra lệnh được khi cập cảng (tới sau ";
+
         string LocationLine(ShipState s, int shipIndex)
         {
-            if (s.Status == ShipStatus.Moving && s.Route != null)
+            if (s.Status != ShipStatus.Idle && s.Route != null)
             {
                 float pct = s.Route.length > 0.0001f ? s.DistanceAlongRoute / s.Route.length * 100f : 0f;
                 return $"Đang đi {PortName(s.Route.portPath[0])} → {PortName(s.Route.portPath[s.Route.portPath.Count - 1])} ({pct:0}%)";
             }
-            return $"Đang ở {PortName(s.PortId)}";
+            return $"Đang đậu ở {PortName(s.PortId)}";
         }
 
         string CargoLine(ShipState s)
@@ -352,6 +333,16 @@ namespace AyeAye
             }
 
             // Tàu đang chạy thì chỉ xem trên bản đồ (áp ngay nên không có pha "chờ MAKE IT SO").
+            if (ship.Status == ShipStatus.Roaming && ship.Route != null)
+            {
+                // G5: tàu Roaming không nhận lệnh giữa cạnh — số giây cập 10 Hz tại chỗ.
+                var wait = new Label("");
+                wait.AddToClassList("order-line");
+                area.Add(wait);
+                shipEtaLabels.Add((ship, wait, RoamWaitPrefix, "s)"));
+                side.Add(area);
+                return;
+            }
             if (ship.Status != ShipStatus.Idle)
             {
                 area.Add(Line("Tàu đang chạy — xem trên bản đồ."));
