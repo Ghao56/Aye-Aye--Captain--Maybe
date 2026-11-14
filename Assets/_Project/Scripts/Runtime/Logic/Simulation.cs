@@ -43,30 +43,13 @@ namespace AyeAye
             return ticks;
         }
         
-        // Thực thực hiện Advance theo các tick nhỏ riêng biệt
+        // Chạy nhiều tick nhỏ (mỗi tick gọi Advance — không nhân bản logic; review boss 14/11).
         public static void AdvanceWithFixedTimestep(SimWorld world, GameState state, float dt)
         {
             if (world == null || state == null || dt <= 0f) return;
-            if (!state.CanAdvance) return; // sự cố chờ / đã kết thúc → TẠM DỪNG
-
             int ticks = CalculateTicks(dt, state.Config.simTickSeconds);
-            float actualTickTime = state.Config.simTickSeconds;
-            
-            for (int i = 0; i < ticks; i++)
-            {
-                state.ElapsedSeconds += actualTickTime;
-                
-                OrderScheduler.SpawnOrders(world.Pool, state);
-                ExpireInbox(state);   // hộp thư không nhận quá hạn → xóa, KHÔNG tính trễ (FR-0304 bản liên tục)
-                MarkLate(state);      // chốt trễ TRƯỚC khi tàu chạy: thua vì trễ ưu tiên hơn thắng cùng tick
-                if (state.IsFinished) return; // đã chốt thua trong tick đó → tàu không chạy, không giao thêm
-
-                foreach (var ship in state.Ships)
-                    AdvanceShip(world, state, ship, actualTickTime);
-                    
-                // Kiểm tra nếu ván đã kết thúc sau mỗi tick
-                if (!state.CanAdvance) return;
-            }
+            for (int i = 0; i < ticks && state.CanAdvance; i++)
+                Advance(world, state, state.Config.simTickSeconds);
         }
 
         // FR-0506: Δ tiến độ từ sự cố; không âm; chạm đích thì giao luôn.

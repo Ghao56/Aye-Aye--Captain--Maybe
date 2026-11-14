@@ -274,6 +274,12 @@ namespace AyeAye
             summary.AddToClassList("order-summary");
             scroll.Add(summary);
 
+            // Hướng dẫn cách chơi (bỏ màn BẮT ĐẦU — review 14/11): hiện đến khi người chơi nhận đơn đầu tiên.
+            // Cờ lấy từ state (Delivered/Late/đang chạy), không phải trạng thái UI — Refresh dựng lại vẫn đúng;
+            // Delivered/Late giữ cờ sau khi giao xong nên clue không nháy lại giữa ván; ván mới (CHƠI LẠI) tự reset.
+            if (activeCount == 0 && state.DeliveredCount == 0 && state.LateCount == 0)
+                scroll.Add(Clue($"Bấm NHẬN ở tab này → điều tàu ở tab ĐỘI TÀU: bấm tuyến là tàu khởi hành NGAY (MAKE IT SO). Đồng hồ chạy liên tục: giao đủ {config.winDeliveries} đơn là THẮNG, trễ {config.maxLateDeliveries} đơn là THUA. Sự cố chờ xử lý ở tab SỰ CỐ — đồng hồ dừng đến khi chọn xong phương án."));
+
             // ĐƠN ĐÃ NHẬN lên trước hộp thư: người chơi thấy kết quả ngay khi bấm NHẬN.
             scroll.Add(Section("ĐƠN ĐÃ NHẬN"));
             var active = state.Orders.FindAll(o => o.Status == OrderStatus.Accepted || o.Status == OrderStatus.Assigned);
@@ -467,6 +473,7 @@ namespace AyeAye
             var label = new Label("» " + text);
             label.AddToClassList("order-line");
             label.AddToClassList("order-clue");
+            label.style.whiteSpace = WhiteSpace.Normal; // clue dài cần xuống dòng (mặc định Label không wrap)
             return label;
         }
     }

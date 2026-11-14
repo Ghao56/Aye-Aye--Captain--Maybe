@@ -67,7 +67,14 @@ Bảng đối chiếu test 114→96 (3 file bị xóa ở commit b176241: DayRun
 - MỚI (không có bản cũ): BaTre_ThuaNgay, ThuaTre_UuTienHonThang_CungTick, GopTick_Vs_TickNho_CungKetQuaCuoi, QuaHan_LateCountTangDungMotLan — hành vi bản chạy liên tục.
 - Kết quả suite hiện tại: 96/96EditMode GREEN.
 
-## G2 done (13/11 tối)
+## 14/11/2026 — Review báo cáo G2 (5 việc giao)
+1. Clue cách chơi vào đầu tab ĐƠN HÀNG (TerminalHud.BuildOrdersPanel, tự ẩn sau NHẬN đầu).
+2. GameStateTests PlayMode xóa (7 test rỗng/trùng) — giữ TerminalInputTests (thật).
+3. Số test đối chiếu lại: 114 → 96 chính xác = −20 (3 file xóa) −5 (file còn lại: EndingEvaluator −4, PhaseGate −3, ScoreCalculator −1, DemoValidator +2, OrderScheduler +1) +7 SimulationTests. Bảng cũ thiếu −5.
+4. AdvanceWithFixedTimestep = vòng lặp gọi Advance (bỏ bản logic trùng).
+5. Balance giữ 96% — chờ playtest người thật; correction: deadlineReactionMarginSeconds chỉ validator dùng; siết thật = deadlineSeconds/incidentChancePerEdge/orderIntervalSeconds/maxLateDeliveries, thử incidentChancePerEdge trước.
+
+Note (TerminalInputTests): KHÔNG tính vào cổng xanh/đỏ batch — là test CHẨN ĐOÁN bug "bấm máy không zoom", cần chạy Test Runner GUI. Batchmode fail hiện tại nghi env (Game view batch không có kích thước thật → WorldToScreenPoint lệch; click không bao giờ tới panel — log TerminalView trống). Nếu GUI cũng fail: nghi phạm (1) PanelInputConfiguration m_InteractionLayers m_Bits:51 (layer 0,1,4,5) — Terminal đang m_Layer:0 nên ổn; (2) collider isTrigger=1 → phải bật Physics.queriesHitTriggers. Playtest người thật cần ghi: thời lượng ván + số đơn trễ (so bot: p50 327s, trễ TB 0.78).
 - Code G2: màn BẮT ĐẦU 3 dòng (đồng hồ chạy sau bấm), pause mất focus/tab ẩn/app pause + clamp dt 0.5s, top bar thêm "Đã giao n/N", countdown hạn đơn ~10Hz sửa text tại chỗ, BuildIncidentsPanel + ResolvePendingIncident (trước đây tab SỰ CỐ không có UI resolve → có sự cố là ván không thể kết thúc), MAKE IT SO trên thẻ lệnh (có sẵn).
 - Play capture (batchmode, -executeMethod PlayCapture.BuildValidateCapture): mở Main.unity trước isPlaying, PlayCaptureBoot [InitializeOnLoad] đăng ký lại Tick qua SessionState, chụp bằng camera ortho riêng trước bounds SpriteRenderer ImagePreview (world-space UIDocument không vào cam.Render() lẫn PanelSettings.targetTexture), gỡ focusPaused bằng reflection mỗi tick, Time.timeScale=10 khi chụp (không đổi config cân bằng), Shot pending 4 tick rồi SaveShot; driver tự chơi theo chính sách đọc-manh-mối (accept gating cả chân đi-lấy-hàng + reposition tàu rỗi).
 - Kết quả Play (2 ván đều THẮNG): ván cuối E1_Empire — giao 10/10, trễ 0, doanh thu 1170, 317s. 6 ảnh: g2-start (màn BẮT ĐẦU 3 dòng), g2-tab-orders (hạn "còn 70s" + ĐÃ VỠ), g2-tab-fleet (bản đồ 5 nút + chấm tàu + thẻ CARGO-9/HAULER-4), g2-tab-incidents, g2-incident-active (SỰ CỐ ĐANG CHỜ — đồng hồ dừng + 3 nút), g2-ending (Đế chế "Sếp Vị Đại" + CHƠI LẠI). Ảnh ở C:/Users/Admin/AppData/Local/Temp/opencode/aa-shots.

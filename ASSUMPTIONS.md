@@ -54,3 +54,11 @@ Thay SRS v3 mục liên quan "ngày/ván 8 ngày/Uy tín 85+". Tag trước thay
 5. **Tab SỰ CỐ có UI resolve** (thiếu trước đó — ván không thể kết thúc khi có sự cố chờ): thẻ sự cố + nút theo phương án → `IncidentResolver.Resolve/Apply` + `Simulation.ApplyProgressDelta` → hiện dòng kết quả cho đến sự cố kế tiếp. Đồng hồ dừng khi còn sự cố chờ (`CanAdvance == false`).
 6. **PlayCapture**: driver tự chơi (sự cố phương án đầu, nhận đơn còn về kịp hạn, điều tàu tuyến nhanh nhất + reposition tàu rỗi) + chụp mốc: tab ĐƠN HÀNG, tab ĐỘI TÀU, tab SỰ CỐ, sự cố đang chờ, màn Ending — chạy batch được bằng `-executeMethod PlayCapture.BuildValidateCapture`.
 
+## 14/11/2026 — Review báo cáo G2 (chủ dự án)
+
+1. **Hướng dẫn cách chơi vào tab ĐƠN HÀNG** (thay màn BẮT ĐẦU đã bỏ): dòng `Clue` đầu tab, dùng số từ config (winDeliveries/maxLateDeliveries), tự ẩn sau lần NHẬN đầu tiên (`activeCount == 0` mới hiện).
+2. **Balance: GIỮ 96%, không siết ngay** — bot đọc-manh-mối là cận trên (phản ứng tức thì, biết chính xác ETA); người thật thấp hơn. Chờ 2–3 người chơi thật playtest rồi mới chỉnh. Nếu siết: thử `incidentChancePerEdge` (0.15 → 0.25) trước vì không đụng validator; **lưu ý `deadlineReactionMarginSeconds` chỉ được DemoValidator dùng để kiểm tra biên, KHÔNG ảnh hưởng gameplay** — siết thật phải đổi `deadlineSeconds` từng đơn trong DemoData / `incidentChancePerEdge` / `orderIntervalSeconds` / `maxLateDeliveries`.
+3. **Xóa GameStateTests (PlayMode)** — 7 test đều rỗng (`IsNotNull`) hoặc trùng coverage EditMode; giữ TerminalInputTests (test click máy thật).
+4. **AdvanceWithFixedTimestep** chuyển thành vòng lặp gọi `Advance` (không còn 2 bản logic trùng).
+5. **Đối chiếu số test 114 → 96 (chính xác)**: b176241 xóa 3 file = −20 attr (DayRunner 6, GameStateFlow 4, SimulationStep 10); file còn lại: EndingEvaluator −4, PhaseGate −3, ScoreCalculator −1, DemoValidator +2, OrderScheduler +1 (net −5) → 89; SimulationTests mới +7 → **96** (khớp XML). Bảng cũ ghi "xóa 20, thêm 7 → 101" thiếu net −5 của các file còn lại.
+
