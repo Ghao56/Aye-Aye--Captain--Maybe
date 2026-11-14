@@ -47,10 +47,10 @@ Thay SRS v3 mục liên quan "ngày/ván 8 ngày/Uy tín 85+". Tag trước thay
 
 ## 13/11/2026 — G2: UI theo phản hồi đánh giá G1
 
-1. **Màn BẮT ĐẦU quay lại**: máy bật → màn "BẮT ĐẦU" với 3 dòng hướng dẫn (nhận đơn/điều tàu, thắng-thua, sự cố chờ dừng đồng hồ); đồng hồ chỉ chạy sau khi bấm BẮT ĐẦU. (Ghi đè quyết định "bỏ màn start" ngày 12/11 — reply chủ dự án 13/11 yêu cầu lại.)
+1. ~~**Màn BẮT ĐẦU quay lại**~~ — **BỔ lại 14/11: chủ dự án yêu cầu BỎ màn BẮT ĐẦU**. Máy bật → ván chạy ngay (`Update` tự `StartNewRun` khi `state == null`); nút `start-button` xóa khỏi UXML, `ShowStartGate`/`atStartGate` xóa khỏi HUD. Màn `start-screen` chỉ còn dùng cho **màn kết thúc** (title + nút CHƠI LẠI).
 2. **Pause mất focus**: `Application.focusChanged` + `OnApplicationFocus/OnApplicationPause` → dừng cộng dt; máy tắt (Esc) cũng không chạy đồng hồ. Quay lại: dt clamp 0.5 s nên không nhảy giờ.
 3. **Thanh trên**: "Thời gian mm:ss · Trễ x/3 · Đã giao n/N · Doanh thu" (thêm nhãn `top-delivered`).
 4. **Hạn đơn ~10 Hz**: label hạn đơn sửa text TẠI CHỖ (registry (đơn, label, tiền tố, hậu tố) dựng lại mỗi Refresh) — không dựng lại panel, giữ vị trí cuộn; chấm tàu vẫn mỗi frame.
 5. **Tab SỰ CỐ có UI resolve** (thiếu trước đó — ván không thể kết thúc khi có sự cố chờ): thẻ sự cố + nút theo phương án → `IncidentResolver.Resolve/Apply` + `Simulation.ApplyProgressDelta` → hiện dòng kết quả cho đến sự cố kế tiếp. Đồng hồ dừng khi còn sự cố chờ (`CanAdvance == false`).
-6. **PlayCapture**: driver tự chơi (sự cố phương án đầu, nhận đơn còn về kịp hạn, điều tàu tuyến nhanh nhất) + chụp mốc: start-gate, tab ĐƠN HÀNG, tab ĐỘI TÀU, tab SỰ CỐ, màn Ending — chạy batch được bằng `-executeMethod PlayCapture.BuildValidateCapture`.
+6. **PlayCapture**: driver tự chơi (sự cố phương án đầu, nhận đơn còn về kịp hạn, điều tàu tuyến nhanh nhất + reposition tàu rỗi) + chụp mốc: tab ĐƠN HÀNG, tab ĐỘI TÀU, tab SỰ CỐ, sự cố đang chờ, màn Ending — chạy batch được bằng `-executeMethod PlayCapture.BuildValidateCapture`.
 

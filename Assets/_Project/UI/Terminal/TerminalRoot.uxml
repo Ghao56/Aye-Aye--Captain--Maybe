@@ -35,7 +35,6 @@
                     <ui:VisualElement name="start-screen" class="start-screen">
                         <ui:Label name="start-title" text="AYE AYE, BOSS... MAYBE?" class="start-title"/>
                         <ui:Label name="start-hint" text="Nhận đơn ở tab ĐƠN HÀNG — điều tàu ở tab ĐỘI TÀU: bấm tuyến là tàu khởi hành NGAY (MAKE IT SO).&#10;Đồng hồ chạy liên tục: giao đủ 10 đơn là THẮNG, trễ 3 đơn là THUA.&#10;Sự cố chờ xử lý ở tab SỰ CỐ — đồng hồ dừng đến khi chọn xong phương án." class="start-hint"/>
-                        <ui:Button name="start-button" text="BẮT ĐẦU" class="start-button"/>
                         <ui:Button name="restart-button" text="CHƠI LẠI" class="start-button restart"/>
                     </ui:VisualElement>
                 </ui:VisualElement>

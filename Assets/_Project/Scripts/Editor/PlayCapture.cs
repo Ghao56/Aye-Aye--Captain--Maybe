@@ -46,7 +46,7 @@ public static class PlayCapture
             + (state != null ? $" t={state.ElapsedSeconds:0}s giao={state.DeliveredCount} trễ={state.LateCount} chờ={state.PendingIncidents.Count} canAdvance={state.CanAdvance}" : ""));
         if (!machineOn) // chờ scene dựng xong rồi bật máy (batchmode: vài chục frame đầu chưa có object)
         {
-            var machine = Object.FindObjectOfType<AyeAye.TerminalView>();
+            var machine = Object.FindFirstObjectByType<AyeAye.TerminalView>();
             if (machine == null) return;
             machine.GetType().GetMethod("FinishIntro", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(machine, null);
             // UI world-space không vào cam.Render() mặc định → dựng camera ortho riêng trước mặt máy để chụp.
@@ -84,19 +84,18 @@ public static class PlayCapture
                 return;
             }
         }
-        if (!started) // chụp màn BẮT ĐẦU rồi mới bấm BẮT ĐẦU khi HUD đã bind (state == null → còn ở màn BẮT ĐẦU)
+        if (!started) // ván tự chạy ngay khi máy bật (bỏ màn BẮT ĐẦU) — chờ HUD bind xong
         {
-            var hud = Object.FindObjectOfType<AyeAye.TerminalHud>();
+            var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
             if (hud == null) return;
-            if (!startShotTaken) { startShotTaken = true; Shot("g2-start"); return; } // chờ pendingShot xong (4 tick)
-            if (pendingShot != null) return;
-            hud.GetType().GetMethod("StartNewRun", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(hud, null);
+            var stateField = typeof(AyeAye.TerminalHud).GetField("state", BindingFlags.NonPublic | BindingFlags.Instance);
+            if ((AyeAye.GameState)stateField.GetValue(hud) == null) return;
             hudRef = hud;
             focusPaused = typeof(AyeAye.TerminalHud).GetField("focusPaused", BindingFlags.NonPublic | BindingFlags.Instance);
             Time.timeScale = 10f; // chỉ dùng khi chụp: rút ngắn thời gian chạy, không đổi cấu hình cân bằng
             started = true;
             startFrame = frame;
-            Debug.Log("[PlayCapture] BẮT ĐẦU");
+            Debug.Log("[PlayCapture] ván đã tự khởi động");
             return;
         }
         int f = frame - startFrame;
@@ -124,7 +123,6 @@ public static class PlayCapture
     static int shotFrames;
     static Camera shotCam;
     static bool endingQueued;
-    static bool startShotTaken;
     static bool incidentShotTaken;
     static AyeAye.TerminalHud hudRef;
     static FieldInfo focusPaused;
@@ -146,7 +144,7 @@ public static class PlayCapture
 
     static void InvokeSelectTab(int i)
     {
-        var hud = Object.FindObjectOfType<AyeAye.TerminalHud>();
+        var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
         var m = hud.GetType().GetMethod("SelectTab", BindingFlags.NonPublic | BindingFlags.Instance);
         m.Invoke(hud, new object[] { i });
         Debug.Log($"[PlayCapture] tab {i}");
@@ -156,7 +154,7 @@ public static class PlayCapture
     // Cùng nhịp với chính sách "đọc manh mối" của BalanceProbe — không đụng UI.
     static void Drive()
     {
-        var hud = Object.FindObjectOfType<AyeAye.TerminalHud>();
+        var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
         if (hud == null) return;
         if (state == null)
         {

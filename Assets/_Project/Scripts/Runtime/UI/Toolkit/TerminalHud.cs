@@ -19,7 +19,7 @@ namespace AyeAye
         Label topDay, topLate, topDelivered, topRevenue, topPhase, startTitle, startHint;
         Button[] tabs = new Button[3];
         VisualElement[] panels = new VisualElement[3];
-        Button bottomButton, startButton, restartButton;
+        Button bottomButton, restartButton;
         Label[] panelHints = new Label[3];
 
         bool bound;
@@ -27,9 +27,7 @@ namespace AyeAye
         SimWorld world;                 // dữ liệu tĩnh của ván cho Simulation.Advance
         float clockAcc;                 // dồn dt thật → chạy Advance theo bước cố định (chỉnh 3)
         int lastRefreshKey = int.MinValue;
-
         bool focusPaused;               // mất focus / tab ẩn / Application pause → đồng hồ dừng (G2)
-        bool atStartGate;               // đang ở màn BẮT ĐẦU — đồng hồ chưa chạy
         float countdownAcc;             // cập nhật hạn đơn ~10 Hz bằng cách sửa text tại chỗ
         // (đơn, label, tiền tố, hậu tố) — dựng lại mỗi Refresh; sửa text tại chỗ, không dựng lại panel
         readonly List<(OrderState order, Label label, string prefix, string suffix)> countLabels
@@ -71,9 +69,9 @@ namespace AyeAye
             if (!bound) { TryBind(); if (!bound) return; }
             if (machine != null && game != null)
                 game.EnableInClassList("on", machine.IsMachineOn);
-            // Máy bật: đứng ở màn BẮT ĐẦU (3 dòng hướng dẫn) — đồng hồ chỉ chạy sau khi bấm BẮT ĐẦU.
-            if (machine != null && machine.IsMachineOn && state == null && !atStartGate)
-                ShowStartGate();
+            // Bỏ màn BẮT ĐẦU (boss 14/11): máy bật là ván chạy ngay.
+            if (machine != null && machine.IsMachineOn && state == null)
+                StartNewRun();
             if (state != null && machine != null && machine.IsMachineOn && !focusPaused)
             {
                 RunClock();
@@ -129,8 +127,6 @@ namespace AyeAye
             }
             bottomButton = root.Q<Button>("bottom-button"); // bỏ MAKE IT SO chung (G2.3) — ẩn luôn
             bottomButton.style.display = DisplayStyle.None;
-            startButton = root.Q<Button>("start-button");
-            startButton.clicked += StartNewRun;
             restartButton = root.Q<Button>("restart-button");
             restartButton.clicked += StartNewRun;
             var exitMachine = root.Q<Button>("exit-machine");
@@ -174,17 +170,6 @@ namespace AyeAye
             };
         }
 
-        // Màn BẮT ĐẦU (G2): máy vừa bật, chưa có ván — 3 dòng hướng dẫn, đồng hồ chưa chạy.
-        void ShowStartGate()
-        {
-            atStartGate = true;
-            startTitle.text = "BẮT ĐẦU";
-            startHint.style.display = DisplayStyle.Flex;
-            startButton.style.display = DisplayStyle.Flex;
-            restartButton.style.display = DisplayStyle.None;
-            startScreen.style.display = DisplayStyle.Flex;
-        }
-
         void StartNewRun()
         {
             LoadWorld();
@@ -192,7 +177,6 @@ namespace AyeAye
             state = GameStateBuilder.CreateRun(config, shipDefs, seed);
             OrderScheduler.SpawnInitial(pool, state); // 2 đơn đầu + bắt đầu nhịp spawn (FR-0301)
             clockAcc = 0f;
-            atStartGate = false;
             startScreen.style.display = DisplayStyle.None;
             lastRefreshKey = int.MinValue;
             Refresh();
@@ -242,7 +226,6 @@ namespace AyeAye
                     if (e.id == state.FinalEnding) { title = e.title; break; }
                 startTitle.text = title;
                 startHint.style.display = DisplayStyle.None;
-                startButton.style.display = DisplayStyle.None;
                 restartButton.style.display = DisplayStyle.Flex;
                 startScreen.style.display = DisplayStyle.Flex;
             }
