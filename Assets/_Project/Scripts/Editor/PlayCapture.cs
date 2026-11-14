@@ -24,7 +24,7 @@ public static class PlayCapture
         Debug.Log("[PlayCapture] Capture: đặt cờ + vào Play");
         SessionState.SetBool("aa-play-capture", true);
         frame = 0;
-        machineOn = false; started = false; endingQueued = false;
+        machineOn = false; started = false; endingQueued = false; warnShotTaken = false; incidentShotTaken = false;
         state = null; world = null; crews = null;
         UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Scenes/Main.unity");
         EditorApplication.isPlaying = true;
@@ -99,17 +99,18 @@ public static class PlayCapture
             return;
         }
         int f = frame - startFrame;
-        if (f == 30) { InvokeSelectTab(0); Shot("g2-tab-orders"); } // chụp lưu ~4 tick sau — tab vẫn 0
+        if (f == 30) { InvokeSelectTab(0); Shot("g4-tab-orders"); } // chụp lưu ~4 tick sau — tab vẫn 0
         if (f == 40) InvokeSelectTab(1);
-        if (f == 80) Shot("g2-tab-fleet"); // lưu khi vẫn ở tab ĐỘI TÀU
+        if (f == 60) SelectFirstShip(); // G4: thẻ + chấm tàu đang chọn vào ảnh ĐỘI TÀU
+        if (f == 80) Shot("g4-tab-fleet"); // lưu khi vẫn ở tab ĐỘI TÀU
         if (f == 90) InvokeSelectTab(2);
-        if (f == 110) Shot("g2-tab-incidents"); // lưu khi đã ở tab SỰ CỐ
+        if (f == 110) Shot("g4-tab-incidents"); // lưu khi đã ở tab SỰ CỐ
         if (f >= 110)
         {
             Drive(); // thay người chơi: nhận đơn / điều tàu / xử lý sự cố
             if (state != null && state.IsFinished)
             {
-                if (!endingQueued) { endingQueued = true; Shot("g2-ending"); } // chụp xong mới Stop (xem pendingShot)
+                if (!endingQueued) { endingQueued = true; Shot("g4-ending"); } // chụp xong mới Stop (xem pendingShot)
             }
             else if (state != null && state.ElapsedSeconds > 1500) { Debug.LogError($"[PlayCapture] {state.ElapsedSeconds:0}s game chưa tới Ending"); Stop(1); }
             else if (frame > 2000000) { Debug.LogError("[PlayCapture] quá 2000000 frame chưa tới Ending"); Stop(1); }
@@ -124,6 +125,7 @@ public static class PlayCapture
     static Camera shotCam;
     static bool endingQueued;
     static bool incidentShotTaken;
+    static bool warnShotTaken;
     static AyeAye.TerminalHud hudRef;
     static FieldInfo focusPaused;
 
@@ -150,6 +152,19 @@ public static class PlayCapture
         Debug.Log($"[PlayCapture] tab {i}");
     }
 
+    // G4: chọn tàu đầu tiên (qua selectedShipId + Dirty) để ảnh ĐỘI TÀU có thẻ/chấm đảo màu.
+    static void SelectFirstShip()
+    {
+        var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
+        var stateF = typeof(AyeAye.TerminalHud).GetField("state", BindingFlags.NonPublic | BindingFlags.Instance);
+        var s = (AyeAye.GameState)stateF.GetValue(hud);
+        if (s == null || s.Ships.Count == 0) return;
+        typeof(AyeAye.TerminalHud).GetField("selectedShipId", BindingFlags.NonPublic | BindingFlags.Instance)
+            .SetValue(hud, s.Ships[0].Id);
+        typeof(AyeAye.TerminalHud).GetMethod("Dirty", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(hud, null);
+        Debug.Log("[PlayCapture] selected ship " + s.Ships[0].Id);
+    }
+
     // Driver tự chơi: xử lý sự cố → nhận đơn (chỉ đơn về kịp hạn) → điều tàu theo tuyến nhanh nhất.
     // Cùng nhịp với chính sách "đọc manh mối" của BalanceProbe — không đụng UI.
     static void Drive()
@@ -172,6 +187,23 @@ public static class PlayCapture
             crews = AyeAye.DemoData.BuildCrews();
         }
 
+        // 0. G4: đơn gần hạn (còn < deadlineWarnSeconds) → về tab ĐƠN HÀNG chụp nhãn nhấp nháy "! ".
+        if (!warnShotTaken && pendingShot == null)
+        {
+            float warn = state.Config.deadlineWarnSeconds;
+            bool near = state.Orders.Exists(o =>
+                (o.Status == AyeAye.OrderStatus.InInbox || o.Status == AyeAye.OrderStatus.Accepted
+                    || o.Status == AyeAye.OrderStatus.Assigned)
+                && !o.IsLate && o.DeadlineAtSeconds - state.ElapsedSeconds < warn);
+            if (near)
+            {
+                warnShotTaken = true;
+                InvokeSelectTab(0);
+                Shot("g4-orders-warn"); // 0.5s blink nên có thể chụp đúng lúc opacity 0.25 — vẫn thấy chữ mờ
+                return;
+            }
+        }
+
         // 1. Sự cố chờ → chụp 1 lần tab SỰ CỐ có sự cố thật, rồi chọn phương án đầu (thay nút tab SỰ CỐ).
         if (state.PendingIncidents.Count > 0)
         {
@@ -179,7 +211,7 @@ public static class PlayCapture
             {
                 incidentShotTaken = true;
                 InvokeSelectTab(2);
-                Shot("g2-incident-active"); // hold ~5 tick — đồng hồ dừng đúng khi có sự cố chờ
+                Shot("g4-incident-active"); // hold ~5 tick — đồng hồ dừng đúng khi có sự cố chờ
                 return;
             }
             if (pendingShot != null) return;

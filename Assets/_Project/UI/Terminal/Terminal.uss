@@ -2,17 +2,20 @@
    Stage 1920x1280 (giữ đúng tỉ lệ ảnh máy tính 1536x1024 = 3:2, rộng tối đa 1920).
    Rect màn hình (% trên ảnh gốc 1536x1024): left 300, top 85, width 975, height 690. */
 
+/* G4 — CRT đơn sắc: MỘT màu phosphor xanh lá, mọi khác biệt thông tin thể hiện bằng
+   độ sáng / hình dạng / ký hiệu / đảo màu / nhấp nháy — không bằng màu.
+   Bốn giá trị duy nhất của UI:
+   --c-text  nội dung chính (sáng nhất)
+   --c-dim   nhãn phụ, clue, disabled
+   --c-faint viền, khung, đường kẻ
+   --c-ink   chữ trên nền đảo màu */
 :root {
     --c-letterbox: rgb(0, 0, 0);
     --c-screen-bg: rgba(4, 16, 10, 0.60);   /* phủ nhẹ lên kính CRT cong, làm đều nền */
-    --c-text: rgb(155, 232, 164);            /* xanh lá nhạt (khớp UI cũ #9BE8A4) */
-    --c-amber: rgb(255, 184, 77);            /* hổ phách #FFB84D */
-    --c-alert: rgb(255, 90, 77);             /* đỏ cảnh báo #FF5A4D */
-    --c-frame: rgb(46, 107, 71);             /* viền khung terminal */
-    --c-fragile: rgb(255, 184, 77);          /* chip Dễ vỡ — hổ phách */
-    --c-cold: rgb(120, 200, 255);            /* chip Lạnh — xanh băng */
-    --c-urgent: rgb(255, 90, 77);            /* chip Khẩn — đỏ */
-    --c-plain: rgb(110, 150, 120);           /* chip Hàng Thường */
+    --c-text: rgb(155, 232, 164);
+    --c-dim: rgb(95, 150, 105);
+    --c-faint: rgb(46, 107, 71);
+    --c-ink: rgb(2, 12, 6);
 }
 
 /* Container world-space (kiến trúc B): lấp vừa khít vùng worldSpaceSize của UIDocument.
@@ -45,7 +48,7 @@
     padding: 28px 38px;
 }
 
-/* Overlay căn chỉnh GATE B: đã duyệt ngày 11/11/2026 → ẩn mặc định */
+/* Overlay căn chỉnh GATE B: đã duyệt ngày 11/11/2026 → ẩn mặc định (debug, ngoài bốn giá trị phosphor) */
 .debug-overlay {
     display: none;
     position: absolute;
@@ -97,17 +100,17 @@
     justify-content: space-between;
     padding: 6px 10px;
     border-bottom-width: 2px;
-    border-bottom-color: var(--c-frame);
+    border-bottom-color: var(--c-faint);
 }
 .topbar-item { color: var(--c-text); font-size: 26px; }
-.topbar-item.phase { color: var(--c-amber); }
+.topbar-item.phase { color: var(--c-text); }
 
 /* Tab */
 .tabbar {
     flex-direction: row;
     padding: 4px 10px;
     border-bottom-width: 2px;
-    border-bottom-color: var(--c-frame);
+    border-bottom-color: var(--c-faint);
 }
 .tab {
     margin-right: 12px;
@@ -115,14 +118,15 @@
     font-size: 26px;
     color: var(--c-text);
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     background-color: rgba(46, 107, 71, 0.25);
 }
-.tab.selected { color: rgb(2, 12, 6); background-color: var(--c-text); }
-.tab.locked { color: var(--c-alert); border-color: var(--c-alert); background-color: transparent; }
+.tab.selected { color: var(--c-ink); background-color: var(--c-text); }
+/* Khóa: viền mờ + chữ mờ (USS không có border nét đứt — phân biệt bằng độ sáng) */
+.tab.locked { color: var(--c-dim); border-color: var(--c-faint); background-color: transparent; }
 .tab-badge {
     font-size: 20px;
-    color: var(--c-alert);
+    color: var(--c-text);
     margin-left: 6px;
 }
 
@@ -150,16 +154,16 @@
 .exit-machine {
     padding: 2px 8px;
     font-size: 20px;
-    color: var(--c-amber);
+    color: var(--c-dim);
     border-width: 1px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     background-color: transparent;
 }
-.exit-machine:hover { border-color: var(--c-amber); }
+.exit-machine:hover { border-color: var(--c-dim); }
 .bottom-button {
     padding: 8px 24px;
     font-size: 30px;
-    color: rgb(2, 12, 6);
+    color: var(--c-ink);
     background-color: var(--c-text);
     border-width: 0;
 }
@@ -175,14 +179,14 @@
     justify-content: center;
 }
 .start-title { color: var(--c-text); font-size: 52px; margin-bottom: 24px; }
-.start-hint { color: var(--c-plain); font-size: 22px; margin-bottom: 24px; white-space: normal; text-align: center; }
+.start-hint { color: var(--c-dim); font-size: 22px; margin-bottom: 24px; white-space: normal; text-align: center; }
 .start-button {
     margin: 6px 0;
     padding: 8px 32px;
     font-size: 30px;
     color: var(--c-text);
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     background-color: transparent;
 }
 
@@ -191,26 +195,31 @@
 .orders-scroll { flex-grow: 1; flex-shrink: 1; min-height: 0; }
 
 .section-title {
-    color: var(--c-amber);
+    color: var(--c-text);
     font-size: 28px;
     margin: 12px 0 6px 0;
 }
 
 .order-card {
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     padding: 8px 12px;
     margin-bottom: 8px;
 }
 
 .order-title { color: var(--c-text); font-size: 27px; }
 .order-line { color: var(--c-text); font-size: 23px; }
-.order-clue { color: var(--c-amber); }
-.order-warn { color: var(--c-alert); }
+.order-clue { color: var(--c-dim); }
+/* Cảnh báo: cùng phosphor sáng, phân biệt bằng tiền tố "! " do C# thêm */
+.order-warn { color: var(--c-text); }
+/* Cảnh báo hạn đơn (G4): nhấp nháy qua class blink-off (toggle 0.5s trong UpdateCountdowns) */
+.order-line.blink-off { opacity: 0.25; }
+/* Đơn TRỄ: đảo màu cố định */
+.order-line.late { background-color: var(--c-text); color: var(--c-ink); }
 
 .order-active {
     border-left-width: 4px;
-    border-left-color: var(--c-frame);
+    border-left-color: var(--c-faint);
     padding: 4px 0 4px 10px;
     margin-bottom: 6px;
 }
@@ -220,22 +229,23 @@
     padding: 2px 16px;
     margin-right: 10px;
     font-size: 24px;
-    color: rgb(2, 12, 6);
+    color: var(--c-ink);
     border-width: 0;
 }
 /* Đè .btn-row Button (class+type thắng 1 class) — nút decline/route trong hàng phải giữ màu riêng. */
 .btn-row .btn-accept { background-color: var(--c-text); }
-.btn-row .btn-accept:hover { background-color: rgb(200, 255, 210); }
+.btn-row .btn-accept:hover { background-color: var(--c-dim); }
 .btn-row .btn-accept:disabled { opacity: 0.4; background-color: var(--c-text); }
+/* Từ chối: nút phụ — viền + chữ mờ, hover đảo màu (nền mờ, chữ ink). Không dùng đỏ. */
 .btn-decline {
-    color: var(--c-text);
+    color: var(--c-dim);
     background-color: transparent;
     border-width: 2px;
-    border-color: var(--c-alert);
+    border-color: var(--c-dim);
 }
-.btn-row .btn-decline { color: var(--c-text); background-color: transparent; border-width: 2px; border-color: var(--c-alert); }
-.btn-decline:hover { background-color: rgba(255, 90, 77, 0.25); }
-.btn-row .btn-decline:hover { background-color: rgba(255, 90, 77, 0.25); }
+.btn-row .btn-decline { color: var(--c-dim); background-color: transparent; border-width: 2px; border-color: var(--c-dim); }
+.btn-decline:hover { color: var(--c-ink); background-color: var(--c-dim); }
+.btn-row .btn-decline:hover { color: var(--c-ink); background-color: var(--c-dim); }
 .btn-decline:disabled { opacity: 0.4; }
 .btn-row .btn-decline:disabled { opacity: 0.4; }
 
@@ -250,10 +260,12 @@
     border-width: 1px;
     border-radius: 10px;
 }
-.chip-plain { color: var(--c-plain); border-color: var(--c-plain); }
-.chip-fragile { color: var(--c-fragile); border-color: var(--c-fragile); }
-.chip-cold { color: var(--c-cold); border-color: var(--c-cold); }
-.chip-urgent { color: var(--c-urgent); border-color: var(--c-urgent); }
+/* G4 — chip phân biệt bằng ký hiệu ([!] Dễ vỡ, [*] Lạnh, [>>] Khẩn) + kiểu chip, không bằng màu:
+   thường = mờ; fragile/cold = sáng; khẩn = đảo màu. */
+.chip-plain { color: var(--c-dim); border-color: var(--c-faint); }
+.chip-fragile { color: var(--c-text); border-color: var(--c-text); }
+.chip-cold { color: var(--c-text); border-color: var(--c-text); }
+.chip-urgent { color: var(--c-ink); background-color: var(--c-text); border-color: var(--c-text); }
 
 /* === G3: tab ĐỘI TÀU — bản đồ hình sao + thẻ tàu + panel lệnh (FR-04xx) === */
 
@@ -280,7 +292,7 @@
     flex-shrink: 1;
     min-height: 300px;
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     background-color: rgba(4, 16, 10, 0.35);
 }
 
@@ -310,56 +322,58 @@
 
 .ship-card {
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     padding: 8px 12px;
     margin-bottom: 8px;
     max-width: 100%;
 }
-.ship-card.selected { border-color: var(--c-amber); }
-.ship-card:hover { border-color: var(--c-amber); }
+/* Đang chọn: đảo màu (nền sáng, chữ ink) — không viền hổ phách */
+.ship-card.selected { background-color: var(--c-text); border-color: var(--c-text); }
+.ship-card.selected .order-title, .ship-card.selected .order-line { color: var(--c-ink); }
+.ship-card:hover { border-color: var(--c-dim); }
 
 .fleet-commands {
     flex-shrink: 0;
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     padding: 8px 12px;
     margin-top: 8px;
     max-width: 100%;
 }
 
-/* 2 nút chuyển chế độ panel lệnh (GIAO ĐƠN / ĐIỀU TÀU RỖNG) — viền, chọn thành nền xanh */
+/* 2 nút chuyển chế độ panel lệnh (GIAO ĐƠN / ĐIỀU TÀU RỖNG) — viền, chọn thành nền sáng */
 .btn-mode {
     color: var(--c-text);
     background-color: transparent;
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     padding: 2px 12px;
     margin-right: 10px;
     margin-bottom: 6px;
     font-size: 22px;
 }
-.btn-mode:hover { border-color: var(--c-amber); }
-.btn-mode.selected { color: rgb(2, 12, 6); background-color: var(--c-text); border-color: var(--c-text); }
+.btn-mode:hover { border-color: var(--c-dim); }
+.btn-mode.selected { color: var(--c-ink); background-color: var(--c-text); border-color: var(--c-text); }
 
-.order-muted { color: var(--c-plain); }
+.order-muted { color: var(--c-dim); }
 
-/* Nút chọn tuyến RouteOption — viền, khi được chọn thành nền hổ phách.
+/* Nút chọn tuyến RouteOption — viền, khi được chọn đảo màu.
    (Cần đè .btn-row Button vì specificity class+type cao hơn 1 class.) */
 .btn-route {
     color: var(--c-text);
     background-color: transparent;
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
     padding: 2px 12px;
     margin-right: 10px;
     margin-bottom: 6px;
     font-size: 22px;
 }
-.btn-row .btn-route { color: var(--c-text); background-color: transparent; border-width: 2px; border-color: var(--c-frame); padding: 2px 12px; }
-.btn-route:hover { border-color: var(--c-amber); }
-.btn-row .btn-route:hover { border-color: var(--c-amber); }
-.btn-route.selected { color: rgb(2, 12, 6); background-color: var(--c-amber); border-color: var(--c-amber); }
-.btn-row .btn-route.selected { color: rgb(2, 12, 6); background-color: var(--c-amber); border-color: var(--c-amber); }
+.btn-row .btn-route { color: var(--c-text); background-color: transparent; border-width: 2px; border-color: var(--c-faint); padding: 2px 12px; }
+.btn-route:hover { border-color: var(--c-dim); }
+.btn-row .btn-route:hover { border-color: var(--c-dim); }
+.btn-route.selected { color: var(--c-ink); background-color: var(--c-text); border-color: var(--c-text); }
+.btn-row .btn-route.selected { color: var(--c-ink); background-color: var(--c-text); border-color: var(--c-text); }
 
 /* Nút hành tinh / trạm: tọa độ do C# đặt (PortDef.mapPosition), kích thước nằm ở đây.
    Nhãn đặt DƯỚI nút, nền bán trong suốt — không đè nút hay nhãn khác. */
@@ -371,7 +385,7 @@
 .map-hq {
     width: 46px;
     height: 46px;
-    background-color: var(--c-amber);
+    background-color: var(--c-dim);
     border-width: 2px;
     border-color: var(--c-text);
 }
@@ -381,7 +395,7 @@
     border-radius: 50%;
     background-color: var(--c-text);
     border-width: 2px;
-    border-color: var(--c-frame);
+    border-color: var(--c-faint);
 }
 .map-node-label {
     position: absolute;
@@ -396,35 +410,34 @@
     -unity-picking-mode: ignore;
 }
 
-/* Chấm tàu: nhỏ, tròn, màu theo thuyền trưởng (dot-0..3), chọn → viền sáng */
+/* Chấm tàu (G4): cả 4 chấm cùng phosphor sáng — phân biệt bằng CHỮ CÁI ĐẦU thuyền trưởng
+   (B / M / C / D) in trong chấm. Đang chọn: chấm to hơn + đảo màu (nền ink, viền sáng). */
 .map-dot {
     position: absolute;
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     border-width: 2px;
-    border-color: rgb(2, 12, 6);
+    border-color: var(--c-ink);
+    background-color: var(--c-text);
     translate: -50% -50%;
+    align-items: center;
+    justify-content: center;
 }
-.dot-0 { background-color: var(--c-text); }
-.dot-1 { background-color: var(--c-cold); }
-.dot-2 { background-color: var(--c-amber); }
-.dot-3 { background-color: var(--c-alert); }
-.map-dot.selected { width: 28px; height: 28px; border-color: rgb(255, 255, 255); }
+.map-dot-letter { font-size: 15px; color: var(--c-ink); }
+.map-dot.selected {
+    width: 30px;
+    height: 30px;
+    background-color: var(--c-ink);
+    border-color: var(--c-text);
+}
+.map-dot.selected .map-dot-letter { color: var(--c-text); }
 
-/* Chú giải hazard — màu phải khớp HazardColor trong TerminalHud.Fleet.cs */
-:root {
-    --c-h-clear: rgb(107, 122, 89);
-    --c-h-fog: rgb(158, 181, 201);
-    --c-h-storm: rgb(217, 161, 74);
-    --c-h-pirates: rgb(191, 92, 77);
-    --c-h-ice: rgb(112, 184, 201);
+/* Chú giải hazard (G4): đơn sắc — mỗi hazard phân biệt bằng ký tự mẫu nét vẽ cạnh bản đồ. */
+.chip-h-clear, .chip-h-fog, .chip-h-storm, .chip-h-pirates, .chip-h-ice {
+    color: var(--c-dim);
+    border-color: var(--c-faint);
 }
-.chip-h-clear { color: var(--c-h-clear); border-color: var(--c-h-clear); }
-.chip-h-fog { color: var(--c-h-fog); border-color: var(--c-h-fog); }
-.chip-h-storm { color: var(--c-h-storm); border-color: var(--c-h-storm); }
-.chip-h-pirates { color: var(--c-h-pirates); border-color: var(--c-h-pirates); }
-.chip-h-ice { color: var(--c-h-ice); border-color: var(--c-h-ice); }
 
 /* === Scrollbar kiểu CRT (áp mọi ScrollView của game) === */
 
@@ -441,5 +454,5 @@
     border-width: 0;
     border-radius: 4px;
 }
-.unity-base-slider__dragger:hover { background-color: rgb(200, 255, 210); }
-.unity-base-slider__dragger:active { background-color: var(--c-amber); }
+.unity-base-slider__dragger:hover { background-color: var(--c-dim); }
+.unity-base-slider__dragger:active { background-color: var(--c-dim); }

@@ -83,7 +83,7 @@ namespace AyeAye
             legend.AddToClassList("fleet-legend");
             var seen = new HashSet<HazardType>();
             foreach (var e in mapRouteDefs)
-                if (seen.Add(e.hazard)) legend.Add(Chip("chip-h-" + e.hazard.ToString().ToLowerInvariant(), e.hazard.ToString()));
+                if (seen.Add(e.hazard)) legend.Add(Chip("chip-h-" + e.hazard.ToString().ToLowerInvariant(), HazardLegend(e.hazard)));
             var side = CRTScroll(); // cột phải: MỘT ScrollView dọc duy nhất (thẻ tàu + panel lệnh)
             side.AddToClassList("fleet-side");
             row.Add(left);
@@ -113,7 +113,11 @@ namespace AyeAye
             {
                 var dot = new VisualElement();
                 dot.AddToClassList("map-dot");
-                dot.AddToClassList("dot-" + (index % IdleOffsets.Length));
+                // G4: chữ cái đầu thuyền trưởng trong chấm — phân biệt tàu không cần màu.
+                var letter = new Label(CaptainName(s.Captain)[0].ToString());
+                letter.AddToClassList("map-dot-letter");
+                letter.pickingMode = PickingMode.Ignore;
+                dot.Add(letter);
                 dot.tooltip = $"{s.DisplayName} — thuyền trưởng {s.Captain}";
                 dot.RegisterCallback<ClickEvent>(_ => { selectedShipId = s.Id; Dirty(); });
                 PlaceDot(dot, s, index);
@@ -129,6 +133,17 @@ namespace AyeAye
             roamItem?.Pause();
             roamItem = fleetMap.schedule.Execute(RoamTick).Every(RoamTickMs);
         }
+
+        // Chú giải hazard: tên + ký tự mẫu nét khớp DrawStyledLine (không phân biệt bằng màu).
+        static string HazardLegend(HazardType h) => h switch
+        {
+            HazardType.Clear => "Clear ───",
+            HazardType.Fog => "Fog ···",
+            HazardType.Storm => "Storm ∿∿∿",
+            HazardType.Pirates => "Pirates ━ ━",
+            HazardType.Ice => "Ice ─·─",
+            _ => h.ToString(),
+        };
 
         void RoamTick()
         {
@@ -168,17 +183,10 @@ namespace AyeAye
 
         // ---- vẽ cạnh (generateVisualContent + Painter2D) ----------------------
 
-        // shortcut: màu cạnh khớp biến màu trong Terminal.uss — đổi màu phải sửa cả hai nơi.
-        static Color HazardColor(HazardType h) => h switch
-        {
-            HazardType.Fog => new Color(0.62f, 0.71f, 0.79f),
-            HazardType.Storm => new Color(0.85f, 0.63f, 0.29f),
-            HazardType.Pirates => new Color(0.75f, 0.36f, 0.30f),
-            HazardType.Ice => new Color(0.44f, 0.72f, 0.79f),
-            _ => new Color(0.42f, 0.48f, 0.35f), // Clear
-        };
-
-        static float HazardWidth(HazardType h) => h == HazardType.Clear ? 2f : 3f;
+        // G4 — cạnh đơn sắc: mọi hazard cùng màu --c-dim (khớp Terminal.uss), phân biệt bằng KIỂU NÉT:
+        // Clear liền mảnh 2px · Fog chấm 2px cách 6px · Storm zigzag ±4px · Pirates đứt dày 3px (10/6)
+        // · Ice gạch 8px cách 4px xen chấm 2px. Painter2D không có dash sẵn → tự chia đoạn.
+        static readonly Color EdgeColor = new Color(95f / 255f, 150f / 255f, 105f / 255f);
 
         void DrawFleetEdges(MeshGenerationContext ctx)
         {
@@ -189,13 +197,65 @@ namespace AyeAye
             {
                 var a = PortPos(edge.fromPortId);
                 var b = PortPos(edge.toPortId);
-                painter.strokeColor = HazardColor(edge.hazard);
-                painter.lineWidth = HazardWidth(edge.hazard);
-                painter.BeginPath();
-                painter.MoveTo(new Vector2(a.x * rect.width, a.y * rect.height));
-                painter.LineTo(new Vector2(b.x * rect.width, b.y * rect.height));
-                painter.ClosePath();
+                DrawStyledLine(painter,
+                    new Vector2(a.x * rect.width, a.y * rect.height),
+                    new Vector2(b.x * rect.width, b.y * rect.height),
+                    edge.hazard);
             }
+        }
+
+        static void DrawStyledLine(Painter2D p, Vector2 a, Vector2 b, HazardType h)
+        {
+            var dir = b - a;
+            float len = dir.magnitude;
+            if (len < 1f) return;
+            dir /= len;
+            var n = new Vector2(-dir.y, dir.x); // pháp tuyến — cho zigzag Storm
+            switch (h)
+            {
+                case HazardType.Fog: // chấm: đoạn ngắn 2px vẽ dày thành chấm tròn, cách 6px
+                    Dashes(p, a, dir, len, start: 0f, dash: 2f, gap: 6f, width: 4f);
+                    break;
+                case HazardType.Storm: // zigzag: điểm lệch ±4px xen kẽ mỗi 12px
+                    p.strokeColor = EdgeColor;
+                    p.lineWidth = 2f;
+                    p.BeginPath();
+                    p.MoveTo(a);
+                    for (float t = 12f; t < len; t += 12f)
+                        p.LineTo(a + dir * t + n * (((int)(t / 12f) & 1) == 1 ? 4f : -4f));
+                    p.LineTo(b);
+                    p.ClosePath();
+                    break;
+                case HazardType.Pirates: // đứt dày: đoạn 10px, cách 6px
+                    Dashes(p, a, dir, len, start: 0f, dash: 10f, gap: 6f, width: 3f);
+                    break;
+                case HazardType.Ice: // gạch 8px cách 4px, chấm 2px giữa mỗi khoảng trống
+                    Dashes(p, a, dir, len, start: 0f, dash: 8f, gap: 4f, width: 2f);
+                    Dashes(p, a, dir, len, start: 9f, dash: 2f, gap: 10f, width: 4f);
+                    break;
+                default: // Clear: nét liền mảnh
+                    p.strokeColor = EdgeColor;
+                    p.lineWidth = 2f;
+                    p.BeginPath();
+                    p.MoveTo(a);
+                    p.LineTo(b);
+                    p.ClosePath();
+                    break;
+            }
+        }
+
+        // Vẽ các đoạn nét đều dọc cạnh (dash/gap), mỗi lần gọi là một đường riêng.
+        static void Dashes(Painter2D p, Vector2 a, Vector2 dir, float len, float start, float dash, float gap, float width)
+        {
+            p.strokeColor = EdgeColor;
+            p.lineWidth = width;
+            p.BeginPath();
+            for (float t = start; t < len; t += dash + gap)
+            {
+                p.MoveTo(a + dir * t);
+                p.LineTo(a + dir * Mathf.Min(t + dash, len));
+            }
+            p.ClosePath();
         }
 
         // ---- cột phải: thẻ tàu ----------------------------------------------
@@ -280,10 +340,7 @@ namespace AyeAye
 
             if (fleetError != null)
             {
-                var err = new Label(fleetError);
-                err.AddToClassList("order-line");
-                err.AddToClassList("order-warn");
-                area.Add(err);
+                area.Add(Warn(fleetError));
             }
 
             var ship = state.Ships.Find(s => s.Id == selectedShipId);

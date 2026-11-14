@@ -236,13 +236,22 @@ namespace AyeAye
             => o.IsLate ? "TRỄ" : $"còn {Mathf.Max(0f, o.DeadlineAtSeconds - s.ElapsedSeconds):0}s";
 
         // ~10 Hz: sửa text hạn đơn TẠI CHỖ (G2) — không dựng lại panel, không mất cuộn.
+        // G4: còn < config.deadlineWarnSeconds → tiền tố "! " + nhấp nháy 0.5s (class blink-off);
+        // TRỄ → class late (đảo màu cố định). Số giây lấy từ config, không hard-code.
         void UpdateCountdowns()
         {
             countdownAcc += Time.unscaledDeltaTime;
             if (countdownAcc < 0.1f) return;
             countdownAcc = 0f;
+            bool blinkOff = (Mathf.FloorToInt(Time.unscaledTime / 0.5f) & 1) == 1;
             foreach (var (o, label, prefix, suffix) in countLabels)
-                if (label != null) label.text = prefix + DeadlineText(o, state) + suffix;
+            {
+                if (label == null) continue;
+                bool warn = !o.IsLate && o.DeadlineAtSeconds - state.ElapsedSeconds < config.deadlineWarnSeconds;
+                label.text = (warn ? "! " : "") + prefix + DeadlineText(o, state) + suffix;
+                label.EnableInClassList("blink-off", warn && blinkOff);
+                label.EnableInClassList("late", o.IsLate);
+            }
         }
 
         Label CountdownLabel(OrderState o, string prefix, string suffix = "")
@@ -391,9 +400,7 @@ namespace AyeAye
             row.Add(accept);
             if (!canAccept)
             {
-                var reason = new Label($"Đã đủ {config.maxActiveOrders} đơn đang hoạt động");
-                reason.AddToClassList("order-line");
-                reason.AddToClassList("order-warn");
+                var reason = Warn($"Đã đủ {config.maxActiveOrders} đơn đang hoạt động");
                 row.Add(reason);
             }
             var decline = new Button(() => { OrderActions.Decline(state, o.Id); Dirty(); }) { text = "TỪ CHỐI" };
@@ -420,9 +427,10 @@ namespace AyeAye
 
         static IEnumerable<(OrderTag tag, string name)> CargoTags(OrderTag tags)
         {
-            if ((tags & OrderTag.Fragile) != 0) yield return (OrderTag.Fragile, "Dễ vỡ");
-            if ((tags & OrderTag.Cold) != 0) yield return (OrderTag.Cold, "Lạnh");
-            if ((tags & OrderTag.Urgent) != 0) yield return (OrderTag.Urgent, "Khẩn");
+            // G4: ký hiệu thay màu — phân biệt loại hàng khi CRT đơn sắc.
+            if ((tags & OrderTag.Fragile) != 0) yield return (OrderTag.Fragile, "[!] Dễ vỡ");
+            if ((tags & OrderTag.Cold) != 0) yield return (OrderTag.Cold, "[*] Lạnh");
+            if ((tags & OrderTag.Urgent) != 0) yield return (OrderTag.Urgent, "[>>] Khẩn");
             if (tags == OrderTag.None) yield return (OrderTag.None, "Hàng Thường");
         }
 
@@ -474,6 +482,16 @@ namespace AyeAye
             label.AddToClassList("order-line");
             label.AddToClassList("order-clue");
             label.style.whiteSpace = WhiteSpace.Normal; // clue dài cần xuống dòng (mặc định Label không wrap)
+            return label;
+        }
+
+        // G4: cảnh báo đơn sắc — cùng phosphor sáng, phân biệt bằng tiền tố "! ".
+        static VisualElement Warn(string text)
+        {
+            var label = new Label("! " + text);
+            label.AddToClassList("order-line");
+            label.AddToClassList("order-warn");
+            label.style.whiteSpace = WhiteSpace.Normal;
             return label;
         }
     }
