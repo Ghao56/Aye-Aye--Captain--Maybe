@@ -1,28 +1,28 @@
 using NUnit.Framework;
 using UnityEngine;
 using AyeAye;
-
 namespace AyeAye.Tests.EditMode
 {
-    // FR-0303, FR-0404, FR-0405, FR-0406: kiểm tra lệnh trước khi áp NGAY (MAKE IT SO — không staged).
+
     public class CommandValidatorTests
     {
-        private GameConfig _config;
-        private GameState _state;
-        private RouteTable _routes;
 
+        private GameConfig _config;
+
+        private GameState _state;
+
+        private RouteTable _routes;
         [SetUp]
+
         public void SetUp()
         {
             _config = ScriptableObject.CreateInstance<GameConfig>();
             _state = new GameState(_config);
-
             var s1 = ScriptableObject.CreateInstance<ShipDef>();
             s1.shipId = "S1"; s1.captain = CrewId.Bob; s1.startPortId = "A";
             var s2 = ScriptableObject.CreateInstance<ShipDef>();
             s2.shipId = "S2"; s2.captain = CrewId.Mira; s2.startPortId = "B";
             GameStateBuilder.InitializeShips(_state, new[] { s1, s2 });
-
             _routes = ScriptableObject.CreateInstance<RouteTable>();
             _routes.pairs.Add(new RoutePairEntry
             {
@@ -47,91 +47,86 @@ namespace AyeAye.Tests.EditMode
             _state.Orders.Add(o);
             return o;
         }
-
-        // FR-0303
         [Test]
+
         public void Accept_Chan_Khi_Dat_Gioi_Han()
         {
             _config.maxActiveOrders = 1;
             Active("O1");
             Assert.IsFalse(CommandValidator.CanAccept(_state, "O2"));
         }
-
         [Test]
+
         public void Accept_Duoc_Khi_Duoi_Gioi_Han()
         {
             _config.maxActiveOrders = 4;
             Assert.IsTrue(CommandValidator.CanAccept(_state, "O9"));
         }
-
-        // FR-0404
         [Test]
+
         public void Assign_Hop_Le()
         {
             var o = Active("O1");
             Assert.IsNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
-
         [Test]
+
         public void Assign_Chan_Tau_Khong_OLLuc()
         {
             var o = Active("O1");
             _state.Ships[0].Status = ShipStatus.Moving;
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
-
         [Test]
+
         public void Assign_Chan_Tau_Sai_Cang_Di()
         {
             Active("O1");
             _state.Ships[0].PortId = "C";
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
-
         [Test]
+
         public void Assign_Chan_Don_Chua_Accept()
         {
             var o = Active("O1");
             o.Status = OrderStatus.InInbox;
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
-
         [Test]
+
         public void Assign_Chan_Don_Da_Cho_Tau_Khac()
         {
             var o = Active("O1");
-            o.AssignedShipId = "S2"; // lệnh áp ngay → đơn đã gán tàu khác là từ chối
+            o.AssignedShipId = "S2"; 
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
-
         [Test]
+
         public void Assign_Chan_Tau_Da_Co_Len_Ngay()
         {
             Active("O1");
             Active("O2");
-            _state.Ships[0].Status = ShipStatus.Moving; // MAKE IT SO áp ngay → tàu Moving là bận
+            _state.Ships[0].Status = ShipStatus.Moving; 
             _state.Ships[0].OrderId = "O2";
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 0));
         }
-
         [Test]
+
         public void Assign_Chan_Index_Route_Khong_Hop_Le()
         {
             Active("O1");
             Assert.IsNotNull(CommandValidator.ValidateAssign(_state, _routes, "S1", "O1", 5));
         }
-
-        // FR-0405
         [Test]
+
         public void Reposition_Chan_Tau_Dang_Cho_Hang()
         {
             _state.Ships[0].OrderId = "O1";
             Assert.IsNotNull(CommandValidator.ValidateReposition(_state, _routes, "S1", "C", 0));
         }
-
-        // Phần 2 (G7): KHÔNG còn ràng buộc thuyền trưởng/tag khi nhận đơn — Bob chở được hàng dễ vỡ,
-        // mọi tàu Idle đậu đúng cảng đi × đơn Accepted đều hợp lệ. Khác biệt tàu chỉ qua tốc độ + sự cố.
         [Test]
+
         public void Assign_KhongChanTheoThuyenTruongHoacTag()
         {
             foreach (var tags in new[]
@@ -140,17 +135,18 @@ namespace AyeAye.Tests.EditMode
                 OrderTag.Fragile | OrderTag.Cold | OrderTag.Urgent,
             })
             {
-                var o = Active("O-TAG"); // Accepted, A→B, S1 (Bob) đang đậu ở A
+                var o = Active("O-TAG"); 
                 o.Tags = tags;
                 Assert.IsNull(CommandValidator.ValidateAssign(_state, _routes, "S1", o.Id, 0),
                     $"Bob phải nhận được đơn tag {tags} — không cấm tàu nào (Phần 2)");
             }
         }
-
         [Test]
+
         public void Reposition_Hop_Le()
         {
             Assert.IsNull(CommandValidator.ValidateReposition(_state, _routes, "S1", "C", 0));
         }
     }
 }
+

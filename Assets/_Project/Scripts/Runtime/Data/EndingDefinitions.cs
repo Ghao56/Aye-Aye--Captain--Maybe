@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
 namespace AyeAye
 {
     [CreateAssetMenu(fileName = "Endings", menuName = "AyeAye/Ending Definitions")]
+
     public class EndingDefinitions : ScriptableObject
     {
         [Serializable]
+
         public class EndingEntry
         {
+
             public EndingId id;
 
             public string title;
-
             [TextArea] public string body;
         }
 
@@ -25,3 +26,4 @@ namespace AyeAye
         }
     }
 }
+

@@ -2,29 +2,25 @@ using System.Linq;
 using AyeAye;
 using NUnit.Framework;
 using UnityEngine;
-
 namespace AyeAye.Tests.EditMode
 {
-    // OrderScheduler bản G7 (sinh đơn NGẪU NHIÊN — xem ASSUMPTIONS.md mục G7):
-    // SpawnInitial KHÔNG sinh đơn lúc 0 giây — chỉ đặt mốc bốc đầu tiên sau orderFirstDelaySeconds;
-    // SpawnOrders gọi OrderGenerator (state.Rng) — Id "O-G{n}" duy nhất, không còn bốc từ OrderPool.
+
     public class OrderSchedulerTests
     {
         TestWorld _world;
-
         [SetUp]
+
         public void SetUp()
         {
             _world = TestWorld.Create();
-            _world.Config.incidentChancePerEdge = 0f; // cô lập — sự cố có test riêng
+            _world.Config.incidentChancePerEdge = 0f; 
         }
-
         [TearDown]
+
         public void TearDown()
         {
             foreach (var so in _world.SOs) Object.DestroyImmediate(so);
         }
-
         SimWorld Sim() => new SimWorld
         {
             Pool = _world.OrderPool, Routes = _world.Routes,
@@ -32,17 +28,14 @@ namespace AyeAye.Tests.EditMode
             FixedFirstDay = _world.FixedFirstDay, FixedFinale = _world.FixedFinale,
             HQPortId = TestWorld.Goc,
         };
-
         GameState State(int seed)
         {
             var state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed);
             OrderScheduler.SpawnInitial(_world.OrderPool, state);
             return state;
         }
-
-        // ---- Phần 3: ván mới KHÔNG có hàng; làm quen xong mới có hàng -------------------------
-
         [Test]
+
         public void VanMoi_OrderRong_Tai0Giay()
         {
             var state = State(7);
@@ -51,30 +44,28 @@ namespace AyeAye.Tests.EditMode
                 "mốc bốc đơn đầu = orderFirstDelaySeconds");
             Assert.AreEqual(0, state.OrderSpawnCount);
         }
-
         [Test]
+
         public void TruocMocLamQuen_AdvanceKhongSinhDon()
         {
             var state = State(7);
             var sim = Sim();
-            for (int i = 0; i < 249; i++) Simulation.Advance(sim, state, 0.1f); // 24.9s
+            for (int i = 0; i < 249; i++) Simulation.Advance(sim, state, 0.1f); 
             Assert.AreEqual(0, state.Orders.Count, "trước orderFirstDelaySeconds không được sinh đơn");
             Assert.AreEqual(0, state.OrderSpawnCount);
         }
-
         [Test]
+
         public void DonDauXuatHienTaiMocLamQuen()
         {
             var state = State(7);
             var sim = Sim();
-            for (int i = 0; i < 251; i++) Simulation.Advance(sim, state, 0.1f); // 25.1s — qua mốc 25s
+            for (int i = 0; i < 251; i++) Simulation.Advance(sim, state, 0.1f); 
             Assert.AreEqual(1, state.Orders.Count, "đúng 1 đơn đầu tiên sau thời gian làm quen");
             Assert.AreEqual("O-G1", state.Orders[0].Id);
         }
-
-        // ---- SpawnInitial đặt mốc, SpawnOrders bốc qua generator -------------------------------
-
         [Test]
+
         public void SpawnOrders_DonDauTaiMoc_IdDuyNhatO_G1()
         {
             var state = State(7);
@@ -85,8 +76,8 @@ namespace AyeAye.Tests.EditMode
             Assert.AreEqual(OrderStatus.InInbox, state.Orders[0].Status);
             Assert.That(state.UsedOrderIds, Does.Contain("O-G1"));
         }
-
         [Test]
+
         public void SameSeed_CungChuoiDon()
         {
             var a = State(42);
@@ -108,35 +99,31 @@ namespace AyeAye.Tests.EditMode
                 Assert.AreEqual(a.Orders[i].Revenue, b.Orders[i].Revenue);
             }
         }
-
         [Test]
+
         public void Interval_DecaysPerSpawn_FlooredAtMin()
         {
             _world.Config.orderIntervalDecayPerOrder = 0.5f;
-            var state = State(9); // Next = 25, Count = 0
+            var state = State(9); 
             var sim = Sim();
-
             state.ElapsedSeconds = 25f;
             OrderScheduler.SpawnOrders(sim, state);
             Assert.AreEqual(65f, state.NextOrderSpawnAtSeconds, "interval 40 * decay^0 = 40 → Next=65");
-
             state.ElapsedSeconds = 65f;
             OrderScheduler.SpawnOrders(sim, state);
             Assert.AreEqual(85f, state.NextOrderSpawnAtSeconds, "interval 40 * 0.5 = 20 → Next=85");
-
             state.ElapsedSeconds = 85f;
             OrderScheduler.SpawnOrders(sim, state);
             Assert.AreEqual(100f, state.NextOrderSpawnAtSeconds, "interval 10 < min 15 → Next=100");
         }
-
         [Test]
+
         public void InboxDuNguoc_BoLuotSinh_NhungVanDiMoc()
         {
             _world.Config.maxInboxOrders = 2;
-            _world.Config.orderIntervalDecayPerOrder = 0.5f; // mốc 25→65→85 (interval 40→20→15 sàn)
+            _world.Config.orderIntervalDecayPerOrder = 0.5f; 
             var state = State(3);
             var sim = Sim();
-            // 3 mốc (25/65/85): sinh 2 đơn đầu; lượt 3 bị bỏ vì hộp thư đủ ngưỡng — mốc vẫn dời.
             state.ElapsedSeconds = 85f;
             OrderScheduler.SpawnOrders(sim, state);
             Assert.AreEqual(2, state.Orders.Count, "hộp thư đạt maxInboxOrders → không sinh thêm");
@@ -145,3 +132,4 @@ namespace AyeAye.Tests.EditMode
         }
     }
 }
+

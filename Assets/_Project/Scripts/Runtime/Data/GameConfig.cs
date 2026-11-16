@@ -1,118 +1,120 @@
 using UnityEngine;
-
 namespace AyeAye
 {
-    // Mọi số cân bằng nằm đây — bản CHẠY LIÊN TỤC (bỏ ngày, xem ASSUMPTIONS.md mục G1).
-    // G7: ván bắt đầu KHÔNG có đơn; đơn sinh NGẪU NHIÊN qua OrderGenerator — mọi tham số sinh đơn nằm đây.
     [CreateAssetMenu(fileName = "GameConfig", menuName = "AyeAye/Game Config")]
+
     public class GameConfig : ScriptableObject
     {
-        [Header("Ván chơi")]
-        [Tooltip("Số đơn đang hoạt động tối đa.")]
+        [Header("Run")]
+
         public int maxActiveOrders = 4;
+        [Header("Clock")]
+        [Tooltip("Fixed simulation step (seconds). UI accumulates real dt and runs Advance in fixed steps — same seed, same result.")]
 
-        [Header("Đồng hồ")]
-        [Tooltip("Bước mô phỏng cố định (giây). UI cộng dồn dt thật rồi chạy Advance theo bước này — cùng seed cho cùng kết quả.")]
         public float simTickSeconds = 0.1f;
+        [Tooltip("How many seconds one route-unit takes at Normal speed.")]
 
-        [Tooltip("1 route-unit mất bao nhiêu giây ở tốc Thường.")]
         public float secondsPerRouteUnit = 20f;
+        [Header("Orders")]
+        [Tooltip("Warm-up: the first order appears at this mark (seconds). A run starts with NO orders.")]
 
-        [Header("Đơn hàng")]
-        [Tooltip("Thời gian làm quen: đơn đầu tiên xuất hiện sau mốc này (giây). Ván bắt đầu KHÔNG có đơn.")]
         public float orderFirstDelaySeconds = 25f;
+        [Tooltip("Seconds between two order spawns.")]
 
-        [Tooltip("Khoảng giây giữa hai lần bốc đơn mới.")]
         public float orderIntervalSeconds = 40f;
+        [Tooltip("Interval shortened by this exponent after each spawned order.")]
 
-        [Tooltip("Khoảng rút ngắn theo số mũ sau mỗi đơn đã bốc.")]
         public float orderIntervalDecayPerOrder = 0.92f;
+        [Tooltip("Minimum interval between two spawns.")]
 
-        [Tooltip("Khoảng tối thiểu giữa hai lần bốc.")]
         public float orderIntervalMinSeconds = 15f;
+        [Tooltip("Max orders in the inbox — at the cap the spawn is skipped but the next mark still advances (anti-flood).")]
 
-        [Tooltip("Số đơn trong hộp thư tối đa — đạt ngưỡng thì bỏ lượt sinh đó nhưng vẫn dời mốc kế tiếp (chống tràn).")]
         public int maxInboxOrders = 5;
+        [Range(0f, 1f), Tooltip("Chance EACH tag (Fragile/Cold/Urgent) turns on when generating an order — combinations allowed.")]
 
-        [Range(0f, 1f), Tooltip("Xác suất MỖI tag (Dễ vỡ/Lạnh/Khẩn) bật khi sinh đơn — cho phép tổ hợp.")]
         public float orderTagChance = 0.35f;
+        [Tooltip("Random deadline bonus: minimum (seconds) on top of ETA + reaction margin.")]
 
-        [Tooltip("Phần hạn cộng thêm ngẫu nhiên: tối thiểu (giây) trên ETA + biên phản ứng.")]
         public float orderDeadlineExtraMinSeconds = 5f;
+        [Tooltip("Random deadline bonus: maximum (seconds). Urgent orders skip the random part.")]
 
-        [Tooltip("Phần hạn cộng thêm ngẫu nhiên: tối đa (giây). Đơn Khẩn bỏ phần ngẫu nhiên.")]
         public float orderDeadlineExtraMaxSeconds = 35f;
+        [Tooltip("Base revenue of each generated order.")]
 
-        [Tooltip("Doanh thu cơ bản của mỗi đơn sinh ra.")]
         public int orderRevenueBase = 60;
+        [Tooltip("Revenue added per route-unit of the shortest route.")]
 
-        [Tooltip("Doanh thu cộng theo mỗi route-unit của tuyến ngắn nhất.")]
         public int orderRevenuePerRouteUnit = 30;
+        [Tooltip("Revenue added for EACH tag on an order.")]
 
-        [Tooltip("Doanh thu cộng cho MỖI tag bật trên đơn.")]
         public int orderRevenueTagBonus = 25;
+        [Range(0f, 1f), Tooltip("Revenue deviation ±% (jitter).")]
 
-        [Range(0f, 1f), Tooltip("Độ lệch doanh thu ±% (jitter).")]
         public float orderRevenueJitter = 0.2f;
+        [Tooltip("Countdown lower than this many seconds turns red (UI).")]
 
-        [Tooltip("Hạn đếm ngược thấp hơn số giây này thì tô đỏ cảnh báo (UI).")]
         public float deadlineWarnSeconds = 30f;
+        [Tooltip("Player reaction margin: order deadline ≥ fastest-ship ETA + this (checked by DemoValidator).")]
 
-        [Tooltip("Biên phản ứng người chơi: hạn đơn ≥ ETA tàu nhanh nhất + biên này (DemoValidator kiểm).")]
         public float deadlineReactionMarginSeconds = 25f;
+        [Tooltip("Extra margin for the FIRST order (easy rule) — new players need time to read the guide.")]
 
-        [Tooltip("Biên thêm cho đơn ĐẦU TIÊN (luật dễ) — người chơi mới cần thời gian đọc hướng dẫn.")]
         public float tutorialDeadlineBonusSeconds = 30f;
+        [Header("Win / Lose")]
+        [Tooltip("Deliver this many orders → win.")]
 
-        [Header("Thắng / Thua")]
-        [Tooltip("Giao đủ số đơn này → thắng.")]
         public int winDeliveries = 10;
+        [Tooltip("Max late deliveries — reaching this loses immediately.")]
 
-        [Tooltip("Số lần trễ tối đa — đủ số này là thua ngay.")]
         public int maxLateDeliveries = 3;
+        [Tooltip("Too-early loss: losing while fewer than this were delivered.")]
 
-        [Tooltip("Thua quá sớm nếu lúc thua đã giao ít hơn số đơn này.")]
         public int earlyLoseDeliveries = 2;
+        [Header("Incidents")]
+        [Range(0f, 1f), Tooltip("Chance each time a ship enters a new edge.")]
 
-        [Header("Sự cố")]
-        [Range(0f, 1f), Tooltip("Xác suất mỗi lần một tàu vào cạnh mới.")]
         public float incidentChancePerEdge = 0.15f;
+        [Tooltip("Max pending incidents at once (at the cap the clock keeps running but no more rolls).")]
 
-        [Tooltip("Số sự cố đang chờ tối đa cùng lúc (đủ cap → đồng hồ vẫn chạy nhưng không roll thêm).")]
         public int maxPendingIncidents = 2;
+        [Tooltip("Allow incident rolls while a ship roams idle — [S].")]
 
-        [Tooltip("Cho phép roll sự cố khi tàu đi rảnh (roaming) — [S].")]
         public bool incidentsWhileRoaming = false;
+        [Header("Roaming ([S] — idle ships wander, G5)")]
+        [Tooltip("Enable roaming in Simulation. Turn off to isolate tests or measure balance.")]
 
-        [Header("Roaming ([S] — tàu rảnh tự đi, G5)")]
-        [Tooltip("Bật roaming trong Simulation. Tắt để cô lập test hoặc đo cân bằng.")]
         public bool roamEnabled = true;
+        [Tooltip("Roaming speed factor (multiplies the ship's normal speed).")]
 
-        [Tooltip("Hệ số tốc độ roaming (nhân với tốc thường của tàu).")]
         public float roamSpeedFactor = 0.7f;
+        [Tooltip("Run-start grace: before this mark no ship leaves port. Must be ≥ orderFirstDelaySeconds (checked by DemoValidator).")]
 
-        [Tooltip("Ân hạn đầu ván: trước mốc giây này không tàu nào rời cảng. Phải ≥ orderFirstDelaySeconds (DemoValidator kiểm).")]
         public float roamStartSeconds = 30f;
+        [Header("Speed (multipliers over secondsPerRouteUnit)")]
 
-        [Header("Tốc độ (hệ số nhân trên secondsPerRouteUnit)")]
         public float fastSpeed = 1.5f;
+
         public float normalSpeed = 1.0f;
+
         public float slowSpeed = 0.7f;
+        [Header("Progress Δ per Outcome (route-units, added to the option's baseProgressDelta)")]
 
-        [Header("Δ tiến độ theo Outcome (route-units, cộng thêm baseProgressDelta của phương án)")]
         public float smartProgressDelta = 0.5f;
+
         public float normalProgressDelta = 0f;
+
         public float slipUpProgressDelta = -0.7f;
+        [Header("Scoring (FR-0602)")]
+        [Tooltip("Revenue factor for late deliveries.")]
 
-        [Header("Chấm điểm (FR-0602)")]
-        [Tooltip("Hệ số doanh thu khi giao trễ.")]
         public float lateRevenueFactor = 0.5f;
+        [Header("Effects")]
+        [Tooltip("Typing speed of the terminal effect (chars/second).")]
 
-        [Header("Hiệu ứng")]
-        [Tooltip("Tốc độ gõ chữ của hiệu ứng terminal (ký tự/giây).")]
         public int typewriterCharsPerSecond = 90;
+        [Tooltip("If on: Restart replays the same seed (same incident/order chain).")]
 
-        [Tooltip("Nếu bật: Restart chơi lại với đúng seed cũ (chuỗi sự cố/đơn lặp lại).")]
         public bool repeatSeedOnRestart = false;
 
         public float SpeedValue(SpeedClass speed)
@@ -125,7 +127,6 @@ namespace AyeAye
             }
         }
 
-        // Tốc chạy thật (route-units/giây) — dùng cho Advance và ETA trên UI.
         public float SpeedUnitsPerSecond(SpeedClass speed)
         {
             return SpeedValue(speed) / Mathf.Max(0.0001f, secondsPerRouteUnit);

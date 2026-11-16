@@ -1,5 +1,3 @@
-// Công cụ chụp Play mode để xác minh UI (tạm thời — chủ dự án yêu cầu chụp màn hình Play từ Start đến Ending).
-// Chạy: menu hoặc -executeMethod PlayCapture.BuildValidateCapture (batch mode).
 using System.IO;
 using System.Reflection;
 using UnityEditor;
@@ -10,8 +8,6 @@ public static class PlayCapture
 {
     const string Dir = "C:/Users/Admin/AppData/Local/Temp/opencode/aa-shots";
     static int frame;
-
-    // Trạng thái ván lấy qua reflection từ TerminalHud — driver tự chơi thay người (G2 báo cáo Play).
     static AyeAye.GameState state;
     static AyeAye.SimWorld world;
     static System.Collections.Generic.List<AyeAye.CrewDefinition> crews;
@@ -19,8 +15,6 @@ public static class PlayCapture
     public static void Capture()
     {
         Directory.CreateDirectory(Dir);
-        // Bật cờ TRƯỚC khi vào Play: domain reload khi vào Play mất subscription update —
-        // PlayCaptureBoot ([InitializeOnLoad]) sẽ đăng ký lại Tick sau reload.
         Debug.Log("[PlayCapture] Capture: đặt cờ + vào Play");
         SessionState.SetBool("aa-play-capture", true);
         frame = 0;
@@ -30,7 +24,6 @@ public static class PlayCapture
         EditorApplication.isPlaying = true;
     }
 
-    // Build Demo (idempotent) + Validate rồi chụp — dùng cho lượt có regenerate asset.
     public static void BuildValidateCapture()
     {
         AyeAye.DemoBuilder.BuildDemo();
@@ -44,12 +37,11 @@ public static class PlayCapture
         frame++;
         if (frame % 300 == 0) Debug.Log($"[PlayCapture] tick {frame} machineOn={machineOn} started={started}"
             + (state != null ? $" t={state.ElapsedSeconds:0}s giao={state.DeliveredCount} trễ={state.LateCount} chờ={state.PendingIncidents.Count} canAdvance={state.CanAdvance}" : ""));
-        if (!machineOn) // chờ scene dựng xong rồi bật máy (batchmode: vài chục frame đầu chưa có object)
+        if (!machineOn) 
         {
             var machine = Object.FindFirstObjectByType<AyeAye.TerminalView>();
             if (machine == null) return;
             machine.GetType().GetMethod("FinishIntro", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(machine, null);
-            // UI world-space không vào cam.Render() mặc định → dựng camera ortho riêng trước mặt máy để chụp.
             var preview = machine.GetComponentInChildren<SpriteRenderer>();
             if (preview == null) { Debug.LogError("[PlayCapture] không thấy SpriteRenderer máy"); }
             else
@@ -70,8 +62,6 @@ public static class PlayCapture
             Debug.Log("[PlayCapture] machine on");
             return;
         }
-        // batchmode không bao giờ có window focus → tính năng pause-mất-focus (G2) sẽ dừng đồng hồ vĩnh viễn.
-        // Driver gỡ pause mỗi tick (đúng hành vi game trên máy có focus thật).
         if (hudRef != null && focusPaused != null) focusPaused.SetValue(hudRef, false);
         if (pendingShot != null && ++shotFrames >= 4)
         {
@@ -84,7 +74,7 @@ public static class PlayCapture
                 return;
             }
         }
-        if (!started) // ván tự chạy ngay khi máy bật (bỏ màn BẮT ĐẦU) — chờ HUD bind xong
+        if (!started) 
         {
             var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
             if (hud == null) return;
@@ -92,31 +82,30 @@ public static class PlayCapture
             if ((AyeAye.GameState)stateField.GetValue(hud) == null) return;
             hudRef = hud;
             focusPaused = typeof(AyeAye.TerminalHud).GetField("focusPaused", BindingFlags.NonPublic | BindingFlags.Instance);
-            Time.timeScale = 10f; // chỉ dùng khi chụp: rút ngắn thời gian chạy, không đổi cấu hình cân bằng
+            Time.timeScale = 10f; 
             started = true;
             startFrame = frame;
             Debug.Log("[PlayCapture] ván đã tự khởi động");
             return;
         }
         int f = frame - startFrame;
-        if (f == 30) { InvokeSelectTab(0); Shot("g5-tab-orders"); } // chụp lưu ~4 tick sau — tab vẫn 0
+        if (f == 30) { InvokeSelectTab(0); Shot("g5-tab-orders"); } 
         if (f == 40) InvokeSelectTab(1);
-        if (f == 60) SelectFirstShip(); // G5: thẻ + chấm tàu đang chọn vào ảnh ĐỘI TÀU
-        if (f == 80) Shot("g5-tab-fleet"); // lưu khi vẫn ở tab ĐỘI TÀU
+        if (f == 60) SelectFirstShip(); 
+        if (f == 80) Shot("g5-tab-fleet"); 
         if (f == 90) InvokeSelectTab(2);
-        if (f == 110) Shot("g5-tab-incidents"); // lưu khi đã ở tab SỰ CỐ
+        if (f == 110) Shot("g5-tab-incidents"); 
         if (f >= 110)
         {
-            Drive(); // thay người chơi: nhận đơn / điều tàu / xử lý sự cố
+            Drive(); 
             if (state != null && state.IsFinished)
             {
-                if (!endingQueued) { endingQueued = true; Shot("g5-ending"); } // chụp xong mới Stop (xem pendingShot)
+                if (!endingQueued) { endingQueued = true; Shot("g5-ending"); } 
             }
             else if (state != null && state.ElapsedSeconds > 1500) { Debug.LogError($"[PlayCapture] {state.ElapsedSeconds:0}s game chưa tới Ending"); Stop(1); }
             else if (frame > 2000000) { Debug.LogError("[PlayCapture] quá 2000000 frame chưa tới Ending"); Stop(1); }
         }
     }
-
     static bool machineOn, started;
     static int startFrame;
     static RenderTexture shotRt;
@@ -126,10 +115,9 @@ public static class PlayCapture
     static bool endingQueued;
     static bool incidentShotTaken;
     static bool warnShotTaken;
-    static bool roamShotTaken; // G5: ảnh ĐỘI TÀU có tàu Roaming giữa cạnh
+    static bool roamShotTaken; 
     static AyeAye.TerminalHud hudRef;
     static FieldInfo focusPaused;
-
     static void Stop(int code)
     {
         SessionState.SetBool("aa-play-capture", false);
@@ -144,7 +132,6 @@ public static class PlayCapture
         EditorApplication.update -= Tick;
         EditorApplication.Exit(code);
     }
-
     static void InvokeSelectTab(int i)
     {
         var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
@@ -152,8 +139,6 @@ public static class PlayCapture
         m.Invoke(hud, new object[] { i });
         Debug.Log($"[PlayCapture] tab {i}");
     }
-
-    // G4: chọn tàu đầu tiên (qua selectedShipId + Dirty) để ảnh ĐỘI TÀU có thẻ/chấm đảo màu.
     static void SelectFirstShip()
     {
         var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
@@ -165,9 +150,6 @@ public static class PlayCapture
         typeof(AyeAye.TerminalHud).GetMethod("Dirty", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(hud, null);
         Debug.Log("[PlayCapture] selected ship " + s.Ships[0].Id);
     }
-
-    // Driver tự chơi: xử lý sự cố → nhận đơn (chỉ đơn về kịp hạn) → điều tàu theo tuyến nhanh nhất.
-    // Cùng nhịp với chính sách "đọc manh mối" của BalanceProbe — không đụng UI.
     static void Drive()
     {
         var hud = Object.FindFirstObjectByType<AyeAye.TerminalHud>();
@@ -184,12 +166,10 @@ public static class PlayCapture
                 Pool = pool, Routes = AyeAye.DemoData.BuildRouteTable(),
                 Incidents = incidents.incidents,
                 FixedFirstDay = incidents.fixedFirstDay, FixedFinale = incidents.fixedFinale,
-                HQPortId = AyeAye.DemoData.Goc, // goc là trụ (G5)
+                HQPortId = AyeAye.DemoData.Goc, 
             };
             crews = AyeAye.DemoData.BuildCrews();
         }
-
-        // 0. G5: có tàu Roaming giữa cạnh → chụp tab ĐỘI TÀU một lần (thẻ có "tới sau Ns", chấm mờ 0.6).
         if (!roamShotTaken && pendingShot == null)
         {
             bool anyRoam = state.Ships.Exists(s => s.Status == AyeAye.ShipStatus.Roaming && s.Route != null);
@@ -201,8 +181,6 @@ public static class PlayCapture
                 return;
             }
         }
-
-        // 0b. G4: đơn gần hạn (còn < deadlineWarnSeconds) → về tab ĐƠN HÀNG chụp nhãn nhấp nháy "! ".
         if (!warnShotTaken && pendingShot == null)
         {
             float warn = state.Config.deadlineWarnSeconds;
@@ -214,19 +192,17 @@ public static class PlayCapture
             {
                 warnShotTaken = true;
                 InvokeSelectTab(0);
-                Shot("g5-orders-warn"); // 0.5s blink nên có thể chụp đúng lúc opacity 0.25 — vẫn thấy chữ mờ
+                Shot("g5-orders-warn"); 
                 return;
             }
         }
-
-        // 1. Sự cố chờ → chụp 1 lần tab SỰ CỐ có sự cố thật, rồi chọn phương án đầu (thay nút tab SỰ CỐ).
         if (state.PendingIncidents.Count > 0)
         {
             if (!incidentShotTaken && pendingShot == null)
             {
                 incidentShotTaken = true;
                 InvokeSelectTab(2);
-                Shot("g5-incident-active"); // hold ~5 tick — đồng hồ dừng đúng khi có sự cố chờ
+                Shot("g5-incident-active"); 
                 return;
             }
             if (pendingShot != null) return;
@@ -237,10 +213,6 @@ public static class PlayCapture
             state.PendingIncidents.RemoveAt(0);
             return;
         }
-
-        // 2. Nhận đơn còn về kịp hạn (tàu rảnh: tới cảng lấy hàng + đi tuyến nhanh nhất ≤ thời gian còn lại).
-        // G5: tàu Roaming ước tính từ đích cạnh (edge còn lại + tới cảng lấy hàng) — cùng quy tắc BalanceProbe;
-        // gán vẫn chỉ cho tàu Idle đã cập cảng.
         foreach (var o in state.Orders.FindAll(x => x.Status == AyeAye.OrderStatus.InInbox))
         {
             float haul = FastestSeconds(o.FromPortId, o.ToPortId);
@@ -262,8 +234,6 @@ public static class PlayCapture
             if (reachable && AyeAye.CommandValidator.CanAccept(state, o.Id))
                 AyeAye.OrderActions.Accept(state, o.Id);
         }
-
-        // 3. Điều tàu: đơn đã nhận chưa gán → tàu đứng ở cảng đi, tuyến nhanh nhất (MAKE IT SO áp ngay).
         foreach (var o in state.Orders.FindAll(x => x.Status == AyeAye.OrderStatus.Accepted && string.IsNullOrEmpty(x.AssignedShipId)))
         {
             var options = world.Routes.GetOptions(o.FromPortId, o.ToPortId);
@@ -280,8 +250,6 @@ public static class PlayCapture
             }
             if (best != null) AyeAye.FleetActions.Assign(state, world.Routes, best.Id, o.Id, bestIdx);
         }
-
-        // 4. Đọc manh mối: tàu rỗi chạy về cảng lấy hàng của đơn đã nhận chưa có tàu (như chính sách BalanceProbe).
         var demand = state.Orders.Find(o => o.Status == AyeAye.OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId));
         if (demand == null) return;
         foreach (var ship in state.Ships)
@@ -296,7 +264,6 @@ public static class PlayCapture
             AyeAye.FleetActions.Reposition(state, world.Routes, ship.Id, demand.FromPortId, best);
         }
     }
-
     static float FastestSeconds(string from, string to)
     {
         var options = world.Routes.GetOptions(from, to);
@@ -307,13 +274,11 @@ public static class PlayCapture
         return bestLen == float.MaxValue ? float.MaxValue
             : bestLen / Mathf.Max(0.0001f, state.Config.SpeedUnitsPerSecond(AyeAye.SpeedClass.Fast));
     }
-
     static void Shot(string name)
     {
-        pendingShot = name; // chờ 4 frame để panel kịp repaint vào targetTexture
+        pendingShot = name; 
         shotFrames = 0;
     }
-
     static void SaveShot(string name)
     {
         if (shotCam == null || shotRt == null) { Debug.LogError("[PlayCapture] không có camera/RT để chụp"); return; }
@@ -331,9 +296,8 @@ public static class PlayCapture
         Debug.Log($"[PlayCapture] shot {name}");
     }
 }
-
-// Đăng ký lại Tick sau domain reload của Play mode (xem PlayCapture.Capture).
 [InitializeOnLoad]
+
 public static class PlayCaptureBoot
 {
     static PlayCaptureBoot()
@@ -345,3 +309,4 @@ public static class PlayCaptureBoot
         }
     }
 }
+

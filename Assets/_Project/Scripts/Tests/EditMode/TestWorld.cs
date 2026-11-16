@@ -1,29 +1,35 @@
 using System.Collections.Generic;
 using AyeAye;
 using UnityEngine;
-
 namespace AyeAye.Tests.EditMode
 {
-    /// <summary>
-    /// Dữ liệu mẫu SRS §5 dưới dạng SO trong bộ nhớ (tạo mỗi lần SetUp, hủy ở TearDown).
-    /// Nguồn dữ liệu duy nhất là DemoData — DemoBuilder dùng đúng nguồn đó để dựng assets (FR-0905).
-    /// </summary>
+
     public class TestWorld
     {
-        // §5.1 port ids (alias cho DemoData) — bản đồ hình sao 5 nút, mogio đã bỏ
+
         public const string Goc = DemoData.Goc, Vang = DemoData.Vang, Suong = DemoData.Suong,
             Camap = DemoData.Camap, Tram = DemoData.Tram;
 
         public GameConfig Config;
+
         public RouteTable Routes;
+
         public List<PortDef> Ports;
+
         public List<RouteDef> RouteDefs;
+
         public OrderPool OrderPool;
+
         public List<ShipDef> ShipDefs;
+
         public List<IncidentDef> Incidents;
+
         public List<CrewDefinition> Crews;
+
         public IncidentDef FixedFirstDay;
+
         public IncidentDef FixedFinale;
+
         public readonly List<ScriptableObject> SOs = new List<ScriptableObject>();
 
         public static TestWorld Create()
@@ -36,12 +42,10 @@ namespace AyeAye.Tests.EditMode
             w.OrderPool = w.Track(DemoData.BuildOrderPool());
             w.ShipDefs = DemoData.BuildShips();
             w.Crews = DemoData.BuildCrews();
-
             var pool = w.Track(DemoData.BuildIncidentPool());
             w.FixedFirstDay = pool.fixedFirstDay;
             w.FixedFinale = pool.fixedFinale;
             w.Incidents = pool.incidents;
-
             foreach (var p in w.Ports) w.Track(p);
             foreach (var r in w.RouteDefs) w.Track(r);
             foreach (var s in w.ShipDefs) w.Track(s);
@@ -57,9 +61,6 @@ namespace AyeAye.Tests.EditMode
             return so;
         }
 
-        /// <summary>
-        /// G7: dựng đơn tay cho test — không phụ thuộc SpawnInitial/pool cố định (đơn giờ sinh ngẫu nhiên).
-        /// </summary>
         public static OrderState AddManualOrder(GameState state, string id, string from, string to,
             float deadlineSeconds, int revenue = 100, OrderTag tags = OrderTag.None, string clue = "")
         {
@@ -79,3 +80,4 @@ namespace AyeAye.Tests.EditMode
         }
     }
 }
+

@@ -1,97 +1,92 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
 namespace AyeAye
 {
-    // Điều kiện sinh của một sự cố (FR-0502): mỗi trigger là một nhóm điều kiện AND;
-    // sự cố hợp lệ khi BẤT KỲ trigger nào khớp. Triggers rỗng = luôn đủ điều kiện (vd I-07).
     [Serializable]
+
     public class IncidentTrigger
     {
-        [Tooltip("Hazard của cạnh tàu vừa đi qua / đang đi qua. Any = không lọc theo hazard.")]
+        [Tooltip("Hazard of the edge the ship just entered / is entering. Any = no hazard filter.")]
+
         public HazardType requiredHazard = HazardType.Any;
+        [Tooltip("The ship must be carrying Fragile cargo.")]
 
-        [Tooltip("Tàu phải đang chở hàng Dễ vỡ.")]
         public bool requireFragileCargo;
+        [Tooltip("The ship just arrived at an intermediate port this sim step (I-04 Port Jam).")]
 
-        [Tooltip("Tàu vừa cập một cảng trung gian trong bước mô phỏng này (I-04 Kẹt cảng).")]
         public bool requireJustArrivedAtPort;
+        [Tooltip("Ship Condition = Worn (I-06).")]
 
-        [Tooltip("Condition của tàu = Hao mòn (I-06).")]
         public bool requireWornCondition;
+        [Tooltip("The ship has the TemporaryRepair flag (I-06, high-weight branch).")]
 
-        [Tooltip("Tàu đang có cờ TemporaryRepair (I-06, nhánh trọng số cao).")]
         public bool requireTemporaryRepair;
+        [Tooltip("The ship must be carrying cargo (I-F finale).")]
 
-        [Tooltip("Tàu phải đang chở hàng (I-F finale).")]
         public bool requireCarryingCargo;
+        [Tooltip("Weight multiplier when this trigger matches (I-06: TemporaryRepair ×3).")]
 
-        [Tooltip("Nhân trọng số khi trigger này khớp (I-06: TemporaryRepair ×3).")]
         public float weightMultiplier = 1f;
     }
-
-    // Một phương án xử lý sự cố. baseProgressDelta cộng với Δ của Outcome (FR-0506).
     [Serializable]
+
     public class IncidentOption
     {
+
         public string label;
-
         [TextArea] public string description;
+        [Tooltip("The option's own progress Δ (e.g. risky/fast +0.3, wait/slow −0.3).")]
 
-        [Tooltip("Δ tiến độ riêng của phương án (vd: liều/nhanh +0.3, chờ/chậm −0.3).")]
         public float baseProgressDelta;
+        [Tooltip("Table (captain, condition) → outcome. No match = Normal (FR-0505).")]
 
-        [Tooltip("Bảng (thuyền trưởng, điều kiện) → outcome. Không khớp bảng = Normal (FR-0505).")]
         public List<IncidentOutcomeEntry> entries = new List<IncidentOutcomeEntry>();
     }
-
-    // Một dòng trong bảng outcome: thuyền trưởng × điều kiện cờ → hệ quả.
     [Serializable]
+
     public class IncidentOutcomeEntry
     {
-        [Tooltip("Thuyền trưởng áp dụng; Any = mọi thuyền trưởng không có entry riêng.")]
-        public CrewId crew = CrewId.Any;
+        [Tooltip("Captain it applies to; Any = every captain without its own entry.")]
 
-        [Tooltip("Điều kiện cờ của tàu/đơn trong ngữ cảnh sự cố.")]
+        public CrewId crew = CrewId.Any;
+        [Tooltip("Flag condition of the ship/order in the incident context.")]
+
         public FlagCondition condition = FlagCondition.Always;
 
         public DecisionOutcome outcome = DecisionOutcome.Normal;
-
         [TextArea] public string explanation;
-
         [TextArea] public string quote;
+        [Tooltip("Max 1 flag per incident (FR-0506).")]
 
-        [Tooltip("Tối đa 1 cờ mỗi sự cố (FR-0506).")]
         public FlagToSet setFlag = FlagToSet.None;
+        [Tooltip("Change the cargo level of the carried order (negative = degrade; only when explicit — FR-0506).")]
 
-        [Tooltip("Đổi mức hàng của đơn đang chở (âm = giảm mức; chỉ khi ghi rõ — FR-0506).")]
         public int cargoDelta;
+        [Tooltip("Drop the ship's Condition by 1 level (max Worn until FR-0408).")]
 
-        [Tooltip("Hạ Condition của tàu 1 mức (tối đa Hao mòn khi chưa có FR-0408).")]
         public bool conditionDown;
+        [Tooltip("Change Revenue (e.g. toll −20). Revenue never goes negative.")]
 
-        [Tooltip("Đổi Doanh thu (vd phí qua đường −20). Doanh thu không âm.")]
         public int revenueDelta;
     }
-
     [CreateAssetMenu(fileName = "Incident_New", menuName = "AyeAye/Incident Definition")]
+
     public class IncidentDef : ScriptableObject
     {
+
         public string incidentId;
 
         public string title;
-
         [TextArea] public string situationText;
-
-        [Tooltip("Manh mối hiển thị trên thẻ sự cố (log thuyền trưởng, thời tiết, tình trạng...).")]
+        [Tooltip("Clue shown on the incident card (captain's log, weather, condition...).")]
         [TextArea] public string clueText;
 
         public int weight = 1;
 
         public List<IncidentTrigger> triggers = new List<IncidentTrigger>();
+        [Tooltip("2–3 options; always include a \"do nothing/hold\" option when sensible (FR-0504).")]
 
-        [Tooltip("2–3 phương án; luôn có phương án \"mặc kệ/giữ nguyên\" khi hợp lý (FR-0504).")]
         public List<IncidentOption> options = new List<IncidentOption>();
     }
 }

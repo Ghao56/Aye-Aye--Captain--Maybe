@@ -109,3 +109,51 @@ Thay SRS v3 mục liên quan "ngày/ván 8 ngày/Uy tín 85+". Tag trước thay
 - FIX (render-only, TerminalHud.cs): field lastPendingIncidents + trong Refresh() khi pending chuyen 0->>0 -> SelectTab(2) tu mo tab SU CO (the su co + nut phuong an hien ngay, de "SU CO DANG CHO - dong ho dung").
 - XAC NHAN: repro batch - sau giao don 2 panel-2 bat on; sau khi chon phuong an (ResolvePendingIncident) dong ho chay lai delta 3.0s/3s, pending=0, CanAdvance=true; EditMode 109/109 pass.
 - Driver lessons (batch khong co focus): UI Toolkit Button khong an ClickEvent gui tay; selection qua reflection + Dirty(); mo tuong minh Assets/_Project/Scenes/Main.unity trong Run() (Library reset -> scene rong); FinishIntro dung 1 lan; clear focusPaused moi tick.
+
+## G7 - Bug "giao don thu 3 game dung" + sinh don NGAU NHIEN + bo chan tau (16/11/2026)
+
+### 1. Bug "giao don thu 3 thi game dung" - NGUYEN NHAN GOC
+- Khong co hang sim: 400/400 seed x 2 policy chay het van, 0/400 ket (BalanceProbe + StuckClockTests sweep seed 1..50). Dong ho dung thiet ke (G4: su co cho) hoac mat focus.
+- Van de LA UI/UX: khi CanAdvance=false (su co cho) hoac mat focus, UI chi doi text topbar khi lastRefreshKey doi -> o tab DOI TAU nguoi choi chi thay dong ho dung, khong biet ly do; them ma Refresh() nem exception thi lastRefreshKey da bi ghi tu truoc -> UI dong bang vinh vien (khong tu hoi phuc).
+- FIX (render-only, TerminalHud.cs):
+  1. lastRefreshKey = key ghi SAU khi Refresh() chay tron -> UI tu hoi phuc sau exception.
+  2. UpdateTopPhase() goi MOI frame: TAM DUNG (mat focus) / TAM DUNG (su co cho) / KET THUC / DANG CHAY.
+  3. Su co moi pending 0->>0: tu mo tab SU CO + nhay nhap tab (class blink-off tai dung).
+  4. ignoreFocusPause (debug editor) bo qua pause mat focus.
+  5. Dem nguoc "don dau tien sau ~Ns" trong tab DON HANG (10 Hz) - vi G7 bo don co san.
+  6. NewRun reset lastPendingIncidents (van moi khong nhay tab nham).
+- Bang chung seed: StuckClockTests quet seed 1..50 x 2 policy - dong ho luon tien khi chua ket + khong con su co cho; bat bien 1500s: khong don nao bi xoa khi dang Accepted/Assigned (bug AddOrder fallback RemoveAll cu).
+
+### 2. Bo chan tau theo thuyen truong/tag (Phan 2)
+- CommandValidator.ValidateAssign khong con kiem tra captain/tag (da la hanh vi cu, test moi Assign_KhongChanTheoThuyenTruongHoacTag chot lai). Manh moi chi con la huong dan, khong con canh bao tau.
+- O-04 "Dung cho Bob cho" sua thanh "Lot dem ki vao." (demo data).
+
+### 3. Sinh don NGAU NHIEN (OrderGenerator) thay boc tu OrderPool
+- OrderPool chi con la du lieu mau tuy chon; don sinh qua state.Rng voi thu tu lay random CO DINH: (1) cang di (trong so x2 khi co tau Idle o do) -> (2) cang den (bat buoc co tuyen) -> (3) tung tag theo orderTagChance -> (4) phan han cong them -> (5) jitter doanh thu -> (6) ten khach -> (7) manh moi. Id "O-G{n}".
+- Don DAU TIEN (OrderSpawnCount==0) theo luat "de": cang di dang co tau Idle, tuyen ngan nhat <=1 route-unit, khong tag, han = ETA + bien phan ung + bien huong dan CHINH XAC (khong cong them roll ngau nhien - test DonDau_DungLuatDe da bat bug nay).
+- NHIP sinh (OrderScheduler): moc dau = orderFirstDelaySeconds; interval sau do = orderIntervalSeconds x decay^OrderSpawnCount (exponent = so don da sinh TRUOC luot nay - don dau giu nguyen 40s), san orderIntervalMinSeconds. Chong tran hop thu: du maxInboxOrders -> bo luot sinh, van di moc.
+- Goc khi hang: NewRun dat NextOrderSpawnAtSeconds = orderFirstDelaySeconds (TRUOC DO la 0f -> don sinh ngay tick dau, don dau chon cang co tau Idle -> demand ghim tau tai cang -> 6 test RoamTests bao "Idle thay vi Roaming").
+
+### 4. Balance TRUOC vs SAU (400 van/policy, seedBase 1000, DemoBuilder.Balance)
+| Chinh sach | Truoc | Sau |
+|---|---|---|
+| Ngau nhien | 34% (135/400) [E1 5 · E2 29 · E3 101 · E4 265] | 11% (44/400) [E1 3 · E2 14 · E3 27 · E4 355 · E5 1] |
+| Doc manh moi | 79% (316/400) [E1 55 · E2 167 · E3 94 · E4 84] | 73% (292/400) [E1 70 · E2 127 · E3 95 · E4 108] |
+| Thoi luong TB | 284s / 324s | 284s / 358s |
+| p10/p50/p90 | 207/286/356 · 272/328/374 | 222/287/342 · 315/359/407 |
+| Tre TB | 2.57 / 1.52 | 2.84 / 1.60 |
+| Ket | 0/400 / 0/400 | 0/400 / 0/400 |
+- Ty le giam (34->11, 79->73) la CHU TAM CUA THIET KE: don ngau nhien kho hon bo don tutorial cu (tuyen dai hon, tag nhieu hon, han chat hon). Policy doc manh moi van 73% = do kho phu hop voi nguoi choi co chien luoc; policy ngau nhien 11% = roi vao E4 la chinh (do tre 3 don) - neu muon nho hon, giam orderDeadlineExtraMinSeconds hoac tang maxActiveOrders, KHONG sua generator.
+
+### 5. Test: 118/118 EditMode PASS (chi co thay doi test duoc li do)
+- SimulationTests / Day1FogRouteTests / RouteProgressTests: don tutorial cu O-01/O-02 dung tay qua TestWorld.AddManualOrder (G7 bo SpawnInitial don co san; SpawnInitial chi dat moc).
+- RoamTests: chong spawn bang orderFirstDelaySeconds=100000f; test 4 dung AddManualOrder; test 8 REWRITE - bat bien doi tu "noi dung don giong het" thanh "nhip sinh giong het (OrderSpawnCount + NextOrderSpawnAtSeconds)" vi don ngau nhien phu thuoc vi tri tau (trong so cang co tau Idle); phia roam-tat dung Object.Instantiate(config) copy (config dung chung tham chieu).
+- OrderSchedulerTests: decay 0.5 them vao test Inbox; ky vong moc 25->65->85->100 (interval 40x0.5^n san 15).
+- OrderGeneratorTests (moi): cung seed cung chuoi; han >= ETA + bien; Id duy nhat 200 lan; don dau dung luat de; tag/doanh thu trong khoang config.
+- StuckClockTests (moi): sweep seed 1..50 x 2 policy + bat bien 1500s + tau dang cho tro don Assigned that.
+- CommandValidatorTests / DemoValidatorTests: them test Phan 2 + tham so generator (max>=min, roamStart>=moc lam quen).
+- PlayMode TerminalInputTests: khong tham chieu don hang -> chay nguyen ban (chay rieng).
+- Skip (khong vong doi): Fleet routeEtaLabels cho tau Roaming dang cho hang - scope creep, ghi o day.
+
+### 6. DemoValidator them kiem (G7)
+- orderDeadlineExtraMaxSeconds >= orderDeadlineExtraMinSeconds; orderRevenueBase > 0; roamStartSeconds >= orderFirstDelaySeconds; toan bo cap cang trong RouteTable phai co tuyen (generator co the sinh don vao cap nao do).

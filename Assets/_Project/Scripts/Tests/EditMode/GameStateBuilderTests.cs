@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
-
 namespace AyeAye.Tests
 {
-    // GameStateBuilder: dựng ván mới từ config + danh sách ShipDef — trạng thái khởi đầu theo FR-0101.
+
     public class GameStateBuilderTests
     {
         static GameConfig Config()
@@ -12,7 +11,6 @@ namespace AyeAye.Tests
             GameConfig config = ScriptableObject.CreateInstance<GameConfig>();
             return config;
         }
-
         static List<ShipDef> ShipDefs()
         {
             return new List<ShipDef>
@@ -23,7 +21,6 @@ namespace AyeAye.Tests
                 Ship("S-NGO", "Nghi Ngờ Số Một", CrewId.Dex, SpeedClass.Normal, "VANG"),
             };
         }
-
         static ShipDef Ship(string id, string name, CrewId captain, SpeedClass speed, string port)
         {
             ShipDef def = ScriptableObject.CreateInstance<ShipDef>();
@@ -34,12 +31,11 @@ namespace AyeAye.Tests
             def.startPortId = port;
             return def;
         }
-
         [Test]
+
         public void CreateRun_InitializesStartingState_PerFR0101()
         {
             GameState state = GameStateBuilder.CreateRun(Config(), ShipDefs(), seed: 42);
-
             Assert.AreEqual(0f, state.ElapsedSeconds);
             Assert.AreEqual(0, state.Revenue);
             Assert.AreEqual(0, state.LateCount);
@@ -58,8 +54,8 @@ namespace AyeAye.Tests
             Assert.IsEmpty(state.CargoShiftedOrderIds);
             Assert.IsEmpty(state.TemporaryRepairShipIds);
         }
-
         [Test]
+
         public void NewRun_ResetsEverythingAndSeed()
         {
             GameState state = GameStateBuilder.CreateRun(Config(), ShipDefs(), seed: 42);
@@ -74,16 +70,14 @@ namespace AyeAye.Tests
             state.UsedIncidentIds.Add("I-01");
             state.IsFinished = true;
             state.FinalEnding = EndingId.E2_Renowned;
-
             state.NewRun(seed: 7);
-
             Assert.AreEqual(7, state.Seed);
             Assert.AreEqual(0f, state.ElapsedSeconds);
             Assert.AreEqual(0, state.Revenue);
             Assert.AreEqual(0, state.LateCount);
             Assert.AreEqual(0, state.DeliveredCount);
             Assert.AreEqual(0, state.Orders.Count);
-            Assert.AreEqual(0, state.Ships.Count); // builder phải nạp lại tàu sau NewRun
+            Assert.AreEqual(0, state.Ships.Count); 
             Assert.IsEmpty(state.CargoShiftedOrderIds);
             Assert.IsEmpty(state.TemporaryRepairShipIds);
             Assert.IsEmpty(state.UsedOrderIds);
@@ -92,14 +86,13 @@ namespace AyeAye.Tests
             Assert.AreEqual(EndingId.None, state.FinalEnding);
             Assert.IsTrue(state.CanAdvance);
         }
-
         [Test]
+
         public void Initialize_RepopulatesShips_AfterNewRun()
         {
             GameState state = GameStateBuilder.CreateRun(Config(), ShipDefs(), seed: 42);
             state.NewRun(seed: 7);
             GameStateBuilder.InitializeShips(state, ShipDefs());
-
             Assert.AreEqual(4, state.Ships.Count);
             Assert.AreEqual(CrewId.Dex, state.Ships[3].Captain);
             Assert.AreEqual("VANG", state.Ships[3].PortId);
@@ -107,3 +100,4 @@ namespace AyeAye.Tests
         }
     }
 }
+

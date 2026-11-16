@@ -1,29 +1,31 @@
 using UnityEngine;
-
 namespace AyeAye
 {
     [CreateAssetMenu(fileName = "Ship_New", menuName = "AyeAye/Ship Definition")]
+
     public class ShipDef : ScriptableObject
     {
+
         public string shipId;
 
         public string displayName;
 
         public CrewId captain;
+        [Tooltip("Display name of the captain (must match CrewId for the incident table lookup).")]
 
-        [Tooltip("Tên thuyền trưởng hiển thị (phải khớp CrewId để tra bảng sự cố).")]
         public string captainName;
 
         public SpeedClass speedClass = SpeedClass.Normal;
+        [Tooltip("Personality tag shown on the ship card (e.g. \"Fast · Loud · Shortcut lover\").")]
 
-        [Tooltip("Tag tính cách hiển thị trên thẻ tàu (vd: \"Nhanh · Ẩu · Thích đường tắt\").")]
         public string traits;
 
         public string startPortId;
 
         public ShipCondition startCondition = ShipCondition.Good;
+        [Tooltip("Captain's roaming profile (G5). Null = ship never roams.")]
 
-        [Tooltip("Hồ sơ roaming của thuyền trưởng (G5). Null = tàu không roaming.")]
         public RoamProfile roam;
     }
 }
+

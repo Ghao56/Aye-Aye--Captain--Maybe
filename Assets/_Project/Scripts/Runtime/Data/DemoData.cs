@@ -1,21 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
 namespace AyeAye
 {
-    /// <summary>
-    /// Nguồn DUY NHẤT của dữ liệu mẫu SRS §5: TestWorld (SO trong bộ nhớ cho test EditMode) và
-    /// DemoBuilder (assets dưới Assets/_Project/Data) cùng gọi các hàm Build* tại đây.
-    /// Sửa dữ liệu mẫu chỉ sửa ở đây — hai phía không thể lệch nhau.
-    /// Mọi số cân bằng nằm trong GameConfig (mặc định §2.5) — không hard-code ở lớp này.
-    /// </summary>
+
     public static class DemoData
     {
-        // §5.1 port ids — bản đồ hình sao 5 nút (goc là trạm trung chuyển ở giữa; mogio đã bỏ, xem ASSUMPTIONS.md)
-        public const string Goc = "goc", Vang = "vang", Suong = "suong", Camap = "camap", Tram = "tram";
 
-        // §5.2 cạnh (không hướng): "a|b|độ dài|nguy hiểm" — 4 nan hoa từ goc + 2 cạnh phụ giữa hành tinh
+        public const string Goc = "goc", Vang = "vang", Suong = "suong", Camap = "camap", Tram = "tram";
         static readonly string[] Edges =
         {
             Goc + "|" + Vang + "|1|Clear",
@@ -28,7 +20,6 @@ namespace AyeAye
 
         public static GameConfig CreateConfig()
         {
-            // Mặc định GameConfig đã khớp §2.5 — không ghi đè, tránh hard-code cân bằng.
             return ScriptableObject.CreateInstance<GameConfig>();
         }
 
@@ -41,14 +32,13 @@ namespace AyeAye
                 p.mapPosition = new Vector2(x, y);
                 return p;
             }
-            // G3: hình sao 4 cánh — 4 hành tinh ở 4 góc, HQ ở giữa; cạnh phụ suong-camap là đáy, camap-tram là phải.
             return new List<PortDef>
             {
-                P(Goc, "Trạm Trung Chuyển", hq: true),
-                P(Vang, "Phố Cảng Vàng", x: 0.2f, y: 0.25f),
-                P(Suong, "Đảo Sương Mù", x: 0.2f, y: 0.75f),
-                P(Camap, "Bến Cá Mập", x: 0.8f, y: 0.75f),
-                P(Tram, "Trạm Lạnh Bắc", x: 0.8f, y: 0.25f),
+                P(Goc, "Central Hub", hq: true),
+                P(Vang, "Golden Harbor", x: 0.2f, y: 0.25f),
+                P(Suong, "Fog Isle", x: 0.2f, y: 0.75f),
+                P(Camap, "Shark Wharf", x: 0.8f, y: 0.75f),
+                P(Tram, "North Ice Station", x: 0.8f, y: 0.25f),
             };
         }
 
@@ -66,7 +56,6 @@ namespace AyeAye
             }
             return list;
         }
-
         static RouteOption Opt(string label, params string[] path)
         {
             var opt = new RouteOption { label = label, portPath = new List<string>(path), hazards = new List<HazardType>() };
@@ -92,31 +81,28 @@ namespace AyeAye
         {
             var rt = ScriptableObject.CreateInstance<RouteTable>();
             rt.pairs = new List<RoutePairEntry>();
-
             void Add(string from, string to, RouteOption[] opts)
             {
                 rt.pairs.Add(new RoutePairEntry { fromPortId = from, toPortId = to, options = new List<RouteOption>(opts) });
                 rt.pairs.Add(new RoutePairEntry { fromPortId = to, toPortId = from, options = opts.Select(o =>
                     new RouteOption
                     {
-                        label = o.label + " (chiều về)",
+                        label = o.label + " (return)",
                         portPath = o.portPath.AsEnumerable().Reverse().ToList(),
                         hazards = o.hazards.AsEnumerable().Reverse().ToList(),
                         length = o.length,
                     }).ToList() });
             }
-
-            // Bản đồ hình sao: 10 cặp cảng, mỗi cặp tối đa 2 RouteOption — đều 2 chiều qua Add
-            Add(Goc, Vang, new[] { Opt("Qua thẳng", Goc, Vang) });
-            Add(Goc, Suong, new[] { Opt("Đường mù", Goc, Suong) });
-            Add(Goc, Camap, new[] { Opt("Qua Sương Mù", Goc, Suong, Camap), Opt("Biển cướp", Goc, Camap) });
-            Add(Goc, Tram, new[] { Opt("Qua Băng", Goc, Tram), Opt("Qua Cá Mập", Goc, Camap, Tram) });
-            Add(Vang, Suong, new[] { Opt("Qua Gốc", Vang, Goc, Suong) });
-            Add(Vang, Camap, new[] { Opt("Qua Gốc", Vang, Goc, Camap), Opt("Qua Sương Mù", Vang, Goc, Suong, Camap) });
-            Add(Vang, Tram, new[] { Opt("Qua Gốc", Vang, Goc, Tram) });
-            Add(Suong, Camap, new[] { Opt("Đường mù", Suong, Camap), Opt("Qua Gốc", Suong, Goc, Camap) });
-            Add(Suong, Tram, new[] { Opt("Qua Cá Mập", Suong, Camap, Tram) });
-            Add(Camap, Tram, new[] { Opt("Biển bão", Camap, Tram), Opt("Qua Gốc", Camap, Goc, Tram) });
+            Add(Goc, Vang, new[] { Opt("Direct", Goc, Vang) });
+            Add(Goc, Suong, new[] { Opt("Fog Route", Goc, Suong) });
+            Add(Goc, Camap, new[] { Opt("Via Fog Isle", Goc, Suong, Camap), Opt("Pirate Sea", Goc, Camap) });
+            Add(Goc, Tram, new[] { Opt("Via Ice", Goc, Tram), Opt("Via Shark Wharf", Goc, Camap, Tram) });
+            Add(Vang, Suong, new[] { Opt("Via Hub", Vang, Goc, Suong) });
+            Add(Vang, Camap, new[] { Opt("Via Hub", Vang, Goc, Camap), Opt("Via Fog Isle", Vang, Goc, Suong, Camap) });
+            Add(Vang, Tram, new[] { Opt("Via Hub", Vang, Goc, Tram) });
+            Add(Suong, Camap, new[] { Opt("Fog Route", Suong, Camap), Opt("Via Hub", Suong, Goc, Camap) });
+            Add(Suong, Tram, new[] { Opt("Via Shark Wharf", Suong, Camap, Tram) });
+            Add(Camap, Tram, new[] { Opt("Storm Sea", Camap, Tram), Opt("Via Hub", Camap, Goc, Tram) });
             return rt;
         }
 
@@ -127,23 +113,18 @@ namespace AyeAye
                 var s = ScriptableObject.CreateInstance<ShipDef>();
                 s.shipId = id; s.displayName = name; s.captain = captain; s.captainName = capName;
                 s.speedClass = speed; s.traits = traits; s.startPortId = port; s.startCondition = ShipCondition.Good;
-                s.roam = roam; // G5
+                s.roam = roam;
                 return s;
             }
-            // §5.3 — hồ sơ roaming G5: giá trị khởi đầu theo tính cách (đo lại qua Balance, không tự chỉnh)
             return new List<ShipDef>
             {
-                // Bob: nghỉ ngắn, thích cảng xa, hơi hay đổi ý
-                Ship("tau-tia-chop", "CARGO-9", CrewId.Bob, "Bob", SpeedClass.Fast, "Nhanh · Ẩu · Thích đường tắt", Goc,
+                Ship("tau-tia-chop", "CARGO-9", CrewId.Bob, "Bob", SpeedClass.Fast, "Fast · Loud · Shortcut lover", Goc,
                     new RoamProfile { dwellSeconds = 8f, demandWeight = 2f, farBias = 0.6f, wanderWeight = 2f }),
-                // Chen: nghỉ lâu, thích cảng gần, gắn HQ
-                Ship("tau-rua-vang", "HAULER-4", CrewId.Chen, "Chen", SpeedClass.Slow, "Chậm · Thân vững · Bình tĩnh", Goc,
+                Ship("tau-rua-vang", "HAULER-4", CrewId.Chen, "Chen", SpeedClass.Slow, "Slow · Sturdy · Calm", Goc,
                     new RoamProfile { dwellSeconds = 30f, demandWeight = 2f, farBias = -0.5f, hubAffinity = 3f, wanderWeight = 1f, backtrackPenalty = 3f }),
-                // Mira: nghỉ vừa, gắn HQ, không nhiễu — đi đều như theo quy trình
-                Ship("tau-dung-quy-trinh", "FREIGHT-12", CrewId.Mira, "Mira", SpeedClass.Normal, "Chuẩn sách · Hơi cứng nhắc", Goc,
+                Ship("tau-dung-quy-trinh", "FREIGHT-12", CrewId.Mira, "Mira", SpeedClass.Normal, "By the book · A bit stiff", Goc,
                     new RoamProfile { dwellSeconds = 15f, demandWeight = 2f, hubAffinity = 3f, wanderWeight = 0f }),
-                // Dex: nghỉ vừa, hay đổi ý (nhiễu cao)
-                Ship("tau-nghi-ngo", "TRANSIT-3", CrewId.Dex, "Dex", SpeedClass.Normal, "Đa nghi · Kiểm tra kỹ", Vang,
+                Ship("tau-nghi-ngo", "TRANSIT-3", CrewId.Dex, "Dex", SpeedClass.Normal, "Suspicious · Double-checks", Vang,
                     new RoamProfile { dwellSeconds = 15f, demandWeight = 2f, wanderWeight = 6f }),
             };
         }
@@ -159,13 +140,12 @@ namespace AyeAye
             }
             return new List<CrewDefinition>
             {
-                C(CrewId.Bob, "Bob", "Chưa chết con nào.", "Tốc độ là sức mạnh!"),
-                C(CrewId.Mira, "Mira", "Theo đúng quy trình.", "Quy trình tồn tại vì có lý do."),
-                C(CrewId.Chen, "Chen", "Bình tĩnh, sẽ tới.", "Tàu chậm nhưng hàng nguyên."),
-                C(CrewId.Dex, "Dex", "Kiểm tra lại lần nữa.", "Ta nghi ngờ mọi thứ."),
+                C(CrewId.Bob, "Bob", "No one has died yet.", "Speed is power!"),
+                C(CrewId.Mira, "Mira", "Following procedure.", "Procedure exists for a reason."),
+                C(CrewId.Chen, "Chen", "Stay calm, we'll get there.", "Slow ship, intact cargo."),
+                C(CrewId.Dex, "Dex", "Check it once more.", "I doubt everything."),
             };
         }
-
         static OrderDef Order(string id, string customer, OrderTag tags, string from, string to, float deadline, int revenue, string clue)
         {
             var o = ScriptableObject.CreateInstance<OrderDef>();
@@ -176,25 +156,23 @@ namespace AyeAye
 
         public static OrderPool BuildOrderPool()
         {
-            // §5.4 — deadlineSeconds đặt theo DemoValidator (ETA nhanh nhất + biên phản ứng 25s, tutorial +30s — xem ASSUMPTIONS.md G1)
             var pool = ScriptableObject.CreateInstance<OrderPool>();
             pool.fixedFirstDay = new List<OrderDef>
             {
-                Order("O-01", "Tiệm Bánh Hành Tinh Xa", OrderTag.Fragile, Goc, Vang, 70f, 120, "Thùng ghi DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES"),
-                Order("O-02", "Cửa hàng Dép Lê Số 1", OrderTag.None, Goc, Camap, 85f, 100, "Tuyến Sương Mù ngắn nhưng... mù như tâm trạng sếp"),
+                Order("O-01", "Far Planet Bakery", OrderTag.Fragile, Goc, Vang, 70f, 120, "The crate reads DO NOT SHAKE / KEEP UPRIGHT / DELIVER BEFORE THE CANDLES"),
+                Order("O-02", "Le's Flip-Flop Shop No.1", OrderTag.None, Goc, Camap, 85f, 100, "The Fog Isle route is short but... foggy like the boss's mood"),
             };
             pool.pool = new List<OrderDef>
             {
-                Order("O-03", "Kem Que Sa Mạc", OrderTag.Cold, Goc, Tram, 75f, 90, "Kem mà đi đường bão... ẵm về nước"),
-                Order("O-04", "Tiệm Gương Vỡ Hạnh Phúc", OrderTag.Fragile, Suong, Camap, 45f, 110, "Gương vỡ = 7 năm xui. Lót đệm kĩ vào."),
-                Order("O-05", "Pizza Giao Chậm Là Miễn Phí", OrderTag.Urgent, Goc, Vang, 45f, 70, "Tên cửa hàng đã nói tất cả."),
-                Order("O-06", "Hội Sưu Tập Đá Cuội", OrderTag.None, Vang, Tram, 90f, 100, "Đá cuội không vội. Nhưng sếp thì có."),
-                Order("O-07", "Đám Cưới Cá Heo", OrderTag.Fragile | OrderTag.Urgent, Camap, Goc, 90f, 160, "Cá heo không đợi. Hàng dễ vỡ thì càng không."),
-                Order("O-08", "Bưu Kiện Không Ghi Tên", OrderTag.None, Suong, Tram, 75f, 130, "Không ai nhận trách nhiệm. Đặc biệt là nội dung."),
+                Order("O-03", "Desert Popsicle", OrderTag.Cold, Goc, Tram, 75f, 90, "Ice cream crossing a storm... bring a bucket"),
+                Order("O-04", "Happy Broken Mirror Shop", OrderTag.Fragile, Suong, Camap, 45f, 110, "Broken mirror = 7 years of bad luck. Pad it well."),
+                Order("O-05", "Late Pizza Is Free", OrderTag.Urgent, Goc, Vang, 45f, 70, "The shop's name says it all."),
+                Order("O-06", "Pebble Collectors Club", OrderTag.None, Vang, Tram, 90f, 100, "Pebbles are in no hurry. The boss is."),
+                Order("O-07", "Dolphin Wedding", OrderTag.Fragile | OrderTag.Urgent, Camap, Goc, 90f, 160, "Dolphins don't wait. Fragile cargo even less."),
+                Order("O-08", "Unsigned Parcel", OrderTag.None, Suong, Tram, 75f, 130, "Nobody claims responsibility. Especially for the contents."),
             };
             return pool;
         }
-
         static IncidentDef Inc(string id, string title, string situation, string clue, IncidentTrigger[] triggers, params IncidentOption[] options)
         {
             var d = ScriptableObject.CreateInstance<IncidentDef>();
@@ -203,17 +181,14 @@ namespace AyeAye
             d.options = new List<IncidentOption>(options);
             return d;
         }
-
         static IncidentTrigger Trig(HazardType hazard = HazardType.Any, bool fragile = false, bool justArrived = false, bool worn = false, bool tempRepair = false, bool carrying = false, int mult = 1)
         {
             return new IncidentTrigger { requiredHazard = hazard, requireFragileCargo = fragile, requireJustArrivedAtPort = justArrived, requireWornCondition = worn, requireTemporaryRepair = tempRepair, requireCarryingCargo = carrying, weightMultiplier = mult };
         }
-
         static IncidentOption OptI(string label, string desc, float baseDelta, params IncidentOutcomeEntry[] entries)
         {
             return new IncidentOption { label = label, description = desc, baseProgressDelta = baseDelta, entries = new List<IncidentOutcomeEntry>(entries) };
         }
-
         static IncidentOutcomeEntry E(CrewId crew, FlagCondition cond, DecisionOutcome outcome, string explanation, string quote, FlagToSet flag = FlagToSet.None, int cargoDelta = 0, bool conditionDown = false, int revenueDelta = 0)
         {
             return new IncidentOutcomeEntry { crew = crew, condition = cond, outcome = outcome, explanation = explanation, quote = quote, setFlag = flag, cargoDelta = cargoDelta, conditionDown = conditionDown, revenueDelta = revenueDelta };
@@ -221,108 +196,99 @@ namespace AyeAye
 
         public static IncidentPool BuildIncidentPool()
         {
-            // §5.5 — đầy đủ bảng (captain, option). Quy ước: entry khớp đầu tiên thắng; không khớp → Normal mặc định.
-            var i01 = Inc("I-01", "Sương mù dày", "Bờ trước mũi tàu biến mất trong sương.", "Mira có sách tín hiệu cảng; Dex ngờ tín hiệu.",
+            var i01 = Inc("I-01", "Thick Fog", "The shoreline ahead vanishes into the fog.", "Mira has the port signal book; Dex doubts signals.",
                 new[] { Trig(hazard: HazardType.Fog) },
-                OptI("Giữ tốc độ", "Không giảm tốc.", 0.3f,
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.SlipUp, "Bob lao thẳng trong mù.", "Mù gì mà mù! Vào thôi!"),
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Tàu lướt qua mù mà không bị gì — lần này.", "Thấy không, cứ chạy đều.")),
-                OptI("Giảm tốc dò đường", "Chậm, bấm còi liên tục.", 0f,
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Chậm nhưng an toàn.", "Bíp bíp... bíp..."),
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Smart, "Chen nghe sóng, đo mù chính xác.", "Chậm một nhịp, đỡ cả ngày."),
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.Normal, "Dex bấm còi hơi nhiều.", "Cẩn thận không bao giờ là thừa.")),
-                OptI("Theo tín hiệu cảng", "Nhớ sơ đồ đèn các cảng.", 0f,
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira đọc chuẩn sách tín hiệu.", "Trang 47: hai chớp, một dài."),
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex đọc nhầm đèn.", "Khoan... đèn đó là của bến phụ?"))
+                OptI("Hold speed", "Don't slow down.", 0.3f,
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.SlipUp, "Bob charges straight into the fog.", "What fog? Full steam ahead!"),
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "The ship glides through unharmed — this time.", "See? Just keep steady.")),
+                OptI("Slow and probe", "Slow down, honk continuously.", 0f,
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Slow but safe.", "Beep beep... beep..."),
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Smart, "Chen reads the waves, measures the fog precisely.", "One beat slower, a whole day saved."),
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.Normal, "Dex honks a bit too much.", "Being careful is never wasted.")),
+                OptI("Follow port signals", "Recall every port's light patterns.", 0f,
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira reads the signal book flawlessly.", "Page 47: two blinks, one long."),
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex misreads the lights.", "Wait... is that light the secondary dock's?"))
                 );
-
-            var i02 = Inc("I-02", "Bão bất ngờ", "Khối mây đen nghiêng về phía mũi tàu.", "HAULER-4 đã gia cố thân tàu.",
+            var i02 = Inc("I-02", "Sudden Storm", "A black cloud mass leans over the bow.", "HAULER-4 has a reinforced hull.",
                 new[] { Trig(hazard: HazardType.Storm) },
-                OptI("Xuyên bão", "Giữ hướng, đâm thẳng.", 0.3f,
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Smart, "Thân tàu gia cố chịu được sóng.", "Sóng lớn thì tàu phải cứng."),
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.SlipUp, "Bob lái như đi mô-tô.", "Bay lên nào!", conditionDown: true),
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Tàu rung lắc nhưng qua được.", "Cầm chặt tay lái.")),
-                OptI("Neo chờ", "Neo lại cho bão đi qua.", -0.3f,
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Chờ bão tan, mất thời gian.", "Chờ cho lành.")),
-                OptI("Vòng tránh", "Đi vòng cung tránh tâm bão.", 0f,
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira tính đúng vòng cung.", "Tâm bão ở đây, ta ở đây."),
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex vòng sai, chạm rìa bão.", "Đúng là phải vòng... hướng kia!", conditionDown: true))
+                OptI("Push through", "Hold course, punch straight.", 0.3f,
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Smart, "The reinforced hull takes the waves.", "Big waves need a stiff ship."),
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.SlipUp, "Bob drives like it's a motorbike.", "Fly, baby, fly!", conditionDown: true),
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "The ship shakes but makes it.", "Grip the wheel tight.")),
+                OptI("Drop anchor", "Anchor until the storm passes.", -0.3f,
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Wait it out, lose time.", "This too shall pass.")),
+                OptI("Arc around", "Sail an arc around the storm's eye.", 0f,
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira computes the arc correctly.", "The eye is here, we are here."),
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex arcs wrong, clips the edge.", "Right idea to arc... the OTHER way!", conditionDown: true))
                 );
-
-            var i03 = Inc("I-03", "Hải tặc chặn đường", "Ba tàu nhỏ không cờ, chặn ngang mũi tàu.", "Dex đã nghi từ lúc rời cảng.",
+            var i03 = Inc("I-03", "Pirates Blockade", "Three unflagged small ships block the bow.", "Dex suspected since leaving port.",
                 new[] { Trig(hazard: HazardType.Pirates) },
-                OptI("Trả phí qua đường", "Đưa 'phí qua lại' cho bọn cướp.", 0f,
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Được qua, sạc hụt 20.", "Đây... coi như tiền xe ôm.", revenueDelta: -20),
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob mặc cả cực mạnh, phí rẻ nhất.", "Mười chục thôi, ông nội!")),
-                OptI("Phóng nhanh thoát", "Tăng tốc toàn lực.", 0.3f,
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Không tàu nào nhanh hơn CARGO-9.", "Tạm biệt, đàn cá!"),
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "HAULER-4 mà đua? Kẹt.", "Ơ... chân vịt quay rồi!")),
-                OptI("Mặc cả / đánh lừa", "Chém gió cho bọn cướp quay đầu.", 0f,
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.Smart, "Dex nói dối có mặt giàu kinh nghiệm.", "Đằng kia có cảnh sát biển."),
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.SlipUp, "Mira không biết nói dối.", "Xin chào, chúng tôi chở hàng quý giá..."))
+                OptI("Pay the toll", "Hand the pirates a 'toll'.", 0f,
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Passage granted, 20 revenue lighter.", "Here... think of it as a taxi fare.", revenueDelta: -20),
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob haggles like a legend, cheapest toll.", "Ten bucks, tops, grandpa!")),
+                OptI("Sprint away", "Full throttle.", 0.3f,
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "No ship is faster than CARGO-9.", "Bye-bye, fish school!"),
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "HAULER-4 racing? Stuck.", "Huh... is that the propeller spinning?")),
+                OptI("Bluff and bargain", "Talk the pirates into turning around.", 0f,
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.Smart, "Dex lies with a seasoned face.", "Coast guard right over there."),
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.SlipUp, "Mira cannot lie.", "Hello, we are carrying very precious cargo..."))
                 );
-
-            var i04 = Inc("I-04", "Kẹt cảng", "Cảng đông, tàu xếp hàng dài.", "Bob quen nửa bến cảng.",
+            var i04 = Inc("I-04", "Port Jam", "The port is packed, ships queue for miles.", "Bob knows half the dockworkers.",
                 new[] { Trig(justArrived: true) },
-                OptI("Xếp hàng chờ", "Thứ tự đã có luật.", 0f,
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Chờ theo lượt.", "Vào hàng đi, lần lượt."),
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob chen được nhờ quen mặt.", "Ê already! Vào trước được không?")),
-                OptI("Nhờ quan hệ chen ngang", "Gọi một người quen bến.", 0.3f,
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Người quen của Dex hóa ra... hận Dex.", "Cậu còn nợ tôi bữa nhậu!")),
-                OptI("Chuyển bến phụ", "Cập bến phụ cách đó một chút.", 0f,
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira có bản đồ bến phụ chuẩn.", "Sơ đồ cảng, phụ lục 12."),
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "Chen trễ bến phụ một ngày.", "Cảng phụ này... là cảng phụ gì?"))
+                OptI("Queue up", "There are rules for order.", 0f,
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Wait your turn.", "Line up, one by one."),
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob cuts the line through friends.", "Hey already! Can we slip in front?")),
+                OptI("Call a connection", "Ring a dock contact.", 0.3f,
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex's contact turns out to... hate Dex.", "You still owe me a night out!")),
+                OptI("Use side dock", "Dock at the secondary pier nearby.", 0f,
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira has an exact map of the side docks.", "Port diagram, appendix 12."),
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "Chen misjudges the side dock by a day.", "This side dock... is whose side dock?"))
                 );
-
-            var i05 = Inc("I-05", "Hàng rung lắc", "Thùng hàng trên boong rung như trống hội.", "Mira chằng hàng theo sách; Chen biết cách chèn.",
+            var i05 = Inc("I-05", "Rattling Cargo", "Crates on deck rattle like a festival drum.", "Mira lashes per the manual; Chen knows the wedge trick.",
                 new[] { Trig(fragile: true) },
-                OptI("Giảm tốc", "Chậm lại cho bớt rung.", 0f,
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Rung ít hơn, hàng ổn.", "Đi chậm thôi, hàng quan trọng.")),
-                OptI("Chằng lại hàng giữa biển", "Ai ra buộc dây?", 0f,
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira buộc chuẩn kỹ thuật.", "Dây chằng, hai vòng, siết chéo."),
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.SlipUp, "Bob buộc dây như buộc giày.", "Xong! Chắc chắn... chắc là chắc.", cargoDelta: -1)),
-                OptI("Mặc kệ", "Hàng rung thì kệ nó.", 0f,
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Normal, "Chen chèn thùng bằng... chính mình ngồi lên.", "Ngồi lên là hết rung."),
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.SlipUp, "Hàng nảy trên boong.", "Nghe tiếng gì đó vỡ nhẹ...", cargoDelta: -1))
+                OptI("Slow down", "Ease off to stop the rattle.", 0f,
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Less rattle, cargo fine.", "Slow and steady, the cargo matters.")),
+                OptI("Re-lash at sea", "Who goes out to tie ropes?", 0f,
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira lashes to spec.", "Lashing rope, two loops, cross-tighten."),
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.SlipUp, "Bob ties knots like shoelaces.", "Done! Solid... probably solid.", cargoDelta: -1)),
+                OptI("Ignore it", "Let it rattle.", 0f,
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Normal, "Chen wedges the crate by... sitting on it.", "Sit on it and the rattle stops."),
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.SlipUp, "Cargo bounces across the deck.", "Was that a soft crack?", cargoDelta: -1))
                 );
-
-            var i06 = Inc("I-06", "Máy móc hỏng", "Một tiếng 'kịch' dưới khoang, rồi máy khựng lại.", "Mira đọc được sơ đồ máy; Bob có bật 'sửa tạm' trước.",
+            var i06 = Inc("I-06", "Engine Failure", "A 'clunk' below deck, then the engine stalls.", "Mira can read engine diagrams; Bob used 'quick fix' earlier.",
                 new[] { Trig(worn: true), Trig(tempRepair: true, mult: 3) },
-                OptI("Sửa chuẩn", "Ngừng để sửa đúng cách, mất thời gian.", -1f,
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira sửa nhanh và đúng.", "Sơ đồ 3B: thay rơ-le số hai."),
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Normal, "Bob vặn ốc chậm rãi.", "Không gì là không thể vặn."),
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Normal, "Chen sửa chắc như trồng cây.", "Từ từ, chắc tay.")),
-                OptI("Sửa tạm", "Băng keo và hy vọng.", 0f,
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob sửa tạm cực khéo.", "Nó chạy rồi! ừ thì… hơi rung, và có tiếng lạ nữa.", flag: FlagToSet.TemporaryRepair),
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex sửa tạm làm máy tệ hơn.", "Rõ ràng tôi đã nối đúng dây... dây nào?"))
+                OptI("Proper repair", "Stop and fix it right, costs time.", -1f,
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira repairs fast and correctly.", "Diagram 3B: replace relay two."),
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Normal, "Bob turns screws at a leisurely pace.", "Nothing is unscrewable."),
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Normal, "Chen repairs as solid as planting a tree.", "Slowly, firmly.")),
+                OptI("Quick fix", "Duct tape and hope.", 0f,
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob's quick fix is a work of art.", "It runs! Well... it shakes, and there's a new noise.", flag: FlagToSet.TemporaryRepair),
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex's quick fix makes it worse.", "I clearly connected the right wire... which wire?"))
                 );
-
-            var i07 = Inc("I-07", "Tín hiệu cầu cứu", "Một tín hiệu loé giữa biển, không rõ ai.", "Bob thích phiêu lưu; Dex nghĩ nó là bẫy.",
+            var i07 = Inc("I-07", "Distress Signal", "A signal flashes out at sea — sender unknown.", "Bob loves adventure; Dex calls it a trap.",
                 new[] { Trig() },
-                OptI("Bỏ qua", "Không phải việc của ta.", 0f,
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Ta có lịch trình.", "Chuyện của người ta.")),
-                OptI("Đi giúp", "Rẽ hướng đi kiểm tra.", 0f,
-                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob cứu được người, nhận quà bánh.", "Đây, quà nhé! Bánh miếng to lắm!"),
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "Chen đi sai tọa độ.", "Ủa, dấu chấm trên bản đồ là gì?")),
-                OptI("Kiểm tra tín hiệu", "Đọc kỹ nguồn tín hiệu trước.", 0f,
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Normal, "Mira xác nhận là tin nhắn giả.", "Tín hiệu lặp chu kỳ 7 giây — máy phát."),
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex quá tin máy phát của 'ai đó'.", "Quá trùng hợp. Ai lại mất tín hiệu đúng lúc cần tiệc?"))
+                OptI("Ignore", "Not our business.", 0f,
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "We have a schedule.", "Their problem, not ours.")),
+                OptI("Go help", "Change course to check.", 0f,
+                    E(CrewId.Bob, FlagCondition.Always, DecisionOutcome.Smart, "Bob rescues them and gets cake.", "Here, a gift! Big cake slice!"),
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.SlipUp, "Chen sails to the wrong coordinates.", "Wait, what was that dot on the map?")),
+                OptI("Verify first", "Study the signal source first.", 0f,
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Normal, "Mira confirms it is a fake.", "The signal loops every 7 seconds — a machine."),
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex trusts 'someone's' transmitter too much.", "Too convenient. Who loses a signal exactly at party time?"))
                 );
-
-            var iF = Inc("I-F", "Cuộc gọi Chủ tịch", "Điện thoại rung. Màn hình: 'CHỦ TỊCH'.", "Chủ tịch chỉ hỏi một câu: 'Tới được không?'",
+            var iF = Inc("I-F", "The Chairman Calls", "The phone buzzes. Screen: 'CHAIRMAN'.", "The chairman asks one question: 'Will you make it?'",
                 new[] { Trig(carrying: true) },
-                OptI("Ép hết tốc lực", "'Tôi hứa tới. Tận cùng tốc độ.'", 0.3f,
-                    E(CrewId.Bob, FlagCondition.TemporaryRepairForbidden, DecisionOutcome.Smart, "Bob thiêu máy mà vẫn sống.", "Tới! Tận cùng tốc độ!"),
-                    E(CrewId.Bob, FlagCondition.TemporaryRepairRequired, DecisionOutcome.SlipUp, "Máy đang tạm, Bob thiêu luôn.", "Máy từ chối hy sinh cho lời hứa.", flag: FlagToSet.CargoShifted, cargoDelta: -1),
-                    E(CrewId.Any, FlagCondition.CargoShiftedRequired, DecisionOutcome.Normal, "Hàng vốn đã xô dịch, ép tốc làm nó tệ thêm.", "Nghe tiếng thùng nghiêng rõ hơn...", flag: FlagToSet.CargoShifted, cargoDelta: -1),
-                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "Hứa là phải giữ lời.", "Được, tôi ép tốc.")),
-                OptI("Giữ nhịp", "'Tôi sẽ tới, giờ như đã báo.'", 0f,
-                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Normal, "Chen giữ đúng lời hứa của mình.", "Báo mấy giờ là mấy giờ.")),
-                OptI("Xin gia hạn khách", "'Tôi xin thêm 1 giờ, đổi lại hàng nguyên vẹn.'", 0f,
-                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira đàm phán chuẩn lịch sự.", "Xin gia hạn, bồi thường bằng sự chuyên nghiệp."),
-                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex xin sai người, sai giờ.", "Gọi nhầm số... của rival?"))
+                OptI("Full speed, promise", "'I promise. Top speed.'", 0.3f,
+                    E(CrewId.Bob, FlagCondition.TemporaryRepairForbidden, DecisionOutcome.Smart, "Bob burns the engine and survives.", "Making it! Top speed!"),
+                    E(CrewId.Bob, FlagCondition.TemporaryRepairRequired, DecisionOutcome.SlipUp, "The engine is patched; Bob burns it anyway.", "The engine refuses to die for a promise.", flag: FlagToSet.CargoShifted, cargoDelta: -1),
+                    E(CrewId.Any, FlagCondition.CargoShiftedRequired, DecisionOutcome.Normal, "The cargo already shifted; speed makes it worse.", "The crates lean audibly further...", flag: FlagToSet.CargoShifted, cargoDelta: -1),
+                    E(CrewId.Any, FlagCondition.Always, DecisionOutcome.Normal, "A promise is a promise.", "Fine, full speed.")),
+                OptI("Keep the schedule", "'I will arrive as reported.'", 0f,
+                    E(CrewId.Chen, FlagCondition.Always, DecisionOutcome.Normal, "Chen keeps his word exactly.", "Reported time is arrival time.")),
+                OptI("Ask for an extension", "'One more hour, cargo stays intact.'", 0f,
+                    E(CrewId.Mira, FlagCondition.Always, DecisionOutcome.Smart, "Mira negotiates politely to the letter.", "Requesting an extension, compensated with professionalism."),
+                    E(CrewId.Dex, FlagCondition.Always, DecisionOutcome.SlipUp, "Dex calls the wrong person at the wrong time.", "Wrong number... the rival's?"))
                 );
-
             var pool = ScriptableObject.CreateInstance<IncidentPool>();
             pool.fixedFirstDay = i01;
             pool.fixedFinale = iF;
@@ -330,20 +296,17 @@ namespace AyeAye
             return pool;
         }
 
-        // ---- G7: dữ liệu sinh đơn ngẫu nhiên (tên khách + manh mối mơ hồ, không cấm tàu nào) ----
-
         public static readonly List<string> OrderCustomers = new List<string>
         {
-            "Tiệm Bánh Hành Tinh Xa", "Cửa Hàng Dép Lê Số 1", "Kem Que Sa Mạc", "Tiệm Gương Vỡ Hạnh Phúc",
-            "Pizza Giao Chậm Là Miễn Phí", "Hội Sưu Tập Đá Cuội", "Đám Cưới Cá Heo", "Bưu Kiện Không Ghi Tên",
-            "Quán Phở Vũ Trụ", "Vựa Gà Nướng Bàn Chân", "Nhà Của Ông Bảy", "Trạm Thu Mua Vỏ Chai",
-            "Cửa Sách Ẩm Thực", "Kho Phao Cứu Hộ Số 3", "Ông Năm Buôn Dây Thừng", "Hộ Kinh Doanh Mắm Tôm",
-            "Công Ty Cổ Phần Sạn San Hô", "Bác Sĩ Răng Cá Mập", "Trung Tâm Nuôi Cá Bảy Màu",
-            "Chợ Đêm Quận Ngân Hà", "Trại Gà Hành Tinh Đỏ", "Quầy Thuốc Củ Lạc", "Xưởng May Buồm Vải Đục",
-            "Hội Yêu Thích Xà Lần",
+            "Far Planet Bakery", "Le's Flip-Flop Shop No.1", "Desert Popsicle", "Happy Broken Mirror Shop",
+            "Late Pizza Is Free", "Pebble Collectors Club", "Dolphin Wedding", "Unsigned Parcel",
+            "Space Noodle Stand", "Roasted Chicken Feet Depot", "Grandpa Seven's House", "Bottle Buyback Station",
+            "Food Cookbook Store", "Lifebuoy Warehouse No.3", "Uncle Five's Rope Shop", "Fish Sauce Trading Co.",
+            "Coral Sand Ltd.", "Shark Dentist", "Tropical Fish Farm",
+            "Galaxy Night Market", "Red Planet Chicken Ranch", "Cu Lac Pharmacy", "Tattered Sail Workshop",
+            "Woodlouse Fan Club",
         };
 
-        // Manh mối mơ hồ theo tag/hazard — không bao giờ nêu tên hay cấm tàu/thuyền trưởng (Phần 2).
         public static string OrderClue(OrderTag tags, HazardType hazard, System.Random rng)
         {
             var tagText = tags switch
@@ -355,56 +318,55 @@ namespace AyeAye
             };
             var hazardText = hazard switch
             {
-                HazardType.Fog => "Đường đi hay sương mù.",
-                HazardType.Storm => "Nghe đồn vùng đó có bão.",
-                HazardType.Pirates => "Khu đó hay có tàu không cờ.",
-                HazardType.Ice => "Băng trôi mùa này nhiều lắm.",
+                HazardType.Fog => "That route is often foggy.",
+                HazardType.Storm => "Rumor says there's a storm there.",
+                HazardType.Pirates => "Unflagged ships roam that area.",
+                HazardType.Ice => "Ice drifts are heavy this season.",
                 _ => "",
             };
             return hazardText.Length > 0 ? tagText + " " + hazardText : tagText;
         }
-
         static readonly List<string> FragileClues = new List<string>
         {
-            "Khách dặn: hàng dễ vỡ lắm, nhẹ tay thôi.",
-            "Thùng ghi chữ nguệch ngoạc: DO NOT SHAKE.",
+            "Customer warns: very fragile, handle gently.",
+            "The crate scrawls: DO NOT SHAKE.",
         };
         static readonly List<string> ColdClues = new List<string>
         {
-            "Hàng mà tan ra là mất trắng, đi cho lẹ.",
-            "Khách hỏi trước: tàu có kho lạnh không?",
+            "If it melts, it's gone — move fast.",
+            "The customer asks upfront: does the ship have refrigeration?",
         };
         static readonly List<string> UrgentClues = new List<string>
         {
-            "Khách gọi điện giục liên tục, hạn chót ngắn.",
-            "Tên cửa hàng đã nói tất cả: trễ là miễn phí.",
+            "The customer keeps calling — tight deadline.",
+            "The shop's name says it all: late is free.",
         };
         static readonly List<string> PlainClues = new List<string>
         {
-            "Hàng thường, không có gì đặc biệt. Chắc vậy.",
-            "Khách bình thản lạ thường. Bớt nghi ngờ đi.",
+            "Regular cargo, nothing special. Probably.",
+            "The customer is unnervingly calm. Lower your guard.",
         };
 
         public static EndingDefinitions BuildEndings()
         {
-            // FR-0701 bản liên tục (G1.6): thắng 0/1/2 trễ → E1/E2/E3; thua → E4; thua quá sớm → E5.
             var endings = ScriptableObject.CreateInstance<EndingDefinitions>();
             EndingDefinitions.EndingEntry En(EndingId id, string title, string body) =>
                 new EndingDefinitions.EndingEntry { id = id, title = title, body = body };
             endings.endings = new List<EndingDefinitions.EndingEntry>
             {
-                En(EndingId.E1_Empire, "Đế chế \"Sếp Vĩ Đại\"",
-                    "Không trễ một đơn nào. Mọi tàu hát vang trên boong. Ít nhất một thuyền trưởng khóc vì cảm động — mọi nghi ngờ là Bob, nhưng Bob thề là dị ứng bụi biển."),
-                En(EndingId.E2_Renowned, "Công ty có tiếng",
-                    "Chỉ trễ một đơn duy nhất. Khách quay lại đặt đơn tiếp, Dex vẫn nghi ngờ: \"Đơn tốt như vậy? Cẩn thận đó là bẫy.\""),
-                En(EndingId.E3_Survived, "Sống sót qua tháng",
-                    "Trễ hai đơn, vẫn về đích đủ đơn hàng. Hòa vốn vừa đủ. Chen nhắn: \"Tôi đang tới. Đừng hỏi tới đâu.\""),
-                En(EndingId.E4_Debt, "Nợ ngập đầu",
-                    "Trễ quá số đơn cho phép, công ty gánh nợ. Bob đề xuất: \"Bán tàu cho khỏe, sếp. Tàu nào cũng được. Trừ tàu tôi.\""),
-                En(EndingId.E5_Bankrupt, "Phá sản",
-                    "Trễ quá sớm, đội tàu gần như chưa kịp giao gì. Cả đội đòi lương bằng... bánh. Bánh sinh nhật nhiều tầng ấy. Đã vỡ rồi."),
+                En(EndingId.E1_Empire, "The \"Great Boss\" Empire",
+                    "Not a single late order. Every ship sings on deck. At least one captain tears up with emotion — all signs point to Bob, but Bob swears it's sea-spray allergies."),
+                En(EndingId.E2_Renowned, "A Company of Renown",
+                    "Only one order late. Customers come back to order again; Dex still doubts: \"Orders this good? Careful, it's a trap.\""),
+                En(EndingId.E3_Survived, "Survived the Month",
+                    "Two orders late, still delivered enough. Barely broke even. Chen texts: \"I'm on my way. Don't ask how far.\""),
+                En(EndingId.E4_Debt, "Drowning in Debt",
+                    "Too many late orders — the company owes it all. Bob proposes: \"Sell the ships, boss. Any of them. Except mine.\""),
+                En(EndingId.E5_Bankrupt, "Bankrupt",
+                    "Too late, too soon — the fleet barely delivered anything. The whole crew demands wages in... cake. A multi-tier birthday cake. Already broken."),
             };
             return endings;
         }
     }
 }
+

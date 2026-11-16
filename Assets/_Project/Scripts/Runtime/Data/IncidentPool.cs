@@ -1,18 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
-
 namespace AyeAye
 {
     [CreateAssetMenu(fileName = "IncidentPool", menuName = "AyeAye/Incident Pool")]
+
     public class IncidentPool : ScriptableObject
     {
-        [Tooltip("Sự cố cố định Ngày 1 (tutorial: I-01 Sương mù dày).")]
+        [Tooltip("Fixed day-1 incident (tutorial: I-01 Thick Fog).")]
+
         public IncidentDef fixedFirstDay;
+        [Tooltip("Fixed finale incident (I-F The Chairman Calls); spawns only while a Moving ship carries cargo.")]
 
-        [Tooltip("Sự cố cố định Ngày cuối (I-F Cuộc gọi Chủ tịch); chỉ sinh nếu còn tàu Moving có hàng.")]
         public IncidentDef fixedFinale;
+        [Tooltip("Pool drawn by weight + trigger (no repeats in a run; exhausted pools fall back to repeats).")]
 
-        [Tooltip("Pool bốc theo trọng số + trigger (không lặp trong ván; cạn thì fallback cho phép lặp).")]
         public List<IncidentDef> incidents = new List<IncidentDef>();
     }
 }
+

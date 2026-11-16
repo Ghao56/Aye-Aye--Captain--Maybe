@@ -1,12 +1,10 @@
 using System.Collections.Generic;
-
 namespace AyeAye
 {
-    // Lệnh đội tàu từ UI: lớp thuần giống OrderActions — UI chỉ render + intent, không chứa luật.
-    // MAKE IT SO trên thẻ lệnh áp NGAY (không staged, không hủy được — chỉnh 4 của chủ dự án).
-    // Trả về null khi thành công; khác null là lý do từ chối (chuỗi tiếng Việt từ CommandValidator).
+
     public static class FleetActions
     {
+
         public static string Assign(GameState state, RouteTable routes, string shipId, string orderId, int routeOptionIndex)
         {
             string error = CommandValidator.ValidateAssign(state, routes, shipId, orderId, routeOptionIndex);
@@ -27,8 +25,6 @@ namespace AyeAye
             LaunchShip(state, ship, null, options[routeOptionIndex]);
             return null;
         }
-
-        // Áp lệnh NGAY: tàu xuất phát tức thì (không dịch chuyển tức thời, không quay đầu giữa cạnh).
         static void LaunchShip(GameState state, ShipState ship, OrderState order, RouteOption route)
         {
             ship.Route = route;
@@ -44,3 +40,4 @@ namespace AyeAye
         }
     }
 }
+

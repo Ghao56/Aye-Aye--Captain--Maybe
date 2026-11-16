@@ -1,11 +1,10 @@
 using System.Collections.Generic;
-
 namespace AyeAye
 {
-    // Dựng trạng thái khởi đầu của một ván (FR-0101): doanh thu 0,
-    // tàu ở cảng khởi đầu theo ShipDef, Condition Tốt, không cờ nào.
+
     public static class GameStateBuilder
     {
+
         public static GameState CreateRun(GameConfig config, IReadOnlyList<ShipDef> shipDefs, int seed)
         {
             GameState state = new GameState(config);
@@ -14,7 +13,6 @@ namespace AyeAye
             return state;
         }
 
-        // Nạp (nạp lại) tàu từ ShipDef vào state — dùng sau NewRun vì NewRun xóa sạch tàu.
         public static void InitializeShips(GameState state, IReadOnlyList<ShipDef> shipDefs)
         {
             state.Ships.Clear();
@@ -32,10 +30,11 @@ namespace AyeAye
                     Condition = def.startCondition,
                     Status = ShipStatus.Idle,
                     PortId = def.startPortId,
-                    Roam = def.roam, // G5: hồ sơ roaming (null = không roaming)
+                    Roam = def.roam, 
                     RoamTimerSeconds = def.roam != null ? def.roam.dwellSeconds : 0f,
                 });
             }
         }
     }
 }
+

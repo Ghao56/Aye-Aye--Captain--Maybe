@@ -1,21 +1,19 @@
 using System.Collections.Generic;
 using UnityEngine;
-
 namespace AyeAye
 {
-    // G5 — planner roaming thuần C#: chọn cảng kề TRỰC TIẾP có điểm cao nhất.
-    // Điểm = nhu cầu đơn + tính cách (farBias/hubAffinity/wander) − backtrack. Hòa → cảng đứng trước
-    // theo thứ tự ổn định của bảng tuyến (xác định theo seed qua RoamRng cho phần nhiễu).
-    // CẤM dùng state.Rng ở đây (test RoamKhongDungRngChung chốt bằng thực nghiệm).
+
     public static class RoamPlanner
     {
+
         public struct Neighbor
         {
+
             public string PortId;
-            public RouteOption Route; // RouteOption 1 cạnh (portPath.Count == 2)
+
+            public RouteOption Route; 
         }
 
-        // Các cảng kề trực tiếp từ portId, thứ tự ổn định theo RouteTable.pairs.
         public static List<Neighbor> Neighbors(RouteTable routes, string portId)
         {
             var list = new List<Neighbor>();
@@ -33,7 +31,6 @@ namespace AyeAye
             return list;
         }
 
-        // Nhu cầu tại một cảng: đơn hộp thư + đơn đã nhận CHƯA gán tàu xuất phát từ cảng đó.
         public static int DemandAt(GameState state, string portId)
         {
             int count = 0;
@@ -46,8 +43,6 @@ namespace AyeAye
             return count;
         }
 
-        // Tàu là DƯ THỪA tại cảng: số tàu Idle tại cảng > nhu cầu của cảng đó.
-        // Mục đích: tàu không bỏ đi khi đơn đang chờ ngay tại cảng.
         public static bool IsExcess(GameState state, ShipState ship)
         {
             int idleHere = 0;
@@ -56,7 +51,6 @@ namespace AyeAye
             return idleHere > DemandAt(state, ship.PortId);
         }
 
-        // Chọn cảng kề theo điểm (hồ sơ đọc từ ship.Roam, không hard-code).
         public static Neighbor ChooseNext(GameState state, ShipState ship, List<Neighbor> neighbors, string hqPortId)
         {
             var p = ship.Roam;
@@ -71,12 +65,11 @@ namespace AyeAye
                     + (!string.IsNullOrEmpty(hqPortId) && nb.PortId == hqPortId ? p.hubAffinity : 0f)
                     - (nb.PortId == ship.LastPortId ? p.backtrackPenalty : 0f)
                     + p.wanderWeight * (float)state.RoamRng.NextDouble();
-                if (score > bestScore) { bestScore = score; best = i; } // hòa → giữ cảng đứng trước
+                if (score > bestScore) { bestScore = score; best = i; } 
             }
             return neighbors[best];
         }
 
-        // Điều kiện rời cảng (kiểm mỗi tick khi Idle): hết ân hạn + hết nghỉ + dư thừa.
         public static bool ShouldLeave(GameState state, ShipState ship, List<Neighbor> neighbors)
         {
             var config = state.Config;
@@ -88,3 +81,4 @@ namespace AyeAye
         }
     }
 }
+

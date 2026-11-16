@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using AyeAye;
 using NUnit.Framework;
 using UnityEngine;
-
 namespace AyeAye.Tests.EditMode
 {
-    /// Chu kỳ 3 — IncidentResolver: tra bảng (captain, option) + áp dụng hệ quả.
+
     public class IncidentResolverTests
     {
+
         private static CrewDefinition NewCrew(CrewId id, string name)
         {
             var c = ScriptableObject.CreateInstance<CrewDefinition>();
@@ -43,8 +43,8 @@ namespace AyeAye.Tests.EditMode
                 Status = ShipStatus.Moving, PortId = "GOC", Route = new RouteOption(),
             };
         }
-
         [Test]
+
         public void Resolve_EntryKhopDungThuyen_Thang()
         {
             var def = NewDef(new IncidentOption
@@ -62,11 +62,10 @@ namespace AyeAye.Tests.EditMode
             Assert.AreEqual(DecisionOutcome.Smart, resolved.Outcome);
             Assert.AreEqual("Bob bay qua sương mù.", resolved.Explanation);
             Assert.AreEqual("Bob", resolved.CrewName);
-            // Outcome Δ = baseProgressDelta + config.OutcomeDelta(Smart) = 0.3 + 0.5
             Assert.AreEqual(0.8f, resolved.ProgressDelta, 0.0001f);
         }
-
         [Test]
+
         public void Resolve_KhongCoEntryDungThuyen_DungEntryAny()
         {
             var def = NewDef(new IncidentOption
@@ -83,8 +82,8 @@ namespace AyeAye.Tests.EditMode
             Assert.AreEqual(DecisionOutcome.Normal, resolved.Outcome);
             Assert.AreEqual("Wildcard.", resolved.Explanation);
         }
-
         [Test]
+
         public void Resolve_KhongKhop_GanMacDinhNormalTheoCrew()
         {
             var def = NewDef(new IncidentOption
@@ -101,11 +100,10 @@ namespace AyeAye.Tests.EditMode
             Assert.AreEqual("Bob", resolved.CrewName);
             Assert.AreEqual("[Bob] vẫn làm đúng quy trình.", resolved.Explanation);
             Assert.AreEqual("[Bob] Aye aye, boss.", resolved.Quote);
-            // Normal: Δ = base 0
             Assert.AreEqual(0f, resolved.ProgressDelta, 0.0001f);
         }
-
         [Test]
+
         public void Apply_CargoDeltaHaMotBac_VaKhongXuongDuoiRuined()
         {
             var entry = new IncidentOutcomeEntry { crew = CrewId.Any, cargoDelta = -1 };
@@ -115,16 +113,14 @@ namespace AyeAye.Tests.EditMode
             var order = new OrderState { Id = "O-1", CustomerName = "c", Tags = OrderTag.None, FromPortId = "GOC", ToPortId = "VANG", DeadlineAtSeconds = 300f, Revenue = 100, Clue = "", Status = OrderStatus.Assigned };
             ship.OrderId = order.Id;
             state.Orders.Add(order);
-
             IncidentResolver.Apply(IncidentResolver.Resolve(def, def.options[0], state, ship, NewCrews()), state, ship);
             Assert.AreEqual(CargoCondition.Scratched, order.Cargo);
-
             IncidentResolver.Apply(IncidentResolver.Resolve(def, def.options[0], state, ship, NewCrews()), state, ship);
             IncidentResolver.Apply(IncidentResolver.Resolve(def, def.options[0], state, ship, NewCrews()), state, ship);
             Assert.AreEqual(CargoCondition.Ruined, order.Cargo);
         }
-
         [Test]
+
         public void Apply_GanFlag_TheoId()
         {
             var def = NewDef(new IncidentOption
@@ -140,14 +136,10 @@ namespace AyeAye.Tests.EditMode
             ship.OrderId = "O-9";
             IncidentResolver.Apply(IncidentResolver.Resolve(def, def.options[0], state, ship, NewCrews()), state, ship);
             Assert.That(state.CargoShiftedOrderIds.Contains("O-9"));
-
-            // Không chở hàng → không gắn CargoShifted
             var ship2 = NewShip(CrewId.Dex);
             ship2.Id = "S-2";
             IncidentResolver.Apply(IncidentResolver.Resolve(def, def.options[0], state, ship2, NewCrews()), state, ship2);
             Assert.AreEqual(1, state.CargoShiftedOrderIds.Count);
-
-            // TemporaryRepair gắn theo thuyền
             var def2 = NewDef(new IncidentOption
             {
                 label = "O",
@@ -159,8 +151,8 @@ namespace AyeAye.Tests.EditMode
             IncidentResolver.Apply(IncidentResolver.Resolve(def2, def2.options[0], state, ship2, NewCrews()), state, ship2);
             Assert.That(state.TemporaryRepairShipIds.Contains("S-2"));
         }
-
         [Test]
+
         public void Apply_RevenueDelta_VaKhongAm()
         {
             var def = NewDef(new IncidentOption
@@ -176,7 +168,6 @@ namespace AyeAye.Tests.EditMode
             var ship = NewShip(CrewId.Bob);
             IncidentResolver.Apply(IncidentResolver.Resolve(def, def.options[0], state, ship, NewCrews()), state, ship);
             Assert.AreEqual(0, state.Revenue);
-
             var def2 = NewDef(new IncidentOption
             {
                 label = "O",
@@ -188,8 +179,8 @@ namespace AyeAye.Tests.EditMode
             IncidentResolver.Apply(IncidentResolver.Resolve(def2, def2.options[0], state, ship, NewCrews()), state, ship);
             Assert.AreEqual(15, state.Revenue);
         }
-
         [Test]
+
         public void Apply_ConditionDown_XuongWorn_VaDung()
         {
             var def = NewDef(new IncidentOption
@@ -207,12 +198,11 @@ namespace AyeAye.Tests.EditMode
             IncidentResolver.Apply(IncidentResolver.Resolve(def, def.options[0], state, ship, NewCrews()), state, ship);
             Assert.AreEqual(ShipCondition.Worn, ship.Condition);
         }
-
         [Test]
+
         public void ValidateDef_DuBanLaOk_ThieuLaBaoLoi()
         {
             var crews = NewCrews();
-            // Bảng kiểu §5.5: mỗi thuyền trưởng có đúng một (option, outcome) xác định; option không khớp → Normal mặc định.
             var ok = NewDef(
                 new IncidentOption
                 {
@@ -241,11 +231,8 @@ namespace AyeAye.Tests.EditMode
                     },
                 });
             Assert.IsEmpty(IncidentResolver.ValidateDef(ok, crews));
-
             var emptyOption = NewDef(new IncidentOption { label = "O", entries = new List<IncidentOutcomeEntry>() });
             Assert.IsNotEmpty(IncidentResolver.ValidateDef(emptyOption, crews));
-
-            // Thiếu SlipUp cho toàn bộ sự cố
             var noSlipUp = NewDef(
                 new IncidentOption
                 {
@@ -257,8 +244,6 @@ namespace AyeAye.Tests.EditMode
                     },
                 });
             Assert.IsNotEmpty(IncidentResolver.ValidateDef(noSlipUp, crews));
-
-            // Thiếu hẳn một thuyền trưởng (Dex không có entry nào)
             var missingCaptain = NewDef(
                 new IncidentOption
                 {
@@ -279,3 +264,4 @@ namespace AyeAye.Tests.EditMode
         }
     }
 }
+

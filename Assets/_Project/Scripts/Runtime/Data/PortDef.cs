@@ -1,18 +1,20 @@
 using UnityEngine;
-
 namespace AyeAye
 {
     [CreateAssetMenu(fileName = "Port_New", menuName = "AyeAye/Port Definition")]
+
     public class PortDef : ScriptableObject
     {
+
         public string portId;
 
         public string displayName;
+        [Tooltip("Home port (HQ) — start port of the ships and where most orders originate.")]
 
-        [Tooltip("Cảng gốc (HQ) — điểm bắt đầu của ba tàu và nơi các đơn thường xuất phát.")]
         public bool isHeadquarters;
+        [Tooltip("Position on the star map, normalized 0..1 (G3).")]
 
-        [Tooltip("Tọa độ trên bản đồ hình sao, chuẩn hóa 0..1 (G3).")]
         public Vector2 mapPosition = new Vector2(0.5f, 0.5f);
     }
 }
+

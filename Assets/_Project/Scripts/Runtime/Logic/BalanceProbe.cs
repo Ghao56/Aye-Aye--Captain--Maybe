@@ -1,18 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
 namespace AyeAye
 {
-    /// <summary>
-    /// Dò cân bằng (G1.9/G3): mô phỏng ván CHẠY LIÊN TỤC bằng Advance theo simTickSeconds,
-    /// chính sách NGẪU NHIÊN (nhận đơn theo xúc xắc, tuyến/tuỳ chọn ngẫu nhiên) hoặc ĐỌC MANH MỐI
-    /// (nhận đơn về kịp hạn, tuyến ngắn nhất, ưu tiên Smart). Mọi random qua GameState.Rng.
-    /// Trả về tỉ lệ thắng (E1/E2/E3).
-    /// </summary>
+
     public static class BalanceProbe
     {
-        // Chặn an toàn: ván không tự kết thúc sau thời gian này coi như kẹt (NFR-06).
         const float MaxRunSeconds = 1800f;
 
         public static float SimulateRuns(
@@ -25,7 +18,6 @@ namespace AyeAye
                 crews, shipDefs, runs, seedBase, cluePolicy, hqPortId).winRate;
         }
 
-        // Đo cả thời lượng ván trung bình (giây mô phỏng) — menu Tools/AyeAye/Balance và G3 dùng.
         public static (float winRate, double avgSeconds) SimulateRunsMeasured(
             GameConfig config, OrderPool pool, RouteTable routes,
             IReadOnlyList<IncidentDef> incidents, IncidentDef fixedFirstDay, IncidentDef fixedFinale,
@@ -37,13 +29,17 @@ namespace AyeAye
             return (s.winRate, s.avgSeconds);
         }
 
-        /// <summary>Số liệu đầy đủ cho báo cáo cân bằng: phân bổ kết thúc, percentile thời lượng, trễ TB, tỉ lệ kẹt.</summary>
         public struct RunStats
         {
+
             public float winRate;
+
             public double avgSeconds, p10Seconds, p50Seconds, p90Seconds;
+
             public double avgLateCount;
+
             public int stuckRuns;
+
             public int e1, e2, e3, e4, e5;
         }
 
@@ -59,7 +55,7 @@ namespace AyeAye
             {
                 Pool = pool, Routes = routes, Incidents = incidents,
                 FixedFirstDay = fixedFirstDay, FixedFinale = fixedFinale,
-                HQPortId = hqPortId ?? "", // G5: hubAffinity của roaming
+                HQPortId = hqPortId ?? "", 
             };
             var durations = new List<double>(runs);
             var lateCounts = new List<int>(runs);
@@ -70,7 +66,7 @@ namespace AyeAye
                 while (!state.IsFinished && state.ElapsedSeconds < MaxRunSeconds)
                     Step(world, state, crews, cluePolicy);
                 bool stuck = !state.IsFinished;
-                if (stuck) EndingEvaluator.FinishRun(state); // kẹt → coi như thua, vẫn kết thúc
+                if (stuck) EndingEvaluator.FinishRun(state); 
                 durations.Add(state.ElapsedSeconds);
                 lateCounts.Add(state.LateCount);
                 if (stuck) stats.stuckRuns++;
@@ -95,7 +91,6 @@ namespace AyeAye
             return stats;
         }
 
-        /// <summary>Một tick mô phỏng: xử lý sự cố chờ trước (đồng hồ dừng khi chờ), rồi chính sách + Advance.</summary>
         public static void Step(SimWorld world, GameState state, IReadOnlyList<CrewDefinition> crews, bool cluePolicy)
         {
             if (state.PendingIncidents.Count > 0)
@@ -103,11 +98,9 @@ namespace AyeAye
                 ResolvePending(state, crews, cluePolicy);
                 return;
             }
-
             Policy(world, state, cluePolicy);
             Simulation.Advance(world, state, state.Config.simTickSeconds);
         }
-
         static void ResolvePending(GameState state, IReadOnlyList<CrewDefinition> crews, bool cluePolicy)
         {
             var pending = state.PendingIncidents[0];
@@ -119,12 +112,8 @@ namespace AyeAye
             Simulation.ApplyProgressDelta(state, pending.Context.Ship, resolved.ProgressDelta);
             state.PendingIncidents.RemoveAt(0);
         }
-
-        // Chính sách người chơi thay: nhận + gán ngay mỗi tick (MAKE IT SO áp ngay — không staged).
         static void Policy(SimWorld world, GameState state, bool cluePolicy)
         {
-            // 1. Chấp nhận đơn trong hộp (giới hạn đơn đang chạy).
-            //    Ngẫu nhiên: theo xúc xắc. Đọc manh mối: nhận khi có tàu rảnh đi đủ tới cảng lấy hàng rồi về kịp hạn.
             foreach (var order in state.Orders.FindAll(o => o.Status == OrderStatus.InInbox))
             {
                 bool accept;
@@ -136,8 +125,6 @@ namespace AyeAye
                     foreach (var ship in state.Ships)
                     {
                         if (!string.IsNullOrEmpty(ship.OrderId)) continue;
-                        // G5: tàu Idle ước tính từ cảng hiện tại; tàu Roaming ước tính từ ĐÍCH cạnh
-                        // (edge còn lại + tới cảng lấy hàng) — gán vẫn chỉ khi cập cảng.
                         float toPickup;
                         if (ship.Status == ShipStatus.Idle)
                             toPickup = FastestSeconds(world.Routes, ship.PortId, order.FromPortId, state.Config);
@@ -155,8 +142,6 @@ namespace AyeAye
                 if (accept && CommandValidator.CanAccept(state, order.Id))
                     order.Status = OrderStatus.Accepted;
             }
-
-            // 2. Gán: với mỗi đơn đã nhận chưa gán, gom ứng viên (tàu đứng ở bến đi × tuyến hợp lệ) → áp ngay.
             foreach (var order in state.Orders.FindAll(o => o.Status == OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId)))
             {
                 var options = world.Routes.GetOptions(order.FromPortId, order.ToPortId);
@@ -174,9 +159,6 @@ namespace AyeAye
                 var pick = cluePolicy ? BestCandidate(candidates) : candidates[state.Rng.Next(candidates.Count)];
                 FleetActions.Assign(state, world.Routes, pick.ship.Id, order.Id, IndexOf(options, pick.route));
             }
-
-            // 3. Đọc manh mối: tàu rảnh rỗi không có việc ở cảng hiện tại → chạy về cảng lấy hàng của
-            //    đơn đã nhận chưa có tàu (cổ nhất). Người chơi thật cũng làm đúng thế này.
             if (!cluePolicy) return;
             var demand = state.Orders.Find(o => o.Status == OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId));
             if (demand == null) return;
@@ -192,7 +174,6 @@ namespace AyeAye
                 FleetActions.Reposition(state, world.Routes, ship.Id, demand.FromPortId, best);
             }
         }
-
         static float FastestSeconds(RouteTable routes, string from, string to, GameConfig config)
         {
             var options = routes.GetOptions(from, to);
@@ -202,15 +183,12 @@ namespace AyeAye
                     if (opt.length < bestLen) bestLen = opt.length;
             return bestLen / Mathf.Max(0.0001f, config.SpeedUnitsPerSecond(SpeedClass.Fast));
         }
-
         static int IndexOf(List<RouteOption> options, RouteOption route)
         {
             for (int i = 0; i < options.Count; i++)
                 if (options[i] == route) return i;
             return 0;
         }
-
-        // Đọc manh mối: ứng viên (tàu, tuyến) có độ dài tuyến ngắn nhất — hòa thì lấy đầu tiên (deterministic).
         static (ShipState ship, RouteOption route) BestCandidate(List<(ShipState ship, RouteOption route)> candidates)
         {
             var best = candidates[0];
@@ -220,3 +198,4 @@ namespace AyeAye
         }
     }
 }
+
