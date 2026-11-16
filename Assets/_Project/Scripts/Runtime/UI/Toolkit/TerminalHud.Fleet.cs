@@ -1,25 +1,85 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace AyeAye
 {
-    // G3 — tab ĐỘI TÀU (FR-04xx): bản đồ hình sao + thẻ tàu + panel lệnh.
-    // Render-only: đọc state + config + RouteTable, phát intent qua FleetActions; animation chỉ ở UI.
+    // G3+G6.3 — tab ĐỘI TÀU (FR-04xx): hai cột. Trái = bản đồ (min 300px) + đơn chờ điều tàu
+    // (thẻ 2 dòng: khách → đích / hạn+doanh thu+chip, ~2 thẻ trong khung, dư thì cuộn).
+    // Phải = MỘT ScrollView duy nhất chứa thẻ tàu + panel lệnh TỐI GIẢN:
+    // 1 dòng hướng dẫn theo trạng thái + tối đa 2 nút tuyến TO (bấm = XUẤT PHÁT NGAY qua
+    // FleetActions.Assign); điều rỗng là nút phụ nhỏ, chỉ hiện khi đã chọn tàu rảnh.
+    // Lý do bố cục: kính thật chỉ ~1207x679 px thiết kế (zoomOutFactor 1.27 + scale máy 0.22 —
+    // TerminalView.FitScreenToFrame). Hết chỗ → CUỘN trong vùng của mình, không vẽ đè vùng khác.
+    // Số động (ETA/%, hạn đơn) sửa text TẠI CHỖ 10 Hz (shipEtaLabels/countLabels) — tàu Moving
+    // cũng có ETA tại chỗ, không cần bấm mới cập nhật. Chọn đôi: đơn → tàu (tự chọn nếu chỉ 1)
+    // → nút tuyến. Lựa chọn chỉ là state tạm — lệnh vẫn qua FleetActions, áp NGAY (không staged).
+    // Chữ trong thẻ dùng nhãn cảng ngắn + tooltip đầy đủ (portId gốc không đổi).
     public partial class TerminalHud
     {
         Dictionary<string, VisualElement> shipDots;      // shipId → chấm tàu trên bản đồ (dựng lại mỗi Refresh)
         VisualElement fleetMap;
 
         string selectedShipId;
+        string selectedOrderId;
+        string selectedReposPortId;  // cảng đích điều rỗng (bấm nút hành tinh trên bản đồ)
         string fleetError;
-        string fleetMode = "assign"; // chế độ panel lệnh: "assign" | "reposition"
+        string fleetFeedback;        // thông báo lệnh vừa thành công
+        string fleetMode = "assign"; // "assign" | "reposition" — điều rỗng vào bằng nút phụ nhỏ (G6.3)
 
         static readonly Vector2[] IdleOffsets =
         {
             new Vector2(0f, 0f), new Vector2(0.05f, 0.04f),
             new Vector2(-0.05f, 0.04f), new Vector2(0.05f, -0.04f),
         };
+
+        // ---- lựa chọn tạm (không đụng simulation) -----------------------------
+
+        // Đơn đang chọn — chỉ nhận đơn ĐÃ NHẬN chưa có tàu; nếu state đã đổi thì coi như bỏ chọn.
+        OrderState SelectedOrder()
+        {
+            if (string.IsNullOrEmpty(selectedOrderId)) return null;
+            var o = state.Orders.Find(x => x.Id == selectedOrderId);
+            return o != null && o.Status == OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId) ? o : null;
+        }
+
+        void SelectShip(string shipId)
+        {
+            selectedShipId = shipId;
+            selectedReposPortId = null;
+            fleetError = null;
+            fleetFeedback = null;
+            Dirty();
+        }
+
+        void SelectOrder(string orderId)
+        {
+            selectedOrderId = orderId;
+            fleetMode = "assign"; // bấm đơn = về luồng giao đơn (thoát điều rỗng)
+            selectedReposPortId = null;
+            fleetError = null;
+            fleetFeedback = null;
+            // G6.3: chỉ đúng 1 tàu đủ điều kiện (rảnh + đậu đúng cảng đi) → TỰ CHỌN, bỏ một bước bấm.
+            var o = SelectedOrder();
+            if (o != null)
+            {
+                var fits = state.Ships.FindAll(s => s.Status == ShipStatus.Idle && s.PortId == o.FromPortId);
+                if (fits.Count == 1) selectedShipId = fits[0].Id;
+            }
+            Dirty();
+        }
+
+        // ---- nhãn hiển thị ----------------------------------------------------
+
+        // Nhãn ngắn cho chỗ hẹp (thẻ, tóm tắt lệnh): bỏ tiền tố đầu ("Trạm", "Phố", "Đảo"...).
+        // Tên đầy đủ vẫn ở tooltip — portId/portDef không bị thay đổi.
+        string ShortPortName(string portId)
+        {
+            var full = PortName(portId);
+            int sp = full.IndexOf(' ');
+            return sp > 0 && sp < full.Length - 1 ? full.Substring(sp + 1).ToUpperInvariant() : full.ToUpperInvariant();
+        }
 
         // ---- dữ liệu vị trí -------------------------------------------------
 
@@ -57,29 +117,35 @@ namespace AyeAye
         void BuildFleetPanel()
         {
             var panel = panels[1];
+            // G6.2: giữ vị trí cuộn qua lần dựng lại — đọc trước khi Clear.
+            float savedSide = SavedScroll(panel, "fleet-side-scroll");
+            float savedOrders = SavedScroll(panel, "fleet-orders-scroll");
             panel.Clear();
             shipDots = new Dictionary<string, VisualElement>();
             shipEtaLabels.Clear(); // G5: đăng ký nhãn ETA tàu dựng lại từ đầu mỗi lần Refresh
 
+            // Hai cột: trái = bản đồ + đơn chờ dưới bản đồ; phải = MỘT ScrollView (thẻ tàu + thanh lệnh).
             var row = new VisualElement();
             row.AddToClassList("fleet-row");
+
             var left = new VisualElement();
             left.AddToClassList("fleet-left");
             fleetMap = new VisualElement();
             fleetMap.AddToClassList("fleet-map");
             fleetMap.generateVisualContent += DrawFleetEdges;
-            var legend = new VisualElement();
-            legend.AddToClassList("fleet-legend");
-            legend.pickingMode = PickingMode.Ignore; // R-01: click xuyên qua chú giải (USS không đặt được)
-            var seen = new HashSet<HazardType>();
-            foreach (var e in mapRouteDefs)
-                if (seen.Add(e.hazard)) legend.Add(Chip("chip-h-" + e.hazard.ToString().ToLowerInvariant(), HazardLegend(e.hazard)));
-            var side = CRTScroll(); // cột phải: MỘT ScrollView dọc duy nhất (thẻ tàu + panel lệnh)
+            left.Add(fleetMap);
+
+            var side = new VisualElement();
             side.AddToClassList("fleet-side");
+            var sideScroll = CRTScroll();
+            sideScroll.AddToClassList("fleet-side-scroll");
+            side.Add(sideScroll);
+
+            var grid = new VisualElement();
+            grid.AddToClassList("ship-grid");
+
             row.Add(left);
             row.Add(side);
-            left.Add(fleetMap);
-            left.Add(legend);
             panel.Add(row);
 
             // Nút hành tinh + chấm tàu (tọa độ %, tự co giãn theo kích thước phần tử)
@@ -97,6 +163,20 @@ namespace AyeAye
                 label.pickingMode = PickingMode.Ignore; // R-01: không chặn click nút hành tinh dưới label
                 node.Add(label);
                 node.tooltip = p.displayName;
+                // Bấm cảng khi đang chọn tàu đậu → chuyển sang điều rỗng tới cảng đó (dùng validator sẵn có).
+                var portId = kv.Key;
+                node.RegisterCallback<ClickEvent>(_ =>
+                {
+                    var s = state.Ships.Find(x => x.Id == selectedShipId);
+                    if (s != null && s.Status == ShipStatus.Idle && portId != s.PortId)
+                    {
+                        fleetMode = "reposition";
+                        selectedReposPortId = portId;
+                        fleetError = null;
+                        fleetFeedback = null;
+                        Dirty();
+                    }
+                });
                 fleetMap.Add(node);
             }
 
@@ -110,27 +190,36 @@ namespace AyeAye
                 letter.pickingMode = PickingMode.Ignore;
                 dot.Add(letter);
                 dot.tooltip = $"{s.DisplayName} — thuyền trưởng {s.Captain}";
-                dot.RegisterCallback<ClickEvent>(_ => { selectedShipId = s.Id; Dirty(); });
+                dot.RegisterCallback<ClickEvent>(_ => SelectShip(s.Id));
                 PlaceDot(dot, s, index);
+                // G6.3: đơn đang chọn → mờ chấm tàu không đủ điều kiện (thẻ tàu cũng mờ như cũ).
+                var selOrder = SelectedOrder();
+                if (selOrder != null && !(s.Status == ShipStatus.Idle && s.PortId == selOrder.FromPortId))
+                    dot.AddToClassList("dimmed");
                 fleetMap.Add(dot);
                 shipDots[s.Id] = dot;
                 index++;
             }
 
-            BuildShipCards(side);
-            BuildCommandPanel(side);
+            int cardIndex = 0;
+            foreach (var s in state.Ships)
+            {
+                grid.Add(ShipCard(s, cardIndex));
+                cardIndex++;
+            }
+
+            // Đơn chờ: nằm dưới bản đồ trong cột trái; cột phải: thẻ tàu + thanh lệnh trong 1 ScrollView.
+            left.Add(BuildOrdersRow(savedOrders));
+            sideScroll.Add(Section("ĐỘI TÀU"));
+            sideScroll.Add(grid);
+            sideScroll.Add(BuildCommandBar());
+
+            sideScroll.schedule.Execute(() => sideScroll.scrollOffset = new Vector2(0, savedSide)).ExecuteLater(1);
         }
 
-        // Chú giải hazard: tên + ký tự mẫu nét khớp DrawStyledLine (không phân biệt bằng màu).
-        static string HazardLegend(HazardType h) => h switch
-        {
-            HazardType.Clear => "Clear ───",
-            HazardType.Fog => "Fog ···",
-            HazardType.Storm => "Storm ∿∿∿",
-            HazardType.Pirates => "Pirates ━ ━",
-            HazardType.Ice => "Ice ─·─",
-            _ => h.ToString(),
-        };
+        // Vị trí cuộn cũ của ScrollView theo class (0 nếu chưa có) — gọi TRƯỚC panel.Clear().
+        static float SavedScroll(VisualElement panel, string className)
+            => panel.Q(className: className) is ScrollView s ? s.scrollOffset.y : 0f;
 
         void PlaceDot(VisualElement dot, ShipState ship, int shipIndex)
         {
@@ -226,57 +315,80 @@ namespace AyeAye
             p.ClosePath();
         }
 
-        // ---- cột phải: thẻ tàu ----------------------------------------------
+        // ---- vùng B: thẻ tàu 2x2 ----------------------------------------------
 
-        void BuildShipCards(VisualElement side)
+        static string StatusName(ShipStatus s) => s switch
         {
-            side.Add(Section("ĐỘI TÀU"));
-            int index = 0;
-            foreach (var s in state.Ships)
-            {
-                var card = new VisualElement();
-                card.AddToClassList("ship-card");
-                if (s.Id == selectedShipId) card.AddToClassList("selected");
-                card.RegisterCallback<ClickEvent>(_ => { selectedShipId = s.Id; Dirty(); });
-                card.Add(Title(s.DisplayName));
-                card.Add(Line($"Thuyền trưởng: {CaptainName(s.Captain)} · {SpeedName(s.Speed)} · {ConditionName(s.Condition)}"));
-                var def = shipDefs != null ? shipDefs.Find(d => d.shipId == s.Id) : null;
-                if (def != null && !string.IsNullOrEmpty(def.traits)) card.Add(Line(def.traits));
-                if (s.Status == ShipStatus.Roaming && s.Route != null)
-                {
-                    // G5: số giây tới cảng cập tại chỗ ở nhịp 10 Hz (shipEtaLabels) — không dựng lại panel mỗi frame.
-                    var loc = new Label("");
-                    loc.AddToClassList("order-line");
-                    card.Add(loc);
-                    shipEtaLabels.Add((s, loc, LocationPrefix(s), "s"));
-                }
-                else card.Add(Line(LocationLine(s, index)));
-                card.Add(Line(CargoLine(s)));
-                side.Add(card);
-                index++;
-            }
-        }
+            ShipStatus.Idle => "RỖNH",
+            ShipStatus.Roaming => "TỰ ĐI",
+            _ => "ĐANG CHẠY",
+        };
 
-        string LocationPrefix(ShipState s)
-            => $"Đang đi {PortName(s.Route.portPath[0])} → {PortName(s.Route.portPath[s.Route.portPath.Count - 1])}, tới sau ";
-
-        const string RoamWaitPrefix = "Tàu đang đi, chỉ ra lệnh được khi cập cảng (tới sau ";
-
-        string LocationLine(ShipState s, int shipIndex)
+        // Thẻ tàu gọn: tiêu đề + 2 dòng thông tin. Chi tiết (tính cách, tên cảng đầy đủ) ở tooltip.
+        VisualElement ShipCard(ShipState s, int shipIndex)
         {
+            var card = new VisualElement();
+            card.AddToClassList("ship-card");
+            if (s.Id == selectedShipId) card.AddToClassList("selected");
+            var selOrder = SelectedOrder();
+            // Đơn đang chọn → tô tàu nhận được (đậu đúng cảng đi), mờ tàu không khả dụng.
+            if (selOrder != null)
+                card.AddToClassList(s.Status == ShipStatus.Idle && s.PortId == selOrder.FromPortId ? "compatible" : "dimmed");
+            var def = shipDefs != null ? shipDefs.Find(d => d.shipId == s.Id) : null;
+            card.tooltip = ShipCardTooltip(s, def);
+
+            var head = new VisualElement();
+            head.AddToClassList("ship-head");
+            var name = new Label(s.DisplayName);
+            name.AddToClassList("order-title");
+            var status = new Label(StatusName(s.Status));
+            status.AddToClassList("ship-status");
+            head.Add(name);
+            head.Add(status);
+            card.Add(head);
+            card.Add(Line($"{CaptainName(s.Captain)} · {SpeedName(s.Speed)} · {ConditionName(s.Condition)}"));
+
             if (s.Status != ShipStatus.Idle && s.Route != null)
             {
-                float pct = s.Route.length > 0.0001f ? s.DistanceAlongRoute / s.Route.length * 100f : 0f;
-                return $"Đang đi {PortName(s.Route.portPath[0])} → {PortName(s.Route.portPath[s.Route.portPath.Count - 1])} ({pct:0}%)";
+                // G6.3: Roaming lẫn Moving đều sửa text TẠI CHỖ nhịp 10 Hz (shipEtaLabels) —
+                // không dựng lại panel mỗi frame, không cần bấm thẻ mới cập nhật (Việc 1).
+                var loc = new Label("");
+                loc.AddToClassList("order-line");
+                card.Add(loc);
+                string cargo = string.IsNullOrEmpty(s.OrderId) ? "" : $" · CHỞ {s.OrderId}";
+                if (s.Status == ShipStatus.Roaming)
+                    shipEtaLabels.Add((s, loc, $"TỰ ĐI · Tới {ShortPortName(s.Route.ToPort)} sau ", "s"));
+                else
+                    shipEtaLabels.Add((s, loc, $"TỚI {ShortPortName(s.Route.ToPort)} · còn ", $"s{cargo}"));
             }
-            return $"Đang đậu ở {PortName(s.PortId)}";
+            else card.Add(Line(LocationLine(s)));
+
+            card.RegisterCallback<ClickEvent>(_ => SelectShip(s.Id));
+            return card;
         }
 
-        string CargoLine(ShipState s)
+        // Tooltip đầy đủ: tên cảng đầy đủ + tính cách — gộp thông tin bị rút gọn trong thẻ.
+        string ShipCardTooltip(ShipState s, ShipDef def)
         {
-            if (string.IsNullOrEmpty(s.OrderId)) return "Không chở hàng";
-            var o = state.Orders.Find(x => x.Id == s.OrderId);
-            return o != null ? $"Chở: {o.CustomerName} → {PortName(o.ToPortId)}" : "Không chở hàng";
+            var parts = new List<string> { s.DisplayName, $"Thuyền trưởng {CaptainName(s.Captain)}" };
+            if (def != null && !string.IsNullOrEmpty(def.traits)) parts.Add(def.traits);
+            if (s.Status == ShipStatus.Idle) parts.Add($"Đang đậu ở {PortName(s.PortId)}");
+            else if (s.Route != null)
+                parts.Add($"Đang đi {PortName(s.Route.portPath[0])} → {PortName(s.Route.portPath[s.Route.portPath.Count - 1])}");
+            if (!string.IsNullOrEmpty(s.OrderId))
+            {
+                var o = state.Orders.Find(x => x.Id == s.OrderId);
+                if (o != null) parts.Add($"Chở: {o.CustomerName} → {PortName(o.ToPortId)}");
+            }
+            return string.Join("\n", parts);
+        }
+
+        // Dòng vị trí khi ĐẬU — nhãn cảng ngắn, đơn đang chở gộp vào dòng. Tàu đang đi dùng
+        // nhãn ETA tại chỗ (shipEtaLabels) nên không rơi vào đây.
+        string LocationLine(ShipState s)
+        {
+            string cargo = string.IsNullOrEmpty(s.OrderId) ? "" : $" · CHỞ {s.OrderId}";
+            return $"ĐẬU: {ShortPortName(s.PortId)}{cargo}";
         }
 
         float EtaSeconds(RouteOption route, ShipState ship)
@@ -298,110 +410,268 @@ namespace AyeAye
 
         static string ConditionName(ShipCondition c) => c == ShipCondition.Good ? "Tốt" : "Mòn";
 
-        // ---- panel lệnh ------------------------------------------------------
+        // ---- vùng C: hàng đơn chờ điều tàu ------------------------------------
 
-        void BuildCommandPanel(VisualElement side)
+        VisualElement BuildOrdersRow(float savedOffset)
         {
-            var area = new VisualElement();
-            area.AddToClassList("fleet-commands");
-            area.Add(Section("LỆNH"));
+            var wrap = new VisualElement();
+            wrap.AddToClassList("fleet-orders");
+            var list = state.Orders.FindAll(o => o.Status == OrderStatus.Accepted && string.IsNullOrEmpty(o.AssignedShipId));
+            wrap.Add(Section($"ĐƠN CHỜ ĐIỀU TÀU ({list.Count})"));
+            // Thẻ 1 dòng, khung tối đa ~2 thẻ — nhiều hơn thì CUỘN, không tràn ra vùng khác.
+            var scroll = CRTScroll();
+            scroll.AddToClassList("fleet-orders-scroll");
+            var row = new VisualElement();
+            row.AddToClassList("fleet-orders-row");
+            if (list.Count == 0) row.Add(Line("Không có đơn chờ — nhận đơn ở tab ĐƠN HÀNG."));
+            var ship = state.Ships.Find(s => s.Id == selectedShipId);
+            foreach (var o in list) row.Add(OrderCard(o, ship));
+            scroll.Add(row);
+            wrap.Add(scroll);
+            scroll.schedule.Execute(() => scroll.scrollOffset = new Vector2(0, savedOffset)).ExecuteLater(1);
+            return wrap;
+        }
 
-            // Hai nút chuyển chế độ rõ ràng (mặc định GIAO ĐƠN).
-            var modes = new VisualElement();
-            modes.AddToClassList("btn-row");
-            var btnAssign = new Button(() => { fleetMode = "assign"; fleetError = null; Dirty(); }) { text = "GIAO ĐƠN" };
-            btnAssign.AddToClassList("btn-mode");
-            if (fleetMode == "assign") btnAssign.AddToClassList("selected");
-            var btnRepos = new Button(() => { fleetMode = "reposition"; fleetError = null; Dirty(); }) { text = "ĐIỀU TÀU RỖNG" };
-            btnRepos.AddToClassList("btn-mode");
-            if (fleetMode == "reposition") btnRepos.AddToClassList("selected");
-            modes.Add(btnAssign);
-            modes.Add(btnRepos);
-            area.Add(modes);
+        VisualElement OrderCard(OrderState o, ShipState ship)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("fleet-order-card");
+            if (o.Id == selectedOrderId) card.AddToClassList("selected");
+            // Tàu đang chọn → tô đơn khớp cảng đi, mờ đơn không giao được cho tàu này.
+            if (ship != null)
+                card.AddToClassList(ship.Status == ShipStatus.Idle && ship.PortId == o.FromPortId ? "compatible" : "dimmed");
+            var tags = string.Join(" · ", CargoTags(o.Tags).Select(t => t.name));
+            card.tooltip = $"{o.Id} — {o.CustomerName}\n{PortName(o.FromPortId)} → {PortName(o.ToPortId)}"
+                + (tags.Length > 0 ? $"\n{tags}" : "");
 
-            if (fleetError != null)
+            // G6.3: 2 dòng — khách → đích (nhãn ngắn), hạn 10 Hz + doanh thu + chip ký hiệu sẵn có.
+            card.Add(Title($"{o.CustomerName} → {ShortPortName(o.ToPortId)}"));
+            var meta = new VisualElement();
+            meta.AddToClassList("fleet-order-meta");
+            meta.Add(CountdownLabel(o, "hạn ", $" · +{o.Revenue}"));
+            foreach (var (tag, name) in CargoTags(o.Tags))
+                if (tag != OrderTag.None) meta.Add(Chip(CargoChipClass(tag), SymbolOf(name)));
+            card.Add(meta);
+
+            card.RegisterCallback<ClickEvent>(_ => SelectOrder(o.Id));
+            return card;
+        }
+
+        // "[!] Dễ vỡ" → "[!]" — thẻ gọn chỉ vừa ký hiệu; tên đầy đủ đã ở tooltip của thẻ.
+        static string SymbolOf(string tagText)
+        {
+            int close = tagText.IndexOf(']');
+            return close >= 0 ? tagText.Substring(0, close + 1) : tagText;
+        }
+
+        const string RoamWaitPrefix = "Tàu đang đi, chỉ ra lệnh được khi cập cảng (tới sau ";
+
+        // ---- panel lệnh tối giản (G6.3) -----------------------------------------
+        // 1 dòng hướng dẫn theo trạng thái + tối đa 2 nút tuyến TO (bấm = xuất phát ngay).
+        // Điều rỗng là nút phụ nhỏ cuối panel. Không còn hàng TÀU/ĐƠN hay nút chuyển chế độ lớn.
+
+        // Nhãn ETA tại chỗ cho tàu đang đi trong panel lệnh (10 Hz — shipEtaLabels).
+        void AddShipWaitLabel(VisualElement parent, ShipState ship)
+        {
+            var wait = new Label("");
+            wait.AddToClassList("order-line");
+            parent.Add(wait);
+            if (ship.Route == null) { wait.text = "Tàu không có tuyến."; return; }
+            if (ship.Status == ShipStatus.Roaming)
+                shipEtaLabels.Add((ship, wait, RoamWaitPrefix, "s)"));
+            else
+                shipEtaLabels.Add((ship, wait, $"Đang đi tới {ShortPortName(ship.Route.ToPort)}, còn ", "s"));
+        }
+
+        // Nhãn nút theo length: ngắn nhất = NHANH, còn lại = AN TOÀN; bằng nhau → nhãn gốc RouteOption.
+        static string RouteChoiceLabel(List<RouteOption> options, int idx)
+        {
+            float min = options.Min(o => o.length);
+            if (options.All(o => Mathf.Approximately(o.length, min))) return options[idx].label;
+            return Mathf.Approximately(options[idx].length, min) ? "NHANH" : "AN TOÀN";
+        }
+
+        // Nguy hiểm của tuyến, contextual thay chú giải (G6.1): chỉ khi có cạnh không Clear — "! Sương mù".
+        static string HazardText(RouteOption opt)
+        {
+            var hs = opt.hazards
+                .Where(h => h != HazardType.Clear && h != HazardType.Any)
+                .Distinct().ToList();
+            return hs.Count == 0 ? "" : " · ! " + string.Join(" · ! ", hs.Select(HazardShort));
+        }
+
+        static string HazardShort(HazardType h) => h switch
+        {
+            HazardType.Fog => "Sương mù", HazardType.Storm => "Bão",
+            HazardType.Pirates => "Cướp", HazardType.Ice => "Băng", _ => h.ToString(),
+        };
+
+        // Nút tuyến = CHỌN + GIAO trong MỘT cú bấm (FleetActions.Assign áp NGAY như cũ).
+        Button RouteButton(ShipState ship, OrderState order, List<RouteOption> options, int idx)
+        {
+            var opt = options[idx];
+            var btn = new Button(() =>
             {
-                area.Add(Warn(fleetError));
-            }
+                var err = FleetActions.Assign(state, routeTable, ship.Id, order.Id, idx);
+                if (err == null)
+                {
+                    fleetFeedback = $"Đã giao {order.Id} cho {ship.DisplayName} — khởi hành ngay.";
+                    selectedOrderId = null; // đơn vào trạng thái Đang chở → bỏ chọn cả hai
+                    selectedShipId = null;
+                    fleetError = null;
+                }
+                else fleetError = err;
+                Dirty();
+            }) { text = $"{RouteChoiceLabel(options, idx)} · {EtaSeconds(opt, ship):0}s{HazardText(opt)}" };
+            btn.AddToClassList("btn-route");
+            btn.AddToClassList("btn-big");
+            btn.tooltip = $"{PortName(order.FromPortId)} → {PortName(order.ToPortId)}";
+            return btn;
+        }
+
+        VisualElement BuildCommandBar()
+        {
+            var bar = new VisualElement();
+            bar.AddToClassList("fleet-cmd");
 
             var ship = state.Ships.Find(s => s.Id == selectedShipId);
-            if (ship == null)
+            var order = SelectedOrder();
+
+            // Phản hồi / lỗi lệnh — mỗi thứ tối đa 1 dòng, luôn ở đầu panel.
+            var note = new VisualElement();
+            note.AddToClassList("fleet-cmd-note");
+            if (!string.IsNullOrEmpty(fleetFeedback))
             {
-                area.Add(Line("Chọn một tàu để ra lệnh."));
-                side.Add(area);
-                return;
+                var fb = Line(fleetFeedback);
+                fb.AddToClassList("fleet-feedback");
+                note.Add(fb);
+            }
+            if (!string.IsNullOrEmpty(fleetError)) note.Add(Warn(fleetError));
+
+            // Dòng hướng dẫn DUY NHẤT, đổi theo trạng thái — thay mọi dòng TÀU/ĐƠN/mô tả dài.
+            var guide = new Label("");
+            guide.AddToClassList("order-line");
+
+            if (fleetMode == "reposition")
+            {
+                guide.text = ship != null
+                    ? $"ĐIỀU RỖNG {ship.DisplayName} — chọn cảng đích trên bản đồ, hoặc bấm tuyến:"
+                    : "Chọn một tàu để điều rỗng.";
+                bar.Add(guide);
+                var actions = new VisualElement();
+                actions.AddToClassList("fleet-cmd-actions");
+                BuildRepositionActions(note, actions, ship);
+                note.Add(actions);
+                bar.Add(note);
+                var back = new Button(() => { fleetMode = "assign"; fleetError = null; fleetFeedback = null; Dirty(); })
+                    { text = "← GIAO ĐƠN" };
+                back.AddToClassList("btn-sub");
+                bar.Add(back);
+                return bar;
             }
 
-            // Tàu đang chạy thì chỉ xem trên bản đồ (áp ngay nên không có pha "chờ MAKE IT SO").
-            if (ship.Status == ShipStatus.Roaming && ship.Route != null)
+            if (order == null)
             {
-                // G5: tàu Roaming không nhận lệnh giữa cạnh — số giây cập 10 Hz tại chỗ.
-                var wait = new Label("");
-                wait.AddToClassList("order-line");
-                area.Add(wait);
-                shipEtaLabels.Add((ship, wait, RoamWaitPrefix, "s)"));
-                side.Add(area);
+                guide.text = "Bấm một đơn để giao.";
+                bar.Add(guide);
+            }
+            else if (ship == null)
+            {
+                guide.text = $"Chọn tàu đang ở {ShortPortName(order.FromPortId)}.";
+                bar.Add(guide);
+            }
+            else if (ship.Status != ShipStatus.Idle)
+            {
+                // Tàu đang chạy/đang đi rảnh: không nút — 1 dòng ETA cập 10 Hz (Việc 1).
+                guide.text = "Tàu đang đi — chờ cập cảng để giao.";
+                bar.Add(guide);
+                AddShipWaitLabel(bar, ship);
+            }
+            else
+            {
+                var options = routeTable.GetOptions(order.FromPortId, order.ToPortId);
+                if (options == null || options.Count == 0)
+                {
+                    guide.text = "Không có tuyến đường cho cặp cảng này.";
+                    bar.Add(guide);
+                }
+                else
+                {
+                    guide.text = "Chọn đường đi.";
+                    bar.Add(guide);
+                    // Tối đa 2 nút, ngắn nhất trước — bấm là khởi hành, không cần nút GIAO LỆNH riêng.
+                    foreach (var (opt, idx) in options.Select((o, i) => (o, i)).OrderBy(x => x.o.length).Take(2))
+                        bar.Add(RouteButton(ship, order, options, idx));
+                }
+            }
+
+            bar.Add(note);
+
+            // Nút phụ nhỏ: điều tàu rỗng — chỉ khi đã chọn tàu rảnh (G6.3).
+            if (ship != null && ship.Status == ShipStatus.Idle)
+            {
+                var sub = new Button(() =>
+                {
+                    fleetMode = "reposition";
+                    selectedReposPortId = null;
+                    fleetError = null;
+                    fleetFeedback = null;
+                    Dirty();
+                }) { text = "Chuyển tàu rỗng sang cảng khác" };
+                sub.AddToClassList("btn-sub");
+                bar.Add(sub);
+            }
+            return bar;
+        }
+
+        void BuildRepositionActions(VisualElement note, VisualElement actions, ShipState ship)
+        {
+            if (ship == null)
+            {
+                note.Add(Line("Chọn một tàu để điều rỗng."));
                 return;
             }
             if (ship.Status != ShipStatus.Idle)
             {
-                area.Add(Line("Tàu đang chạy — xem trên bản đồ."));
-                side.Add(area);
+                // G6.3/Việc 1: tàu đang đi — ETA cập tại chỗ 10 Hz, không phải chữ tĩnh.
+                AddShipWaitLabel(note, ship);
                 return;
             }
 
-            if (fleetMode == "assign") BuildAssignArea(area, ship);
-            else BuildRepositionArea(area, ship);
-            side.Add(area);
-        }
-
-        void BuildAssignArea(VisualElement area, ShipState ship)
-        {
-            var orders = state.Orders.FindAll(o => o.Status == OrderStatus.Accepted
-                && string.IsNullOrEmpty(o.AssignedShipId) && o.FromPortId == ship.PortId);
-            if (orders.Count == 0)
+            // Cảng đích đã chọn trên bản đồ → chỉ còn chọn tuyến và khởi hành ngay (lệnh áp NGAY như cũ).
+            if (!string.IsNullOrEmpty(selectedReposPortId))
             {
-                var none = new Label("Không có đơn đã nhận nào phù hợp cảng đi của tàu.");
-                none.AddToClassList("order-line");
-                none.AddToClassList("order-muted");
-                area.Add(none);
-                return;
-            }
-            foreach (var o in orders)
-            {
-                var card = new VisualElement();
-                card.AddToClassList("order-card");
-                card.Add(Title(o.CustomerName));
-                card.Add(Line($"{PortName(o.FromPortId)} → {PortName(o.ToPortId)} · Doanh thu {o.Revenue}"));
-                card.Add(CountdownLabel(o, "Hạn: "));
-
-                var options = routeTable.GetOptions(o.FromPortId, o.ToPortId);
-                if (options == null || options.Count == 0) { card.Add(Line("Không có tuyến đường.")); area.Add(card); continue; }
-
-                var optRow = new VisualElement();
-                optRow.AddToClassList("btn-row");
-                for (int i = 0; i < options.Count; i++)
+                var options = routeTable.GetOptions(ship.PortId, selectedReposPortId);
+                if (options != null)
                 {
-                    int idx = i;
-                    var opt = options[i];
-                    // MAKE IT SO riêng từng thẻ lệnh (G2.3): bấm tuyến = tàu khởi hành ngay.
-                    var btn = new Button(() =>
+                    for (int i = 0; i < options.Count; i++)
                     {
-                        fleetError = FleetActions.Assign(state, routeTable, ship.Id, o.Id, idx);
-                        Dirty();
-                    }) { text = $"{opt.label} · {opt.length:0.#} · {EtaSeconds(opt, ship):0}s" };
-                    btn.AddToClassList("btn-route");
-                    optRow.Add(btn);
+                        int idx = i;
+                        var opt = options[i];
+                        var btn = new Button(() =>
+                        {
+                            var err = FleetActions.Reposition(state, routeTable, ship.Id, selectedReposPortId, idx);
+                            if (err == null)
+                            {
+                                fleetFeedback = $"Đã điều {ship.DisplayName} rỗng → {PortName(selectedReposPortId)} — khởi hành ngay.";
+                                selectedReposPortId = null;
+                                fleetError = null;
+                            }
+                            else fleetError = err;
+                            Dirty();
+                        }) { text = $"{opt.label} · {opt.length:0.#} · {EtaSeconds(opt, ship):0}s" };
+                        btn.AddToClassList("btn-route");
+                        actions.Add(btn);
+                    }
                 }
-                card.Add(optRow);
-                area.Add(card);
+                var reset = new Button(() => { selectedReposPortId = null; Dirty(); }) { text = "TẤT CẢ CẢNG" };
+                reset.AddToClassList("btn-mode");
+                actions.Add(reset);
+                return;
             }
-        }
 
-        void BuildRepositionArea(VisualElement area, ShipState ship)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("btn-row");
+            note.Add(Line("Chọn cảng đích trên bản đồ, hoặc bấm tuyến:"));
+            // Chưa chọn cảng: liệt kê mọi cảng đi được (hành vi cũ — bấm là khởi hành ngay).
             bool any = false;
             foreach (var kv in portDefs)
             {
@@ -412,18 +682,24 @@ namespace AyeAye
                 {
                     int idx = i;
                     var opt = options[i];
+                    var toPort = kv.Key;
                     var btn = new Button(() =>
                     {
-                        fleetError = FleetActions.Reposition(state, routeTable, ship.Id, kv.Key, idx);
+                        var err = FleetActions.Reposition(state, routeTable, ship.Id, toPort, idx);
+                        if (err == null)
+                        {
+                            fleetFeedback = $"Đã điều {ship.DisplayName} rỗng → {kv.Value.displayName} — khởi hành ngay.";
+                            fleetError = null;
+                        }
+                        else fleetError = err;
                         Dirty();
-                    }) { text = $"→ {kv.Value.displayName} · {opt.label} · {EtaSeconds(opt, ship):0}s" };
+                    }) { text = $"→ {ShortPortName(toPort)} · {EtaSeconds(opt, ship):0}s" };
                     btn.AddToClassList("btn-route");
-                    row.Add(btn);
+                    actions.Add(btn);
                     any = true;
                 }
             }
-            if (!any) row.Add(Line("Không có tuyến đi rỗng từ cảng này."));
-            area.Add(row);
+            if (!any) actions.Add(Line("Không có tuyến đi rỗng từ cảng này."));
         }
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine;
 namespace AyeAye
 {
     // Mọi số cân bằng nằm đây — bản CHẠY LIÊN TỤC (bỏ ngày, xem ASSUMPTIONS.md mục G1).
+    // G7: ván bắt đầu KHÔNG có đơn; đơn sinh NGẪU NHIÊN qua OrderGenerator — mọi tham số sinh đơn nằm đây.
     [CreateAssetMenu(fileName = "GameConfig", menuName = "AyeAye/Game Config")]
     public class GameConfig : ScriptableObject
     {
@@ -18,6 +19,9 @@ namespace AyeAye
         public float secondsPerRouteUnit = 20f;
 
         [Header("Đơn hàng")]
+        [Tooltip("Thời gian làm quen: đơn đầu tiên xuất hiện sau mốc này (giây). Ván bắt đầu KHÔNG có đơn.")]
+        public float orderFirstDelaySeconds = 25f;
+
         [Tooltip("Khoảng giây giữa hai lần bốc đơn mới.")]
         public float orderIntervalSeconds = 40f;
 
@@ -27,13 +31,37 @@ namespace AyeAye
         [Tooltip("Khoảng tối thiểu giữa hai lần bốc.")]
         public float orderIntervalMinSeconds = 15f;
 
+        [Tooltip("Số đơn trong hộp thư tối đa — đạt ngưỡng thì bỏ lượt sinh đó nhưng vẫn dời mốc kế tiếp (chống tràn).")]
+        public int maxInboxOrders = 5;
+
+        [Range(0f, 1f), Tooltip("Xác suất MỖI tag (Dễ vỡ/Lạnh/Khẩn) bật khi sinh đơn — cho phép tổ hợp.")]
+        public float orderTagChance = 0.35f;
+
+        [Tooltip("Phần hạn cộng thêm ngẫu nhiên: tối thiểu (giây) trên ETA + biên phản ứng.")]
+        public float orderDeadlineExtraMinSeconds = 5f;
+
+        [Tooltip("Phần hạn cộng thêm ngẫu nhiên: tối đa (giây). Đơn Khẩn bỏ phần ngẫu nhiên.")]
+        public float orderDeadlineExtraMaxSeconds = 35f;
+
+        [Tooltip("Doanh thu cơ bản của mỗi đơn sinh ra.")]
+        public int orderRevenueBase = 60;
+
+        [Tooltip("Doanh thu cộng theo mỗi route-unit của tuyến ngắn nhất.")]
+        public int orderRevenuePerRouteUnit = 30;
+
+        [Tooltip("Doanh thu cộng cho MỖI tag bật trên đơn.")]
+        public int orderRevenueTagBonus = 25;
+
+        [Range(0f, 1f), Tooltip("Độ lệch doanh thu ±% (jitter).")]
+        public float orderRevenueJitter = 0.2f;
+
         [Tooltip("Hạn đếm ngược thấp hơn số giây này thì tô đỏ cảnh báo (UI).")]
         public float deadlineWarnSeconds = 30f;
 
         [Tooltip("Biên phản ứng người chơi: hạn đơn ≥ ETA tàu nhanh nhất + biên này (DemoValidator kiểm).")]
         public float deadlineReactionMarginSeconds = 25f;
 
-        [Tooltip("Biên thêm cho 2 đơn tutorial (O-01/O-02) — người chơi mới cần thời gian đọc hướng dẫn.")]
+        [Tooltip("Biên thêm cho đơn ĐẦU TIÊN (luật dễ) — người chơi mới cần thời gian đọc hướng dẫn.")]
         public float tutorialDeadlineBonusSeconds = 30f;
 
         [Header("Thắng / Thua")]
@@ -63,7 +91,7 @@ namespace AyeAye
         [Tooltip("Hệ số tốc độ roaming (nhân với tốc thường của tàu).")]
         public float roamSpeedFactor = 0.7f;
 
-        [Tooltip("Ân hạn đầu ván: trước mốc giây này không tàu nào rời cảng (người chơi mới đọc hướng dẫn).")]
+        [Tooltip("Ân hạn đầu ván: trước mốc giây này không tàu nào rời cảng. Phải ≥ orderFirstDelaySeconds (DemoValidator kiểm).")]
         public float roamStartSeconds = 30f;
 
         [Header("Tốc độ (hệ số nhân trên secondsPerRouteUnit)")]

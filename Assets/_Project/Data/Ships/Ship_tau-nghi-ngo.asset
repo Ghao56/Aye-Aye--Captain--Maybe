@@ -20,3 +20,10 @@ MonoBehaviour:
   traits: "\u0110a nghi \xB7 Ki\u1EC3m tra k\u1EF9"
   startPortId: vang
   startCondition: 2
+  roam:
+    dwellSeconds: 15
+    demandWeight: 2
+    farBias: 0
+    hubAffinity: 0
+    wanderWeight: 6
+    backtrackPenalty: 2

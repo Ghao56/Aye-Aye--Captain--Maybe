@@ -28,6 +28,15 @@ namespace AyeAye
             var errors = new List<string>();
 
             if (config == null) errors.Add("Thiếu GameConfig");
+            else
+            {
+                // G7: tham số sinh đơn ngẫu nhiên — dữ liệu lệch sẽ vỡ nhịp spawn ngay trong ván.
+                if (config.orderDeadlineExtraMaxSeconds < config.orderDeadlineExtraMinSeconds)
+                    errors.Add("GameConfig: orderDeadlineExtraMaxSeconds < orderDeadlineExtraMinSeconds");
+                if (config.orderRevenueBase <= 0) errors.Add("GameConfig: orderRevenueBase <= 0");
+                if (config.roamStartSeconds < config.orderFirstDelaySeconds)
+                    errors.Add($"GameConfig: roamStartSeconds {config.roamStartSeconds:0.#} < orderFirstDelaySeconds {config.orderFirstDelaySeconds:0.#} (tàu phải đợi đơn xuất hiện rồi mới rời cảng)");
+            }
             if (routes == null) errors.Add("Thiếu RouteTable");
             if (orderPool == null) errors.Add("Thiếu OrderPool");
             if (ships == null || ships.Count == 0) errors.Add("Không có ShipDef nào");
@@ -91,6 +100,22 @@ namespace AyeAye
                             errors.Add($"{o.orderId}: hạn {o.deadlineSeconds:0.#}s < ETA nhanh nhất {fastest:0.#}s + biên phản ứng {margin:0.#}s (người chơi không kịp thao tác)");
                     }
                 }
+            }
+
+            // G7: cặp cảng nào thiếu tuyến thì đơn sinh ngẫu nhiên rơi vào là hỏng ván — kiểm toàn bộ.
+            if (routes != null && routes.pairs != null)
+            {
+                var portIds = new List<string>();
+                foreach (var pair in routes.pairs)
+                {
+                    if (pair == null) continue;
+                    if (!portIds.Contains(pair.fromPortId)) portIds.Add(pair.fromPortId);
+                    if (!portIds.Contains(pair.toPortId)) portIds.Add(pair.toPortId);
+                }
+                for (int i = 0; i < portIds.Count; i++)
+                    for (int j = i + 1; j < portIds.Count; j++)
+                        if (routes.GetOptions(portIds[i], portIds[j]) == null)
+                            errors.Add($"RouteTable: thiếu tuyến {portIds[i]} → {portIds[j]} (generator có thể sinh đơn vào cặp này)");
             }
 
             // Route option: các portPath phải nối được bằng cạnh có thật (khi có danh sách cạnh).

@@ -103,6 +103,19 @@ namespace AyeAye.Tests.EditMode
                 "đơn ngày 1 phải áp biên phản ứng + bonus hướng dẫn: " + string.Join("; ", errors));
         }
 
+        // G7: tham số sinh đơn ngẫu nhiên phải hợp lệ — max ≥ min phần hạn, roamStart ≥ mốc làm quen.
+        [Test]
+        public void GeneratorParamsInvalid_Reported()
+        {
+            _world.Config.orderDeadlineExtraMaxSeconds = 2f; // < min (5f)
+            _world.Config.roamStartSeconds = 10f;           // < orderFirstDelaySeconds (25f)
+            var errors = DemoValidator.Validate(_world.Config, _world.Routes,
+                _world.OrderPool, _world.Incidents, _world.FixedFirstDay, _world.FixedFinale,
+                _world.ShipDefs, _world.Crews);
+            Assert.IsTrue(errors.Any(e => e.Contains("orderDeadlineExtraMaxSeconds")), "max < min phần hạn phải bị báo");
+            Assert.IsTrue(errors.Any(e => e.Contains("roamStartSeconds")), "roamStart < mốc làm quen phải bị báo");
+        }
+
         // G5: hồ sơ roaming phải hợp lệ — dwell > 0, mọi hệ số hữu hạn.
         [Test]
         public void RoamProfileInvalid_Reported()

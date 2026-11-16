@@ -1,198 +1,147 @@
-using System.Collections.Generic;
 using System.Linq;
+using AyeAye;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace AyeAye.Tests
+namespace AyeAye.Tests.EditMode
 {
-    // OrderScheduler bản CHẠY LIÊN TỤC (bỏ ngày — xem ASSUMPTIONS.md G1): SpawnInitial đặt 2 đơn tutorial
-    // lúc 0 giây; SpawnOrders bốc theo ĐỒNG HỒ — mỗi mốc NextOrderSpawnAtSeconds bốc 1 đơn theo trọng số +
-    // spawnCondition, không lặp trong ván, cạn pool thì fallback cho phép lặp (FR-0301/0306).
+    // OrderScheduler bản G7 (sinh đơn NGẪU NHIÊN — xem ASSUMPTIONS.md mục G7):
+    // SpawnInitial KHÔNG sinh đơn lúc 0 giây — chỉ đặt mốc bốc đầu tiên sau orderFirstDelaySeconds;
+    // SpawnOrders gọi OrderGenerator (state.Rng) — Id "O-G{n}" duy nhất, không còn bốc từ OrderPool.
     public class OrderSchedulerTests
     {
-        static GameConfig Config()
+        TestWorld _world;
+
+        [SetUp]
+        public void SetUp()
         {
-            GameConfig config = ScriptableObject.CreateInstance<GameConfig>();
-            config.orderIntervalSeconds = 40f;
-            config.orderIntervalDecayPerOrder = 0.92f;
-            config.orderIntervalMinSeconds = 15f;
-            return config;
+            _world = TestWorld.Create();
+            _world.Config.incidentChancePerEdge = 0f; // cô lập — sự cố có test riêng
         }
 
-        static OrderDef Order(string id, int weight = 1, FlagCondition condition = FlagCondition.Always, float deadlineSeconds = 90f)
+        [TearDown]
+        public void TearDown()
         {
-            OrderDef def = ScriptableObject.CreateInstance<OrderDef>();
-            def.orderId = id;
-            def.weight = weight;
-            def.spawnCondition = condition;
-            def.fromPortId = "HQ";
-            def.toPortId = "P2";
-            def.deadlineSeconds = deadlineSeconds;
-            return def;
+            foreach (var so in _world.SOs) Object.DestroyImmediate(so);
         }
 
-        static OrderPool Pool(OrderDef[] fixedOrders, OrderDef[] poolOrders)
+        SimWorld Sim() => new SimWorld
         {
-            OrderPool pool = ScriptableObject.CreateInstance<OrderPool>();
-            pool.fixedFirstDay = new List<OrderDef>(fixedOrders);
-            pool.pool = new List<OrderDef>(poolOrders);
-            return pool;
+            Pool = _world.OrderPool, Routes = _world.Routes,
+            Incidents = _world.Incidents,
+            FixedFirstDay = _world.FixedFirstDay, FixedFinale = _world.FixedFinale,
+            HQPortId = TestWorld.Goc,
+        };
+
+        GameState State(int seed)
+        {
+            var state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed);
+            OrderScheduler.SpawnInitial(_world.OrderPool, state);
+            return state;
         }
 
-        static GameState State(GameConfig config, int seed)
-        {
-            return GameStateBuilder.CreateRun(config, new List<ShipDef>(), seed);
-        }
+        // ---- Phần 3: ván mới KHÔNG có hàng; làm quen xong mới có hàng -------------------------
 
-        // Đặt đồng hồ tới mốc bốc rồi gọi SpawnOrders trực tiếp (unit — không qua Advance).
-        static List<string> SpawnAt(OrderPool pool, GameConfig config, int seed, float elapsedSeconds)
+        [Test]
+        public void VanMoi_OrderRong_Tai0Giay()
         {
-            GameState state = State(config, seed);
-            OrderScheduler.SpawnInitial(pool, state);
-            state.ElapsedSeconds = elapsedSeconds;
-            OrderScheduler.SpawnOrders(pool, state);
-            return state.Orders.Select(o => o.Id).ToList();
+            var state = State(7);
+            Assert.AreEqual(0, state.Orders.Count, "ván mới phải KHÔNG có đơn (bỏ SpawnInitial O-01/O-02)");
+            Assert.AreEqual(_world.Config.orderFirstDelaySeconds, state.NextOrderSpawnAtSeconds,
+                "mốc bốc đơn đầu = orderFirstDelaySeconds");
+            Assert.AreEqual(0, state.OrderSpawnCount);
         }
 
         [Test]
-        public void SpawnInitial_ReturnsFixedOrders_IgnoringSeed()
+        public void TruocMocLamQuen_AdvanceKhongSinhDon()
         {
-            OrderPool pool = Pool(new[] { Order("O-01"), Order("O-02") }, new OrderDef[0]);
-            GameState s1 = State(Config(), 1);
-            GameState s99 = State(Config(), 99);
-            OrderScheduler.SpawnInitial(pool, s1);
-            OrderScheduler.SpawnInitial(pool, s99);
-
-            CollectionAssert.AreEqual(new[] { "O-01", "O-02" }, s1.Orders.Select(o => o.Id).ToList());
-            CollectionAssert.AreEqual(s1.Orders.Select(o => o.Id).ToList(), s99.Orders.Select(o => o.Id).ToList());
-            // Mốc bốc đơn kế tiếp = orderIntervalSeconds.
-            Assert.AreEqual(40f, s1.NextOrderSpawnAtSeconds);
+            var state = State(7);
+            var sim = Sim();
+            for (int i = 0; i < 249; i++) Simulation.Advance(sim, state, 0.1f); // 24.9s
+            Assert.AreEqual(0, state.Orders.Count, "trước orderFirstDelaySeconds không được sinh đơn");
+            Assert.AreEqual(0, state.OrderSpawnCount);
         }
 
         [Test]
-        public void SpawnOrders_OnePerMilestone_DeterministicPerSeed()
+        public void DonDauXuatHienTaiMocLamQuen()
         {
-            OrderPool pool = Pool(new OrderDef[0],
-                new[] { Order("O-03"), Order("O-04"), Order("O-05"), Order("O-06"), Order("O-07"), Order("O-08") });
+            var state = State(7);
+            var sim = Sim();
+            for (int i = 0; i < 251; i++) Simulation.Advance(sim, state, 0.1f); // 25.1s — qua mốc 25s
+            Assert.AreEqual(1, state.Orders.Count, "đúng 1 đơn đầu tiên sau thời gian làm quen");
+            Assert.AreEqual("O-G1", state.Orders[0].Id);
+        }
 
-            List<string> first = SpawnAt(pool, Config(), 42, 40.01f);
-            List<string> replay = SpawnAt(pool, Config(), 42, 40.01f);
+        // ---- SpawnInitial đặt mốc, SpawnOrders bốc qua generator -------------------------------
 
-            Assert.AreEqual(1, first.Count); // mỗi mốc bốc đúng 1 đơn (pool rỗng fixed → không có tutorial)
-            CollectionAssert.AreEqual(first, replay);
+        [Test]
+        public void SpawnOrders_DonDauTaiMoc_IdDuyNhatO_G1()
+        {
+            var state = State(7);
+            state.ElapsedSeconds = _world.Config.orderFirstDelaySeconds + 0.1f;
+            OrderScheduler.SpawnOrders(Sim(), state);
+            Assert.AreEqual(1, state.Orders.Count);
+            Assert.AreEqual("O-G1", state.Orders[0].Id);
+            Assert.AreEqual(OrderStatus.InInbox, state.Orders[0].Status);
+            Assert.That(state.UsedOrderIds, Does.Contain("O-G1"));
         }
 
         [Test]
-        public void NoRepeatWithinRun_FallbackAllowsRepeatWhenExhausted()
+        public void SameSeed_CungChuoiDon()
         {
-            GameConfig config = Config();
-            OrderPool pool = Pool(new OrderDef[0],
-                new[] { Order("A"), Order("B"), Order("C"), Order("D"), Order("E"), Order("F") });
-
-            GameState state = State(config, 7);
-            OrderScheduler.SpawnInitial(pool, state);
-            var seen = new List<string>();
-            // 6 mốc đầu (bỏ mốc 0 vì SpawnInitial đặt Next=40): bốc được 6 đơn phân biệt.
-            for (float t = 40f; t <= 400f; t += config.orderIntervalSeconds)
+            var a = State(42);
+            var b = State(42);
+            var sim = Sim();
+            for (int i = 0; i < 6; i++)
             {
-                state.ElapsedSeconds = t;
-                OrderScheduler.SpawnOrders(pool, state);
-                seen.AddRange(state.Orders.Select(o => o.Id).Where(id => !seen.Contains(id)));
+                float t = _world.Config.orderFirstDelaySeconds + i * _world.Config.orderIntervalSeconds + 0.1f;
+                a.ElapsedSeconds = t; OrderScheduler.SpawnOrders(sim, a);
+                b.ElapsedSeconds = t; OrderScheduler.SpawnOrders(sim, b);
             }
-
-            Assert.AreEqual(6, seen.Distinct().Count());
-
-            // Mốc sau khi pool cạn: fallback cho phép lặp — đơn cũ quay lại Inbox (một OrderState duy nhất cho mỗi id).
-            state.ElapsedSeconds += config.orderIntervalSeconds;
-            OrderScheduler.SpawnOrders(pool, state);
-            Assert.AreEqual(state.Orders.Count, state.Orders.Select(o => o.Id).Distinct().Count());
-            Assert.That(state.Orders.Any(o => o.Id == "A" && o.Status == OrderStatus.InInbox));
+            Assert.AreEqual(a.Orders.Count, b.Orders.Count);
+            for (int i = 0; i < a.Orders.Count; i++)
+            {
+                Assert.AreEqual(a.Orders[i].Id, b.Orders[i].Id, "đơn {0}", i);
+                Assert.AreEqual(a.Orders[i].FromPortId, b.Orders[i].FromPortId);
+                Assert.AreEqual(a.Orders[i].ToPortId, b.Orders[i].ToPortId);
+                Assert.AreEqual(a.Orders[i].DeadlineAtSeconds, b.Orders[i].DeadlineAtSeconds, 0.0001f);
+                Assert.AreEqual(a.Orders[i].Revenue, b.Orders[i].Revenue);
+            }
         }
 
         [Test]
         public void Interval_DecaysPerSpawn_FlooredAtMin()
         {
-            GameConfig config = Config();
-            config.orderIntervalSeconds = 40f;
-            config.orderIntervalDecayPerOrder = 0.5f;
-            config.orderIntervalMinSeconds = 15f;
-            OrderPool pool = Pool(new OrderDef[0], new[] { Order("X"), Order("Y"), Order("Z") });
+            _world.Config.orderIntervalDecayPerOrder = 0.5f;
+            var state = State(9); // Next = 25, Count = 0
+            var sim = Sim();
 
-            GameState state = State(config, 9);
-            OrderScheduler.SpawnInitial(pool, state); // Next=40, Count=0
+            state.ElapsedSeconds = 25f;
+            OrderScheduler.SpawnOrders(sim, state);
+            Assert.AreEqual(65f, state.NextOrderSpawnAtSeconds, "interval 40 * decay^0 = 40 → Next=65");
 
-            state.ElapsedSeconds = 40f;
-            OrderScheduler.SpawnOrders(pool, state);
-            Assert.AreEqual(80f, state.NextOrderSpawnAtSeconds, "interval 40 * decay^0 = 40 → Next=80");
+            state.ElapsedSeconds = 65f;
+            OrderScheduler.SpawnOrders(sim, state);
+            Assert.AreEqual(85f, state.NextOrderSpawnAtSeconds, "interval 40 * 0.5 = 20 → Next=85");
 
-            state.ElapsedSeconds = 80f;
-            OrderScheduler.SpawnOrders(pool, state);
-            Assert.AreEqual(100f, state.NextOrderSpawnAtSeconds, "interval 40 * 0.5 = 20 → Next=100");
-
-            state.ElapsedSeconds = 100f;
-            OrderScheduler.SpawnOrders(pool, state);
-            Assert.AreEqual(115f, state.NextOrderSpawnAtSeconds, "interval 10 < min 15 → Next=115");
+            state.ElapsedSeconds = 85f;
+            OrderScheduler.SpawnOrders(sim, state);
+            Assert.AreEqual(100f, state.NextOrderSpawnAtSeconds, "interval 10 < min 15 → Next=100");
         }
 
         [Test]
-        public void SpawnCondition_FiltersEligibleOrders()
+        public void InboxDuNguoc_BoLuotSinh_NhungVanDiMoc()
         {
-            GameConfig config = Config();
-            OrderDef gated = Order("GATED", condition: FlagCondition.CargoShiftedRequired);
-            OrderPool pool = Pool(new OrderDef[0], new[] { gated, Order("FREE") });
-
-            // Chưa có cờ CargoShifted toàn ván → chỉ đơn FREE đủ điều kiện.
-            List<string> before = SpawnAt(pool, config, 11, 40.01f);
-            Assert.That(before, Does.Contain("FREE"));
-
-            // Có cờ → GATED đủ điều kiện (bốc theo trọng số; seed cố định → kết quả xác định).
-            GameState state = State(config, 11);
-            OrderScheduler.SpawnInitial(pool, state);
-            state.CargoShiftedOrderIds.Add("O-01");
-            state.ElapsedSeconds = 40.01f;
-            OrderScheduler.SpawnOrders(pool, state);
-            CollectionAssert.Contains(state.Orders.Select(o => o.Id).ToList(), "GATED");
-        }
-
-        [Test]
-        public void Weight_HeavierOrderPickedMoreOften()
-        {
-            GameConfig config = Config();
-            OrderPool pool = Pool(new OrderDef[0], new[] { Order("HEAVY", weight: 10), Order("LIGHT", weight: 1) });
-
-            int heavy = 0, light = 0;
-            for (int seed = 1; seed <= 40; seed++)
-            {
-                List<string> ids = SpawnAt(pool, config, seed, 40.01f);
-                Assert.AreEqual(1, ids.Count);
-                if (ids[0] == "HEAVY") heavy++; else light++;
-            }
-
-            Assert.Greater(heavy, light);
-        }
-
-        [Test]
-        public void MarksSpawnedOrdersUsed_AndAddsStatesWithDefaults()
-        {
-            OrderPool pool = Pool(new[] { Order("O-01", deadlineSeconds: 120f) }, new OrderDef[0]);
-            GameConfig config = Config();
-            GameState state = State(config, 5);
-            OrderScheduler.SpawnInitial(pool, state);
-
-            CollectionAssert.AreEqual(new[] { "O-01" }, state.UsedOrderIds);
-            Assert.AreEqual(OrderStatus.InInbox, state.Orders[0].Status);
-            Assert.AreEqual(CargoCondition.Intact, state.Orders[0].Cargo);
-            // Hạn là giây tuyệt đối trên đồng hồ ván: lúc bốc (0) + deadlineSeconds.
-            Assert.AreEqual(120f, state.Orders[0].DeadlineAtSeconds);
-            Assert.IsFalse(state.Orders[0].IsLate);
-        }
-
-        [Test]
-        public void EmptyPool_AddsNothing_DoesNotCrash()
-        {
-            OrderPool pool = Pool(new OrderDef[0], new OrderDef[0]);
-            List<string> ids = SpawnAt(pool, Config(), 3, 40.01f);
-            Assert.AreEqual(0, ids.Count);
+            _world.Config.maxInboxOrders = 2;
+            _world.Config.orderIntervalDecayPerOrder = 0.5f; // mốc 25→65→85 (interval 40→20→15 sàn)
+            var state = State(3);
+            var sim = Sim();
+            // 3 mốc (25/65/85): sinh 2 đơn đầu; lượt 3 bị bỏ vì hộp thư đủ ngưỡng — mốc vẫn dời.
+            state.ElapsedSeconds = 85f;
+            OrderScheduler.SpawnOrders(sim, state);
+            Assert.AreEqual(2, state.Orders.Count, "hộp thư đạt maxInboxOrders → không sinh thêm");
+            Assert.AreEqual(2, state.OrderSpawnCount, "lượt bị bỏ không tính là đơn đã sinh");
+            Assert.AreEqual(100f, state.NextOrderSpawnAtSeconds, "mốc kế tiếp vẫn dời (interval min 15)");
         }
     }
 }

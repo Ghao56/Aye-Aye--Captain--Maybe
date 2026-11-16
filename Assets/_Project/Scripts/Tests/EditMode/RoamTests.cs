@@ -21,12 +21,9 @@ namespace AyeAye.Tests.EditMode
         {
             _world = TestWorld.Create();
             _world.Config.incidentChancePerEdge = 0f; // cô lập — sự cố có test riêng
-            // Cô lập roaming: pool RỖNG → Simulation không bốc đơn tự động nào.
-            // (Quy tắc dư thừa: tàu chỉ rời cảng khi nhu cầu tại cảng < số tàu Idle — đơn tutorial
-            // sinh lúc 0s tại Goc sẽ giữ tàu ở lại mãi). Test cần nhu cầu tự tạo OrderDef riêng,
-            // test Rng-isolation dựng pool thật riêng.
-            _world.OrderPool.fixedFirstDay = new List<OrderDef>();
-            _world.OrderPool.pool = new List<OrderDef>();
+            // G7: đơn sinh NGẪU NHIÊN qua OrderGenerator (pool không còn dùng) — chặn spawn bằng
+            // mốc làm quen cực xa để roaming test không bị đơn sinh giữa chừng làm nhiễu.
+            _world.Config.orderFirstDelaySeconds = 100000f;
             _sim = new SimWorld
             {
                 Pool = _world.OrderPool, Routes = _world.Routes,
@@ -72,11 +69,10 @@ namespace AyeAye.Tests.EditMode
             return d;
         }
 
-        GameState Run(ShipDef ship, float roamStart = 0f, bool spawnOrders = false)
+        GameState Run(ShipDef ship, float roamStart = 0f)
         {
             _world.Config.roamStartSeconds = roamStart;
             var state = GameStateBuilder.CreateRun(_world.Config, new[] { ship }, seed: 7);
-            if (spawnOrders) OrderScheduler.SpawnInitial(_world.OrderPool, state);
             return state;
         }
 
@@ -126,14 +122,9 @@ namespace AyeAye.Tests.EditMode
         [Test]
         public void TauKhongDuThua_OLaiCang()
         {
-            // Tự tạo 1 đơn tại Goc (pool SetUp đã rỗng): nhu cầu 1 ≥ 1 tàu Idle → không dư thừa.
-            var od = ScriptableObject.CreateInstance<OrderDef>();
-            _world.SOs.Add(od);
-            od.orderId = "O-T4"; od.customerName = "T4"; od.fromPortId = TestWorld.Goc;
-            od.toPortId = TestWorld.Vang; od.deadlineSeconds = 999f; od.revenue = 1; od.weight = 1;
-            _world.OrderPool.fixedFirstDay.Add(od);
-
-            var state = Run(OneShip("S-1", Profile(dwell: 0.5f), TestWorld.Goc), spawnOrders: true);
+            // G7: nhu cầu tự tạo bằng đơn TAY (AddManualOrder) — không còn bốc từ pool.
+            var state = Run(OneShip("S-1", Profile(dwell: 0.5f), TestWorld.Goc));
+            TestWorld.AddManualOrder(state, "O-T4", TestWorld.Goc, TestWorld.Vang, 999f);
             Advance(state, 200); // 20s — lâu hơn dwell rất nhiều
             var s = state.Ships[0];
             Assert.AreEqual(ShipStatus.Idle, s.Status, "đơn đang chờ ngay tại cảng → tàu ở lại");
@@ -179,8 +170,6 @@ namespace AyeAye.Tests.EditMode
         {
             var a = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 7);
             var b = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 7);
-            OrderScheduler.SpawnInitial(_world.OrderPool, a);
-            OrderScheduler.SpawnInitial(_world.OrderPool, b);
             Advance(a, 600); // 60s — qua ân hạn + vài chuyến roaming
             Advance(b, 600);
             for (int i = 0; i < a.Ships.Count; i++)
@@ -192,47 +181,32 @@ namespace AyeAye.Tests.EditMode
             }
         }
 
-        // 8. Cô lập Rng: roaming bật/tắt → chuỗi đơn sinh ra GIỐNG HỆT (không đụng state.Rng).
+        // 8. Cô lập Rng: roaming bật/tắt → nhịp sinh đơn GIỐNG HỆT (RoamRng không đụng state.Rng).
         [Test]
         public void RoamKhongDungRngChung_ChoiDonGiongHet()
         {
-            // Pool THẬT của DemoData: có sự kiện bốc đơn dùng state.Rng (PickWeighted) —
-            // nếu roaming lạm dụng state.Rng thì chuỗi đơn hai phía sẽ lệch.
-            var realPool = DemoData.BuildOrderPool();
-            _world.SOs.Add(realPool);
-            foreach (var o in realPool.fixedFirstDay) _world.SOs.Add(o);
-            foreach (var o in realPool.pool) _world.SOs.Add(o);
-            var sim = new SimWorld
-            {
-                Pool = realPool, Routes = _world.Routes, Incidents = _world.Incidents,
-                FixedFirstDay = _world.FixedFirstDay, FixedFinale = _world.FixedFinale,
-                HQPortId = TestWorld.Goc,
-            };
-
+            // G7 — bất biến đổi dạng: đơn sinh NGẪU NHIÊN còn phụ thuộc vị trí tàu (trọng số cảng
+            // có tàu Idle) nên NỘI DUNG đơn hai phía có thể khác nhau — nhưng NHỊP sinh (mốc đồng
+            // hồ + số đơn đã sinh) KHÔNG được lệch: roaming dùng RoamRng, không tiêu hao state.Rng.
+            _world.Config.orderFirstDelaySeconds = 25f; // mở nhịp sinh thật trong cửa sổ 300s
             _world.Config.roamStartSeconds = 0f;
             _world.Config.roamEnabled = true;
             var a = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 7);
-            OrderScheduler.SpawnInitial(realPool, a);
+            // b: bản config SAO CHÉP (config dùng chung tham chiếu — không copy thì a cũng đứng)
+            // với roamEnabled = false → b đứng yên tại cảng, a tự đi.
             _world.Config.roamEnabled = false;
-            var b = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 7);
-            OrderScheduler.SpawnInitial(realPool, b);
+            var bConfig = Object.Instantiate(_world.Config);
+            _world.SOs.Add(bConfig);
+            var b = GameStateBuilder.CreateRun(bConfig, _world.ShipDefs, seed: 7);
             _world.Config.roamEnabled = true;
 
-            Advance(a, 600, sim); // 60s: tutorial 0s + bốc thêm từ pool, tàu A roaming từ 0s
-            Advance(b, 600, sim);
+            Advance(a, 3000, _sim); // 300s: nhiều mốc sinh đơn, tàu A roaming từ 0s, tàu B đứng yên
+            Advance(b, 3000, _sim);
 
-            var oa = a.Orders;
-            var ob = b.Orders;
-            Assert.AreEqual(oa.Count, ob.Count, "số đơn phải giống hệt");
-            for (int i = 0; i < oa.Count; i++)
-            {
-                Assert.AreEqual(oa[i].Id, ob[i].Id, "đơn {0}", i);
-                Assert.AreEqual(oa[i].Status, ob[i].Status, "đơn {0}", i);
-                Assert.AreEqual(oa[i].FromPortId, ob[i].FromPortId, "đơn {0}", i);
-                Assert.AreEqual(oa[i].ToPortId, ob[i].ToPortId, "đơn {0}", i);
-                Assert.AreEqual(oa[i].DeadlineAtSeconds, ob[i].DeadlineAtSeconds, 0.0001f, "đơn {0}", i);
-            }
-            Assert.AreEqual(a.OrderSpawnCount, b.OrderSpawnCount);
+            Assert.AreEqual(a.OrderSpawnCount, b.OrderSpawnCount, "số đơn đã sinh phải giống hệt");
+            Assert.AreEqual(a.NextOrderSpawnAtSeconds, b.NextOrderSpawnAtSeconds, 0.0001f,
+                "mốc sinh kế tiếp phải giống hệt (nhịp sinh thuần đồng hồ)");
+            Assert.AreEqual(a.Orders.Count, b.Orders.Count);
         }
 
         // 9. Tàu không Roam (null) hoặc không có cảng kề trực tiếp → ở yên Idle.

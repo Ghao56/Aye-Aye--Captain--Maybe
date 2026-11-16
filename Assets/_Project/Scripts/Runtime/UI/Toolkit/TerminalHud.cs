@@ -28,6 +28,9 @@ namespace AyeAye
         float clockAcc;                 // dồn dt thật → chạy Advance theo bước cố định (chỉnh 3)
         int lastRefreshKey = int.MinValue;
         bool focusPaused;               // mất focus / tab ẩn / Application pause → đồng hồ dừng (G2)
+        [Tooltip("DEBUG trong editor: bỏ qua tạm dừng khi mất focus (để xem UI khi không giữ cửa sổ).")]
+        public bool ignoreFocusPause = false;
+        Label firstOrderLabel;          // G7: đếm ngược "đơn đầu tiên sau ~Ns" (đơn đầu không còn có sẵn)
         float countdownAcc;             // cập nhật hạn đơn ~10 Hz bằng cách sửa text tại chỗ
         // (đơn, label, tiền tố, hậu tố) — dựng lại mỗi Refresh; sửa text tại chỗ, không dựng lại panel
         readonly List<(OrderState order, Label label, string prefix, string suffix)> countLabels
@@ -48,6 +51,7 @@ namespace AyeAye
         Dictionary<string, PortDef> portDefs;   // G3: tọa độ bản đồ
         RouteTable routeTable;                  // G3: tra tuyến cho panel lệnh
         List<RouteDef> mapRouteDefs;            // G3: các cạnh vẽ trên bản đồ
+        int lastPendingIncidents;               // G6.3b: phát hiện sự cố mới (0→>0) để tự mở tab SỰ CỐ
 
         void OnEnable()
         {
@@ -76,7 +80,7 @@ namespace AyeAye
             // Bỏ màn BẮT ĐẦU (boss 14/11): máy bật là ván chạy ngay.
             if (machine != null && machine.IsMachineOn && state == null)
                 StartNewRun();
-            if (state != null && machine != null && machine.IsMachineOn && !focusPaused)
+            if (state != null && machine != null && machine.IsMachineOn && (ignoreFocusPause || !focusPaused))
             {
                 RunClock();
                 int inboxCount = 0;
@@ -91,10 +95,28 @@ namespace AyeAye
                     key = key * 31 + (s.PortId != null ? s.PortId.GetHashCode() : 0);
                     key = key * 31 + (s.Route != null && s.Route.ToPort != null ? s.Route.ToPort.GetHashCode() : 0);
                 }
-                if (key != lastRefreshKey) { lastRefreshKey = key; Refresh(); }
+                // Bug 15/11: key chỉ GHI SAU khi Refresh() chạy trọn — Refresh ném exception thì
+                // key chưa lưu, frame sau dựng lại ngay → UI tự hồi phục thay vì đóng băng vĩnh viễn.
+                if (key != lastRefreshKey) { Refresh(); lastRefreshKey = key; }
                 UpdateCountdowns(); // hạn đơn ~10 Hz — sửa text tại chỗ, không dựng lại panel
             }
-            if (state != null) UpdateFleetDots(); // chấm tàu theo state mỗi frame (panel dựng lại chỉ khi key đổi)
+            if (state != null)
+            {
+                UpdateTopPhase(); // G6.3b: text topbar cập MỖI frame — kể cả khi đồng hồ dừng (mất focus/sự cố)
+                UpdateFleetDots(); // chấm tàu theo state mỗi frame (panel dựng lại chỉ khi key đổi)
+            }
+        }
+
+        // Dòng pha topbar — gọi mỗi frame vì đây là CÁCH DUY NHẤT người chơi biết vì sao đồng hồ
+        // dừng (bug report 15/11 "giao đơn thứ 3 game đứng": trước đây text này chỉ đổi khi key
+        // Refresh đổi, người chơi không thấy trạng thái TẠM DỪNG và tưởng game treo).
+        void UpdateTopPhase()
+        {
+            if (topPhase == null) return;
+            if (focusPaused && !ignoreFocusPause) topPhase.text = "TẠM DỪNG (mất focus)";
+            else if (state.IsFinished) topPhase.text = "KẾT THÚC";
+            else if (!state.CanAdvance) topPhase.text = "TẠM DỪNG (sự cố chờ)";
+            else topPhase.text = "ĐANG CHẠY";
         }
 
         // G1 shim: dồn dt thật rồi chạy Simulation.Advance theo bước simTickSeconds (giới hạn tick mỗi frame).
@@ -195,10 +217,11 @@ namespace AyeAye
             LoadWorld();
             int seed = (state != null && config.repeatSeedOnRestart) ? state.Seed : System.Environment.TickCount;
             state = GameStateBuilder.CreateRun(config, shipDefs, seed);
-            OrderScheduler.SpawnInitial(pool, state); // 2 đơn đầu + bắt đầu nhịp spawn (FR-0301)
+            OrderScheduler.SpawnInitial(pool, state); // đặt mốc đơn đầu (không còn đơn có sẵn — G7)
             clockAcc = 0f;
             startScreen.style.display = DisplayStyle.None;
             lastRefreshKey = int.MinValue;
+            lastPendingIncidents = 0; // ván mới: đếm sự cố về 0, không nhảy tab nhầm
             Refresh();
         }
 
@@ -215,7 +238,6 @@ namespace AyeAye
             topLate.text = $"Trễ {state.LateCount}/{config.maxLateDeliveries}";
             topDelivered.text = $"Đã giao {state.DeliveredCount}/{config.winDeliveries}";
             topRevenue.text = $"Doanh thu {state.Revenue}";
-            topPhase.text = state.CanAdvance ? "ĐANG CHẠY" : "TẠM DỪNG";
 
             // FR-0202: huy hiệu tab — số chưa xử lý từng tab; 0 → ẩn.
             int inbox = 0, unassigned = 0;
@@ -233,6 +255,11 @@ namespace AyeAye
                 tabs[i].EnableInClassList("locked", locked);
                 tabs[i].text = TabNames[i] + (counts[i] > 0 ? $" ({counts[i]})" : "");
             }
+            // G6.3b: sự cố mới nổ khi đang ở tab khác → tự mở tab SỰ CỐ ngay. Đồng hồ dừng là
+            // thiết kế, nhưng không auto-switch thì người chơi chỉ thấy "game đứng" mà không biết
+            // phải xử lý ở đâu (bug report 14/11: "giao đơn 2 game đứng luôn, UI lỗi").
+            if (incidentPending && lastPendingIncidents == 0) SelectTab(2);
+            lastPendingIncidents = pending;
 
             BuildOrdersPanel();
             BuildFleetPanel();
@@ -264,6 +291,9 @@ namespace AyeAye
             if (countdownAcc < 0.1f) return;
             countdownAcc = 0f;
             bool blinkOff = (Mathf.FloorToInt(Time.unscaledTime / 0.5f) & 1) == 1;
+            // G7: đếm ngược đơn đầu tiên 10 Hz tại chỗ (label được dựng lại mỗi Refresh).
+            if (firstOrderLabel != null && firstOrderLabel.style.display.value == DisplayStyle.Flex)
+                firstOrderLabel.text = $"Đơn đầu tiên xuất hiện sau {Mathf.Max(0f, state.NextOrderSpawnAtSeconds - state.ElapsedSeconds):0}s — đọc hướng dẫn dưới.";
             foreach (var (o, label, prefix, suffix) in countLabels)
             {
                 if (label == null) continue;
@@ -272,12 +302,19 @@ namespace AyeAye
                 label.EnableInClassList("blink-off", warn && blinkOff);
                 label.EnableInClassList("late", o.IsLate);
             }
-            // G5: ETA tàu Roaming — thời gian còn lại của cạnh (tốc × roamSpeedFactor), sửa text tại chỗ.
+            // G6.3b: sự cố đang chờ → nhấp nháy tab SỰ CỐ (class blink-off tái dùng của cảnh báo hạn).
+            if (tabs[2] != null) tabs[2].EnableInClassList("blink-off",
+                state.PendingIncidents.Count > 0 && blinkOff);
+            // G7/G5: ETA tại chỗ — tàu Roaming (tốc × roamSpeedFactor) lẫn tàu Moving
+            // (còn = (length − đã đi) / tốc) đều sửa text 10 Hz, không dựng lại panel.
             foreach (var (ship, label, prefix, suffix) in shipEtaLabels)
             {
                 if (label == null || ship == null) continue;
-                if (ship.Status != ShipStatus.Roaming || ship.Route == null) { label.text = prefix + "?" + suffix; continue; }
-                label.text = prefix + Mathf.CeilToInt(CommandValidator.RoamRemainSeconds(ship, state.Config)) + suffix;
+                if (ship.Route == null) { label.text = prefix + "?" + suffix; continue; }
+                float remain = ship.Status == ShipStatus.Roaming
+                    ? CommandValidator.RoamRemainSeconds(ship, state.Config)
+                    : Mathf.Max(0f, (ship.Route.length - ship.DistanceAlongRoute) / state.Config.SpeedUnitsPerSecond(ship.Speed));
+                label.text = prefix + Mathf.CeilToInt(remain) + suffix;
             }
         }
 
@@ -309,6 +346,20 @@ namespace AyeAye
             var summary = new Label($"Đơn đang hoạt động {activeCount}/{config.maxActiveOrders}");
             summary.AddToClassList("order-summary");
             scroll.Add(summary);
+
+            // G7: ván KHÔNG còn đơn có sẵn — đếm ngược tới đơn đầu tiên (10 Hz, sửa text tại chỗ).
+            if (state.OrderSpawnCount == 0 && state.ElapsedSeconds < state.NextOrderSpawnAtSeconds)
+            {
+                if (firstOrderLabel == null)
+                {
+                    firstOrderLabel = new Label("");
+                    firstOrderLabel.AddToClassList("order-line");
+                }
+                firstOrderLabel.style.display = DisplayStyle.Flex;
+                firstOrderLabel.text = $"Đơn đầu tiên xuất hiện sau {Mathf.Max(0f, state.NextOrderSpawnAtSeconds - state.ElapsedSeconds):0}s — đọc hướng dẫn dưới.";
+                scroll.Add(firstOrderLabel);
+            }
+            else if (firstOrderLabel != null) firstOrderLabel.style.display = DisplayStyle.None;
 
             // Hướng dẫn cách chơi (bỏ màn BẮT ĐẦU — review 14/11): hiện đến khi người chơi nhận đơn đầu tiên.
             // Cờ lấy từ state (Delivered/Late/đang chạy), không phải trạng thái UI — Refresh dựng lại vẫn đúng;

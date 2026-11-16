@@ -129,6 +129,24 @@ namespace AyeAye.Tests.EditMode
             Assert.IsNotNull(CommandValidator.ValidateReposition(_state, _routes, "S1", "C", 0));
         }
 
+        // Phần 2 (G7): KHÔNG còn ràng buộc thuyền trưởng/tag khi nhận đơn — Bob chở được hàng dễ vỡ,
+        // mọi tàu Idle đậu đúng cảng đi × đơn Accepted đều hợp lệ. Khác biệt tàu chỉ qua tốc độ + sự cố.
+        [Test]
+        public void Assign_KhongChanTheoThuyenTruongHoacTag()
+        {
+            foreach (var tags in new[]
+            {
+                OrderTag.None, OrderTag.Fragile, OrderTag.Cold, OrderTag.Urgent,
+                OrderTag.Fragile | OrderTag.Cold | OrderTag.Urgent,
+            })
+            {
+                var o = Active("O-TAG"); // Accepted, A→B, S1 (Bob) đang đậu ở A
+                o.Tags = tags;
+                Assert.IsNull(CommandValidator.ValidateAssign(_state, _routes, "S1", o.Id, 0),
+                    $"Bob phải nhận được đơn tag {tags} — không cấm tàu nào (Phần 2)");
+            }
+        }
+
         [Test]
         public void Reposition_Hop_Le()
         {

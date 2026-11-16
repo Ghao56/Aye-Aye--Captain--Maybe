@@ -186,7 +186,7 @@ namespace AyeAye
             pool.pool = new List<OrderDef>
             {
                 Order("O-03", "Kem Que Sa Mạc", OrderTag.Cold, Goc, Tram, 75f, 90, "Kem mà đi đường bão... ẵm về nước"),
-                Order("O-04", "Tiệm Gương Vỡ Hạnh Phúc", OrderTag.Fragile, Suong, Camap, 45f, 110, "Gương vỡ = 7 năm xui. Đừng cho Bob chở."),
+                Order("O-04", "Tiệm Gương Vỡ Hạnh Phúc", OrderTag.Fragile, Suong, Camap, 45f, 110, "Gương vỡ = 7 năm xui. Lót đệm kĩ vào."),
                 Order("O-05", "Pizza Giao Chậm Là Miễn Phí", OrderTag.Urgent, Goc, Vang, 45f, 70, "Tên cửa hàng đã nói tất cả."),
                 Order("O-06", "Hội Sưu Tập Đá Cuội", OrderTag.None, Vang, Tram, 90f, 100, "Đá cuội không vội. Nhưng sếp thì có."),
                 Order("O-07", "Đám Cưới Cá Heo", OrderTag.Fragile | OrderTag.Urgent, Camap, Goc, 90f, 160, "Cá heo không đợi. Hàng dễ vỡ thì càng không."),
@@ -329,6 +329,61 @@ namespace AyeAye
             pool.incidents = new List<IncidentDef> { i02, i03, i04, i05, i06, i07 };
             return pool;
         }
+
+        // ---- G7: dữ liệu sinh đơn ngẫu nhiên (tên khách + manh mối mơ hồ, không cấm tàu nào) ----
+
+        public static readonly List<string> OrderCustomers = new List<string>
+        {
+            "Tiệm Bánh Hành Tinh Xa", "Cửa Hàng Dép Lê Số 1", "Kem Que Sa Mạc", "Tiệm Gương Vỡ Hạnh Phúc",
+            "Pizza Giao Chậm Là Miễn Phí", "Hội Sưu Tập Đá Cuội", "Đám Cưới Cá Heo", "Bưu Kiện Không Ghi Tên",
+            "Quán Phở Vũ Trụ", "Vựa Gà Nướng Bàn Chân", "Nhà Của Ông Bảy", "Trạm Thu Mua Vỏ Chai",
+            "Cửa Sách Ẩm Thực", "Kho Phao Cứu Hộ Số 3", "Ông Năm Buôn Dây Thừng", "Hộ Kinh Doanh Mắm Tôm",
+            "Công Ty Cổ Phần Sạn San Hô", "Bác Sĩ Răng Cá Mập", "Trung Tâm Nuôi Cá Bảy Màu",
+            "Chợ Đêm Quận Ngân Hà", "Trại Gà Hành Tinh Đỏ", "Quầy Thuốc Củ Lạc", "Xưởng May Buồm Vải Đục",
+            "Hội Yêu Thích Xà Lần",
+        };
+
+        // Manh mối mơ hồ theo tag/hazard — không bao giờ nêu tên hay cấm tàu/thuyền trưởng (Phần 2).
+        public static string OrderClue(OrderTag tags, HazardType hazard, System.Random rng)
+        {
+            var tagText = tags switch
+            {
+                var t when (t & OrderTag.Fragile) != 0 => FragileClues[(int)(rng.NextDouble() * FragileClues.Count) % FragileClues.Count],
+                var t when (t & OrderTag.Cold) != 0 => ColdClues[(int)(rng.NextDouble() * ColdClues.Count) % ColdClues.Count],
+                var t when (t & OrderTag.Urgent) != 0 => UrgentClues[(int)(rng.NextDouble() * UrgentClues.Count) % UrgentClues.Count],
+                _ => PlainClues[(int)(rng.NextDouble() * PlainClues.Count) % PlainClues.Count],
+            };
+            var hazardText = hazard switch
+            {
+                HazardType.Fog => "Đường đi hay sương mù.",
+                HazardType.Storm => "Nghe đồn vùng đó có bão.",
+                HazardType.Pirates => "Khu đó hay có tàu không cờ.",
+                HazardType.Ice => "Băng trôi mùa này nhiều lắm.",
+                _ => "",
+            };
+            return hazardText.Length > 0 ? tagText + " " + hazardText : tagText;
+        }
+
+        static readonly List<string> FragileClues = new List<string>
+        {
+            "Khách dặn: hàng dễ vỡ lắm, nhẹ tay thôi.",
+            "Thùng ghi chữ nguệch ngoạc: DO NOT SHAKE.",
+        };
+        static readonly List<string> ColdClues = new List<string>
+        {
+            "Hàng mà tan ra là mất trắng, đi cho lẹ.",
+            "Khách hỏi trước: tàu có kho lạnh không?",
+        };
+        static readonly List<string> UrgentClues = new List<string>
+        {
+            "Khách gọi điện giục liên tục, hạn chót ngắn.",
+            "Tên cửa hàng đã nói tất cả: trễ là miễn phí.",
+        };
+        static readonly List<string> PlainClues = new List<string>
+        {
+            "Hàng thường, không có gì đặc biệt. Chắc vậy.",
+            "Khách bình thản lạ thường. Bớt nghi ngờ đi.",
+        };
 
         public static EndingDefinitions BuildEndings()
         {

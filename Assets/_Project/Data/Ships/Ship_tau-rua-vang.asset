@@ -20,3 +20,10 @@ MonoBehaviour:
   traits: "Ch\u1EADm \xB7 Th\xE2n v\u1EEFng \xB7 B\xECnh t\u0129nh"
   startPortId: goc
   startCondition: 2
+  roam:
+    dwellSeconds: 30
+    demandWeight: 2
+    farBias: -0.5
+    hubAffinity: 3
+    wanderWeight: 1
+    backtrackPenalty: 3

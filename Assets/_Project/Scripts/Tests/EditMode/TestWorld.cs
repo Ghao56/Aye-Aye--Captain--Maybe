@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using AyeAye;
 using UnityEngine;
 
@@ -55,6 +55,27 @@ namespace AyeAye.Tests.EditMode
         {
             SOs.Add(so);
             return so;
+        }
+
+        /// <summary>
+        /// G7: dựng đơn tay cho test — không phụ thuộc SpawnInitial/pool cố định (đơn giờ sinh ngẫu nhiên).
+        /// </summary>
+        public static OrderState AddManualOrder(GameState state, string id, string from, string to,
+            float deadlineSeconds, int revenue = 100, OrderTag tags = OrderTag.None, string clue = "")
+        {
+            var o = new OrderState
+            {
+                Id = id,
+                CustomerName = id,
+                Tags = tags,
+                FromPortId = from,
+                ToPortId = to,
+                DeadlineAtSeconds = state.ElapsedSeconds + deadlineSeconds,
+                Revenue = revenue,
+                Clue = clue,
+            };
+            state.Orders.Add(o);
+            return o;
         }
     }
 }

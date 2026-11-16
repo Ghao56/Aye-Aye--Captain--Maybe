@@ -80,7 +80,10 @@ namespace AyeAye.Tests.EditMode
         {
             _world = TestWorld.Create();
             _state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 5);
-            OrderScheduler.SpawnInitial(_world.OrderPool, _state); // 2 đơn tutorial lúc 0 giây
+            OrderScheduler.SpawnInitial(_world.OrderPool, _state); // đặt mốc sinh đơn (G7: không còn đơn có sẵn)
+            // G7: đơn tutorial cũ dựng tay (O-01 Goc→Vang, O-02 Goc→Camap — hồ sơ §5.4 cũ).
+            TestWorld.AddManualOrder(_state, "O-01", TestWorld.Goc, TestWorld.Vang, 70f, 120, OrderTag.Fragile);
+            TestWorld.AddManualOrder(_state, "O-02", TestWorld.Goc, TestWorld.Camap, 85f, 100);
             foreach (var order in _state.Orders.Where(o => o.Status == OrderStatus.InInbox))
                 order.Status = OrderStatus.Accepted;
         }

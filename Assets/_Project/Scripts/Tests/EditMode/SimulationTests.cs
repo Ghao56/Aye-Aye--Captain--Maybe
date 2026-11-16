@@ -29,7 +29,11 @@ namespace AyeAye.Tests.EditMode
                 FixedFirstDay = _world.FixedFirstDay, FixedFinale = _world.FixedFinale,
             };
             _state = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 7);
-            OrderScheduler.SpawnInitial(_world.OrderPool, _state);
+            OrderScheduler.SpawnInitial(_world.OrderPool, _state); // đặt mốc sinh đơn (G7: KHÔNG còn đơn có sẵn)
+            // G7: đơn cũ dùng trong test dựng TAY qua AddManualOrder (thay SpawnInitial O-01/O-02):
+            // O-01 Goc→Vang, O-02 Goc→Camap — giống hồ sơ tutorial §5.4 cũ.
+            TestWorld.AddManualOrder(_state, "O-01", TestWorld.Goc, TestWorld.Vang, 70f, 120, OrderTag.Fragile);
+            TestWorld.AddManualOrder(_state, "O-02", TestWorld.Goc, TestWorld.Camap, 85f, 100);
         }
 
         [TearDown]
@@ -185,6 +189,12 @@ namespace AyeAye.Tests.EditMode
             var b = GameStateBuilder.CreateRun(_world.Config, _world.ShipDefs, seed: 11);
             OrderScheduler.SpawnInitial(_world.OrderPool, a);
             OrderScheduler.SpawnInitial(_world.OrderPool, b);
+            // G7: đơn tutorial cũ dựng tay ở CẢ HAI state (cùng seed → chuỗi đơn sinh tự động cũng giống nhau).
+            foreach (var s in new[] { a, b })
+            {
+                TestWorld.AddManualOrder(s, "O-01", TestWorld.Goc, TestWorld.Vang, 70f, 120, OrderTag.Fragile);
+                TestWorld.AddManualOrder(s, "O-02", TestWorld.Goc, TestWorld.Camap, 85f, 100);
+            }
 
             // cùng hành động người chơi lúc 0 tick: nhận + điều tàu
             foreach (var s in new[] { a, b })
